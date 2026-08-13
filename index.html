@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aptis — Ôn tập</title>
+<style>
+  :root{--ink:#1a2238;--paper:#fbf9f4;--card:#fff;--line:#e4ddd0;--accent:#e0533d;
+    --accent-soft:#fbe8e3;--ok:#2f9e6f;--ok-soft:#e3f4ec;--muted:#6b7280;--gold:#f0b429;--blue:#2e6fb0;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;background:var(--paper);
+    color:var(--ink);line-height:1.55;padding:0 16px 80px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto}
+  header{text-align:center;padding:34px 0 10px;border-bottom:2px solid var(--ink);margin-bottom:6px}
+  .eyebrow{font-family:'SF Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  h1{font-size:30px;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;margin-top:8px;font-style:italic}
+  .status{font-family:'SF Mono',monospace;font-size:12px;text-align:center;margin:14px 0;padding:8px 12px;
+    border-radius:10px;background:var(--ok-soft);color:#1f7a52;border:1px solid #cfe6d6}
+  .status.file{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:20px 18px;box-shadow:0 1px 0 rgba(26,34,56,.04),0 12px 30px -18px rgba(26,34,56,.25);
+    transition:transform .12s,box-shadow .12s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 34px -14px rgba(26,34,56,.4)}
+  .card .ic{font-size:30px}
+  .card h2{font-size:20px;font-weight:700;margin:8px 0 2px}
+  .card .csub{font-size:13px;color:var(--muted)}
+  .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:12px 0 8px}
+  .bar>span{display:block;height:100%;background:var(--ok);width:0;transition:width .5s}
+  .stats{display:flex;gap:14px;flex-wrap:wrap;font-family:'SF Mono',monospace;font-size:12px;color:var(--muted)}
+  .stats b{color:var(--ink)}
+  .pill{display:inline-block;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;border-radius:99px;
+    padding:2px 9px;background:var(--accent-soft);color:var(--accent)}
+  .toolbar{display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+  .btn{font-family:'SF Mono',monospace;font-size:12px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);
+    border-radius:99px;padding:8px 15px;cursor:pointer;text-decoration:none}
+  .btn:hover{background:var(--ink);color:#fff}
+  .sync{font-family:'SF Mono',monospace;font-size:12.5px;margin:20px 0 4px;padding:14px 16px;border-radius:14px;
+    background:#eef4fb;border:1px solid #cfe0f0;color:#1f3a5f;line-height:1.7}
+  .sync.on{background:var(--ok-soft);border-color:#cfe6d6;color:#1f7a52}
+  .sync code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:11px;word-break:break-all}
+  .synccode{margin:6px 0}
+  .syncbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .syncrow{display:flex;gap:8px;margin-top:8px}
+  .sync input{flex:1;min-width:0;font-family:inherit;font-size:12px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+  .synchint{margin-top:8px;color:var(--muted);font-style:normal;font-size:11.5px}
+  .sync .btn{font-size:11.5px;padding:7px 12px}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Aptis General</div>
+    <h1>Bộ đề ôn tập</h1>
+    <div class="sub">Chọn kỹ năng để luyện · tiến độ được lưu tự động</div>
+  </header>
+
+  <div class="status" id="status">Đang kiểm tra chế độ lưu…</div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="sync" id="syncBox"></div>
+
+  <div class="toolbar">
+    <button class="btn" id="exportBtn">📤 Xuất tiến độ (.json)</button>
+    <label class="btn" style="cursor:pointer">📥 Nạp tiến độ<input type="file" id="importFile" accept=".json" style="display:none"></label>
+    <button class="btn" id="resetBtn">🗑 Xoá tiến độ</button>
+  </div>
+
+  <footer>Tiến độ tự lưu trên thiết bị · Bật <b>Đồng bộ</b> để dùng chung điện thoại ↔ laptop</footer>
+</div>
+
+<script>
+const SKILLS = [
+  {key:'reading',   name:'Reading',   ic:'📖', file:'Aptis_Reading_All.html',   total:15, sub:'15 đề · điền từ, sắp xếp, nối'},
+  {key:'listening', name:'Listening', ic:'🎧', file:'Aptis_Listening_All.html', total:16, sub:'16 đề · nghe (TTS) & chọn'},
+  {key:'writing',   name:'Writing',   ic:'✍️', file:'Aptis_Writing_All.html',   total:20, sub:'20 đề · gõ lại bài mẫu'},
+  {key:'speaking',  name:'Speaking',  ic:'🗣️', file:'Aptis_Speaking_All.html',  total:20, sub:'20 đề · nói, từ vựng, flashcard'},
+  {key:'vocab',     name:'Từ vựng & Ngữ pháp', ic:'📚', file:'Aptis_Vocab_All.html', total:625, sub:'625 từ B2 · 480 câu ngữ pháp · 5 cấp thuần thục', isVocab:true},
+];
+/* ===== Đồng bộ đám mây — mã đồng bộ = ID blob (jsonblob). Dùng chung mọi app. ===== */
+window.ACLOUD=window.ACLOUD||(function(){
+  var API='/.netlify/functions/progress',CK='aptis_sync_code',t=null;
+  function code(){try{return localStorage.getItem(CK)||'';}catch(e){return'';}}
+  function setCode(c){try{localStorage.setItem(CK,c||'');}catch(e){}}
+  function clear(){try{localStorage.removeItem(CK);}catch(e){}}
+  function on(){return !!code();}
+  function isMap(x){return x&&typeof x==='object'&&!Array.isArray(x);}
+  function score(r){if(!isMap(r))return 0;return (r.attempts||0)*1000+(r.seen||0)*10+(r.correct||0)+((r.history&&r.history.length)||0);}
+  function mm(a,b){a=isMap(a)?a:{};b=isMap(b)?b:{};var o={},ks={};Object.keys(a).concat(Object.keys(b)).forEach(function(k){ks[k]=1;});
+    Object.keys(ks).forEach(function(k){var av=a[k],bv=b[k];
+      if(av===undefined){o[k]=bv;return;}if(bv===undefined){o[k]=av;return;}
+      if(isMap(av)&&isMap(bv)&&!('seen'in av)&&!('attempts'in av)&&!('correct'in av)){o[k]=mm(av,bv);}
+      else{o[k]=score(bv)>=score(av)?bv:av;}});return o;}
+  function merge(a,b){a=isMap(a)?a:{};b=isMap(b)?b:{};var o={},ks={};Object.keys(a).concat(Object.keys(b)).forEach(function(k){ks[k]=1;});
+    Object.keys(ks).forEach(function(k){if(k==='updated'){o.updated=((a.updated||'')>(b.updated||''))?a.updated:b.updated;return;}
+      var av=a[k],bv=b[k];if(isMap(av)||isMap(bv)){o[k]=mm(av,bv);}else{o[k]=(bv!==undefined?bv:av);}});return o;}
+  function u(){return API+'?code='+encodeURIComponent(code());}
+  function pull(){if(!code())return Promise.resolve(null);
+    return fetch(u(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}
+  function pushNow(data){if(!code())return Promise.resolve(false);
+    return fetch(u(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){return r.ok;}).catch(function(){return false;});}
+  function push(data){if(!code())return;clearTimeout(t);t=setTimeout(function(){pushNow(data);},1200);}
+  function syncOnLoad(local){if(!code())return Promise.resolve(local);
+    return pull().then(function(remote){return remote===null?local:merge(local||{},remote||{});});}
+  return {code:code,setCode:setCode,clear:clear,on:on,merge:merge,pull:pull,push:push,pushNow:pushNow,syncOnLoad:syncOnLoad,API:API};
+})();
+const SERVED = location.protocol === 'http:' || location.protocol === 'https:';
+let PROG = {};
+
+async function loadProg(){
+  if(SERVED){
+    try{ const r=await fetch('/api/progress',{cache:'no-store'}); PROG=await r.json()||{}; }
+    catch(e){ try{ PROG=JSON.parse(localStorage.getItem('aptis_progress')||'{}'); }catch(e2){ PROG={}; } }
+  } else {
+    try{ PROG=JSON.parse(localStorage.getItem('aptis_progress')||'{}'); }catch(e){ PROG={}; }
+  }
+  if(ACLOUD.on()){ try{ const m=await ACLOUD.syncOnLoad(PROG); if(m){ PROG=m;
+    try{ localStorage.setItem('aptis_progress',JSON.stringify(PROG)); }catch(e){}
+    if(SERVED){ try{ await fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(PROG)}); }catch(e){} }
+    ACLOUD.push(PROG);
+  } }catch(e){} }
+}
+function persistLocal(){ try{ localStorage.setItem('aptis_progress',JSON.stringify(PROG)); }catch(e){}
+  if(SERVED){ fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(PROG)}).catch(()=>{}); } }
+function renderSync(){
+  const el=document.getElementById('syncBox'); if(!el)return;
+  if(ACLOUD.on()){
+    el.className='sync on';
+    el.innerHTML='☁️ <b>Đồng bộ đang BẬT</b> — mã: <code>'+ACLOUD.code()+'</code>'
+      +'<div class="syncbtns"><button class="btn" id="snow">🔄 Đồng bộ ngay</button>'
+      +'<button class="btn" id="sup">⬆️ Đưa máy này lên mây</button>'
+      +'<button class="btn" id="soff">Tắt</button></div>'
+      +'<div class="synchint">Trên <b>thiết bị khác</b>: nhập <b>đúng mã này</b> rồi Bật đồng bộ → dùng chung tiến độ 2 chiều.</div>';
+  } else {
+    el.className='sync';
+    el.innerHTML='☁️ <b>Đồng bộ điện thoại ↔ laptop</b> — đang <b>tắt</b>.'
+      +'<div class="syncrow"><input id="sinput" placeholder="Đặt mã bí mật (VD: nhan-aptis-2026)" autocomplete="off"><button class="btn" id="son">🔗 Bật đồng bộ</button></div>'
+      +'<div class="synchint">Nhập <b>cùng một mã</b> trên cả laptop và điện thoại là xong — không cần chép mã dài.</div>';
+  }
+  const g=id=>document.getElementById(id);
+  if(g('son'))g('son').onclick=()=>syncEnable((g('sinput').value||'').trim());
+  if(g('snow'))g('snow').onclick=syncNow;
+  if(g('sup'))g('sup').onclick=syncUp;
+  if(g('soff'))g('soff').onclick=()=>{ if(confirm('Tắt đồng bộ trên thiết bị này? Tiến độ vẫn giữ, chỉ ngừng đồng bộ.')){ ACLOUD.clear(); renderSync(); } };
+}
+async function syncEnable(v){
+  if(!v){ alert('Hãy đặt một mã trước (gõ vài chữ tuỳ ý, dùng CÙNG mã trên 2 máy).'); return; }
+  ACLOUD.setCode(v);
+  const remote=await ACLOUD.pull();
+  if(remote===null){ ACLOUD.clear(); renderSync(); alert('Không kết nối được máy chủ đồng bộ (mạng?). Thử lại.'); return; }
+  PROG=ACLOUD.merge(PROG, remote); persistLocal();
+  const ok=await ACLOUD.pushNow(PROG);
+  render(); renderSync(); alert(ok?'✅ Đã bật đồng bộ & lưu lên mây.':'⚠️ Đã bật nhưng đẩy lên lỗi — bấm "Đồng bộ ngay".');
+}
+async function syncNow(){
+  const remote=await ACLOUD.pull();
+  if(remote===null){ alert('Chưa kết nối được (mạng?).'); return; }
+  PROG=ACLOUD.merge(PROG, remote); persistLocal();
+  const ok=await ACLOUD.pushNow(PROG);
+  render(); alert(ok?'✅ Đã đồng bộ.':'⚠️ Tải về xong nhưng đẩy lên lỗi.');
+}
+async function syncUp(){
+  const ok=await ACLOUD.pushNow(PROG);
+  alert(ok?'✅ Đã đưa tiến độ máy này lên mây.':'⚠️ Đẩy lên lỗi (mạng?).');
+}
+function setStatus(){
+  const el=document.getElementById('status');
+  if(SERVED){ el.className='status'; el.innerHTML='✅ Đang chạy qua server — tiến độ <b>lưu tự động</b> vào aptis_progress.json'; }
+  else{ el.className='status file'; el.innerHTML='⚠️ Đang mở trực tiếp (file://). Tiến độ lưu tạm trong trình duyệt — để lưu tự động, hãy mở bằng <b>start.bat</b>.'; }
+}
+function summary(sk){
+  if(sk.isVocab){
+    const V=PROG.vocab||{}; const ids=Object.keys(V).filter(k=>V[k]&&V[k].seen>0);
+    const accs=ids.map(k=>Math.round(V[k].correct/V[k].seen*100));
+    const avg=accs.length?Math.round(accs.reduce((a,b)=>a+b,0)/accs.length):null;
+    let last=PROG.updated||null;
+    return {done:ids.length, total:sk.total, avg:avg, last:last};
+  }
+  const s=PROG[sk.key]||{};
+  const ids=Object.keys(s).filter(k=>s[k]&&s[k].attempts>0);
+  const done=ids.length;
+  const scores=ids.map(k=>s[k].lastScore).filter(v=>typeof v==='number');
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
+  let last=null;
+  ids.forEach(k=>{ const d=s[k].lastDate; if(d && (!last||d>last)) last=d; });
+  return {done, total:sk.total, avg, last};
+}
+function fmtDate(iso){ if(!iso)return '—'; try{ const d=new Date(iso); return d.toLocaleDateString('vi-VN'); }catch(e){ return '—'; } }
+
+function render(){
+  const g=document.getElementById('grid'); g.innerHTML='';
+  SKILLS.forEach(sk=>{
+    const su=summary(sk);
+    const pct=su.total?Math.round(su.done/su.total*100):0;
+    const a=document.createElement('a'); a.className='card'; a.href=sk.file;
+    a.innerHTML =
+      '<div class="ic">'+sk.ic+'</div>'+
+      '<h2>'+sk.name+' '+(su.done===0?'<span class="pill">chưa ôn</span>':'')+'</h2>'+
+      '<div class="csub">'+sk.sub+'</div>'+
+      '<div class="bar"><span style="width:'+pct+'%"></span></div>'+
+      '<div class="stats"><span><b>'+su.done+'</b>/'+su.total+' đề đã ôn</span>'+
+        '<span>Điểm TB: <b>'+(su.avg==null?'—':su.avg+'%')+'</b></span>'+
+        '<span>Gần nhất: <b>'+fmtDate(su.last)+'</b></span></div>';
+    g.appendChild(a);
+  });
+}
+
+document.getElementById('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(PROG,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='aptis_progress.json'; a.click();
+};
+document.getElementById('importFile').onchange=(e)=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=async()=>{ try{
+    const data=JSON.parse(r.result); PROG=data;
+    if(SERVED){ await fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(PROG)}); }
+    localStorage.setItem('aptis_progress',JSON.stringify(PROG)); ACLOUD.push(PROG);
+    render(); alert('Đã nạp tiến độ.');
+  }catch(err){ alert('File không hợp lệ.'); } };
+  r.readAsText(f);
+};
+document.getElementById('resetBtn').onclick=async()=>{
+  if(!confirm('Xoá toàn bộ tiến độ của cả 4 kỹ năng?'))return;
+  PROG={};
+  if(SERVED){ try{ await fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}); }catch(e){} }
+  localStorage.removeItem('aptis_progress'); ACLOUD.push(PROG); render();
+};
+
+(async()=>{ setStatus(); await loadProg(); render(); renderSync(); })();
+</script>
+</body>
+</html>

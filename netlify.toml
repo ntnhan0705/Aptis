@@ -1,0 +1,7 @@
+# Cấu hình Netlify cho bản web Aptis (host tĩnh + 1 hàm lưu tiến độ).
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[build]
+  functions = "netlify/functions"
