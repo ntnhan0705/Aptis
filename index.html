@@ -179,11 +179,11 @@ function summary(sk){
     const accs=ids.map(k=>Math.round(V[k].correct/V[k].seen*100));
     const avg=accs.length?Math.round(accs.reduce((a,b)=>a+b,0)/accs.length):null;
     let last=PROG.updated||null;
-    return {done:ids.length, total:sk.total, avg:avg, last:last};
+    return {done:Math.min(ids.length, sk.total), total:sk.total, avg:avg, last:last};
   }
   const s=PROG[sk.key]||{};
   const ids=Object.keys(s).filter(k=>s[k]&&s[k].attempts>0);
-  const done=ids.length;
+  const done=Math.min(ids.length, sk.total);
   const scores=ids.map(k=>s[k].lastScore).filter(v=>typeof v==='number');
   const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
   let last=null;
