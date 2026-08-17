@@ -5,5 +5,11 @@
   "assets": {
     "directory": "./",
     "binding": "ASSETS"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "PROGRESS_KV",
+      "id": "b33822a6c58948c0ab9b4f4c55c8871e"
+    }
+  ]
 }
