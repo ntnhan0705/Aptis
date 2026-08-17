@@ -8216,7 +8216,7 @@ document.addEventListener('keydown',e=>{
 const APTIS_SKILL='listening';
 /* ===== Đồng bộ đám mây — mã đồng bộ = ID blob (jsonblob). Dùng chung mọi app. ===== */
 window.ACLOUD=window.ACLOUD||(function(){
-  var API='/.netlify/functions/progress',CK='aptis_sync_code',t=null;
+  var API='/progress',CK='aptis_sync_code',t=null;
   function code(){try{return localStorage.getItem(CK)||'';}catch(e){return'';}}
   function setCode(c){try{localStorage.setItem(CK,c||'');}catch(e){}}
   function clear(){try{localStorage.removeItem(CK);}catch(e){}}

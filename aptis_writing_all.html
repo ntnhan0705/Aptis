@@ -487,7 +487,7 @@ function render(){
 
 // Gọi function chấm 1 câu — dùng chung cho nút chấm từng câu và chấm hàng loạt.
 async function fetchGradeResult(it, answer){
-  const res=await fetch('/.netlify/functions/grade-writing',{
+  const res=await fetch('/grade-writing',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -579,7 +579,7 @@ async function gradeSummaryAI(){
 
   box.innerHTML='Đang tổng hợp kết quả (chỉ gửi điểm + tóm tắt đã chấm, không gửi lại bài làm)...';
   try{
-    const res=await fetch('/.netlify/functions/grade-summary',{
+    const res=await fetch('/grade-summary',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({results}),
@@ -818,7 +818,7 @@ function fcScore(v,eg,heard,res,egEl){
 const APTIS_SKILL='writing';
 /* ===== Đồng bộ đám mây — mã đồng bộ = ID blob (jsonblob). Dùng chung mọi app. ===== */
 window.ACLOUD=window.ACLOUD||(function(){
-  var API='/.netlify/functions/progress',CK='aptis_sync_code',t=null;
+  var API='/progress',CK='aptis_sync_code',t=null;
   function code(){try{return localStorage.getItem(CK)||'';}catch(e){return'';}}
   function setCode(c){try{localStorage.setItem(CK,c||'');}catch(e){}}
   function clear(){try{localStorage.removeItem(CK);}catch(e){}}
