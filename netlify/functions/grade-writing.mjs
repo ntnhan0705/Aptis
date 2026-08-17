@@ -54,11 +54,14 @@ const DEFAULT_RUBRIC = {
 
 function systemPromptFor(rubric) {
   return `Bạn là giám khảo chấm bài thi Aptis Writing, đang chấm phần "${rubric.name}".
-Chấm riêng từng tiêu chí sau đây, mỗi tiêu chí một nhận xét ngắn (1-2 câu) bằng tiếng Việt:
+Chấm riêng từng tiêu chí sau đây:
 ${rubric.criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}
-Sau đó cho điểm tổng trên thang 0-10 và một câu tóm tắt.
+Với mỗi tiêu chí:
+- Nếu bài làm ĐÃ TỐT / không có lỗi đáng kể ở tiêu chí đó: để "comment" là chuỗi rỗng "" — KHÔNG khen, không viết gì.
+- Nếu còn điểm cần cải thiện: viết "comment" ngắn gọn (1-2 câu) bằng tiếng Việt, nêu rõ lỗi/thiếu sót và cách sửa cụ thể. Không khen trước khi góp ý, đi thẳng vào điều cần cải thiện.
+Sau đó cho điểm tổng trên thang 0-10 và một câu "summary" tóm tắt — chỉ nêu điều quan trọng nhất cần cải thiện (nếu bài đã hoàn thiện ở mọi mặt thì summary có thể ghi nhận điều đó, nhưng ưu tiên chỉ ra hướng cải thiện nếu có).
 Không chấm tuyệt đối theo đáp án mẫu — chấp nhận mọi cách diễn đạt đúng ngữ pháp và đúng ý.
-Field "criteria" phải có đúng ${rubric.criteria.length} phần tử, theo đúng thứ tự và tên tiêu chí đã liệt kê ở trên.`;
+Field "criteria" phải có đúng ${rubric.criteria.length} phần tử (kể cả phần tử có comment rỗng), theo đúng thứ tự và tên tiêu chí đã liệt kê ở trên.`;
 }
 
 function schemaFor(rubric) {

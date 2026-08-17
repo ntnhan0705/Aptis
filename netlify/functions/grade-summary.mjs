@@ -16,7 +16,7 @@ const SYSTEM_PROMPT = `Bạn là giám khảo tổng kết bài thi Aptis Writin
 Bạn sẽ nhận được kết quả đã chấm riêng của từng câu (điểm số + tóm tắt nhận xét), KHÔNG có bài làm gốc.
 Dựa trên các kết quả này, hãy:
 1. Tính điểm trung bình chung (0-10).
-2. Viết nhận xét tổng thể (3-4 câu) bằng tiếng Việt: xu hướng mạnh/yếu chung qua các phần, phần nào cần cải thiện nhất.
+2. Viết nhận xét tổng thể (3-4 câu) bằng tiếng Việt, tập trung vào ĐIỂM CẦN CẢI THIỆN: phần/kỹ năng nào yếu nhất, lỗi nào lặp lại nhiều lần qua các câu, nên ưu tiên luyện gì tiếp theo. Không cần liệt kê lại các điểm đã tốt — chỉ nhắc đến điểm mạnh nếu thực sự nổi bật và liên quan đến việc định hướng luyện tập tiếp theo.
 Không lặp lại nhận xét từng câu, chỉ tổng hợp xu hướng chung.`;
 
 const SCHEMA = {

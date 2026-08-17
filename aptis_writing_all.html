@@ -510,9 +510,11 @@ function tokenLine(tokens){
 }
 
 function aiResultHTML(data){
-  const criteriaHTML=(data.criteria||[]).map(c=>
-    `<div style="margin-top:6px"><b>${esc(c.name)}</b><br>${esc(c.comment)}</div>`
-  ).join('');
+  // Chỉ hiện các tiêu chí CÒN CẦN CẢI THIỆN (comment không rỗng) — tiêu chí đã tốt bị ẩn.
+  const toImprove=(data.criteria||[]).filter(c=>c.comment && c.comment.trim());
+  const criteriaHTML=toImprove.length
+    ? toImprove.map(c=>`<div style="margin-top:6px"><b>${esc(c.name)}</b><br>${esc(c.comment)}</div>`).join('')
+    : `<div style="margin-top:6px">✅ Không có điểm nào cần sửa — bài làm đạt tốt ở mọi tiêu chí.</div>`;
   return `<span class="score">${esc(data.partName||'')} · Điểm: ${esc(String(data.score))}/10</span>`
     +criteriaHTML
     +`<div style="margin-top:8px;font-style:italic">${esc(data.summary||'')}</div>`
