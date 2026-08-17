@@ -59,15 +59,22 @@ export default async (req) => {
         systemInstruction: SYSTEM_PROMPT,
         responseMimeType: "application/json",
         responseSchema: SCHEMA,
+        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: 512,
       },
     });
+
+    if (!response.text) {
+      const reason = response.candidates?.[0]?.finishReason || "unknown";
+      throw new Error(`empty response from model (finishReason: ${reason})`);
+    }
 
     const parsed = JSON.parse(response.text);
     parsed.count = compact.length;
     const u = response.usageMetadata || {};
     parsed.tokens = {
       prompt: u.promptTokenCount || 0,
-      output: u.candidatesTokenCount || 0,
+      output: u.candidatesTokenCount ?? u.responseTokenCount ?? 0,
       thoughts: u.thoughtsTokenCount || 0,
       total: u.totalTokenCount || 0,
     };

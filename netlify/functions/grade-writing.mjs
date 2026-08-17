@@ -61,25 +61,30 @@ Không chấm tuyệt đối theo đáp án mẫu — chấp nhận mọi cách 
 Field "criteria" phải có đúng ${rubric.criteria.length} phần tử, theo đúng thứ tự và tên tiêu chí đã liệt kê ở trên.`;
 }
 
-const SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    score: { type: Type.NUMBER, description: "Điểm tổng 0-10" },
-    criteria: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING },
-          comment: { type: Type.STRING },
+function schemaFor(rubric) {
+  const n = String(rubric.criteria.length);
+  return {
+    type: Type.OBJECT,
+    properties: {
+      score: { type: Type.NUMBER, description: "Điểm tổng 0-10" },
+      criteria: {
+        type: Type.ARRAY,
+        minItems: n,
+        maxItems: n,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            comment: { type: Type.STRING },
+          },
+          required: ["name", "comment"],
         },
-        required: ["name", "comment"],
       },
+      summary: { type: Type.STRING, description: "Tóm tắt 1 câu" },
     },
-    summary: { type: Type.STRING, description: "Tóm tắt 1 câu" },
-  },
-  required: ["score", "criteria", "summary"],
-};
+    required: ["score", "criteria", "summary"],
+  };
+}
 
 export default async (req) => {
   if (req.method === "OPTIONS") return new Response("", { status: 204, headers: CORS });
@@ -113,16 +118,25 @@ export default async (req) => {
       config: {
         systemInstruction: systemPromptFor(rubric),
         responseMimeType: "application/json",
-        responseSchema: SCHEMA,
+        responseSchema: schemaFor(rubric),
+        // Tắt "thinking" — đây là tác vụ chấm điểm ngắn, không cần suy luận dài,
+        // tắt để tránh tốn token/bị cắt câu trả lời và trả kết quả nhanh hơn.
+        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: 1024,
       },
     });
+
+    if (!response.text) {
+      const reason = response.candidates?.[0]?.finishReason || "unknown";
+      throw new Error(`empty response from model (finishReason: ${reason})`);
+    }
 
     const parsed = JSON.parse(response.text);
     parsed.partName = rubric.name;
     const u = response.usageMetadata || {};
     parsed.tokens = {
       prompt: u.promptTokenCount || 0,
-      output: u.candidatesTokenCount || 0,
+      output: u.candidatesTokenCount ?? u.responseTokenCount ?? 0,
       thoughts: u.thoughtsTokenCount || 0,
       total: u.totalTokenCount || 0,
     };
