@@ -1,0 +1,9 @@
+{
+  "name": "aptis",
+  "compatibility_date": "2024-11-01",
+  "main": "_worker.js",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
+  }
+}
