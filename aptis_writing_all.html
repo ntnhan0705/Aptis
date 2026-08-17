@@ -570,16 +570,42 @@ async function gradeAllAI(){
 function refreshAiSummaryBtn(){
   const btn=$('aiSummaryBtn'); if(!btn) return;
   const n=state.filter(s=>s.aiResult).length;
-  btn.disabled=n===0;
+  const answered=state.filter(s=>s.value && s.value.trim()).length;
+  btn.disabled=answered===0; // bấm được ngay cả khi chưa chấm câu nào — sẽ tự chấm nốt trước khi tổng kết
   btn.textContent=`📊 Tổng kết cả đề (AI) — đã chấm ${n}/${ITEMS.length} câu`;
 }
 
 async function gradeSummaryAI(){
   const box=$('aiSummaryBox'), btn=$('aiSummaryBtn');
-  const results=state.map(s=>s.aiResult).filter(Boolean);
-  if(!results.length){ alert('Chưa có câu nào được AI chấm. Hãy bấm "Chấm bằng AI" ở từng câu trước.'); return; }
+  const hasAnyAnswer=state.some(s=>s.value && s.value.trim());
+  if(!hasAnyAnswer){ alert('Chưa có câu nào có bài làm để chấm.'); return; }
   btn.disabled=true;
   box.classList.remove('err'); box.classList.add('show');
+
+  // Tự động chấm nốt các câu đã làm nhưng chưa được AI chấm, trước khi tổng kết,
+  // để "Tổng kết cả đề" luôn dựa trên toàn bộ bài đã làm chứ không chỉ vài câu.
+  const todo=[];
+  state.forEach((s,i)=>{ if(s.value && s.value.trim() && !s.aiResult) todo.push(i); });
+  let gradeFailed=0;
+  for(let k=0;k<todo.length;k++){
+    const i=todo[k];
+    box.innerHTML=`Đang chấm nốt câu ${k+1}/${todo.length} trước khi tổng kết (${esc(ITEMS[i].tag)})...`;
+    try{
+      const data=await fetchGradeResult(ITEMS[i], state[i].value);
+      state[i].aiResult={tag:ITEMS[i].tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
+      if(i===pos){ const b=$('aiBox'); if(b){ b.classList.remove('err'); b.classList.add('show'); b.innerHTML=aiResultHTML(data); } }
+    }catch(e){ gradeFailed++; }
+    refreshAiSummaryBtn();
+  }
+
+  const results=state.map(s=>s.aiResult).filter(Boolean);
+  if(!results.length){
+    box.classList.add('err');
+    box.innerHTML='Không chấm được câu nào, thử lại sau.';
+    btn.disabled=false;
+    return;
+  }
+
   box.innerHTML='Đang tổng hợp kết quả (chỉ gửi điểm + tóm tắt đã chấm, không gửi lại bài làm)...';
   try{
     const res=await fetch('/.netlify/functions/grade-summary',{
@@ -591,8 +617,14 @@ async function gradeSummaryAI(){
     if(!res.ok || data.error) throw new Error((data.error||'Lỗi không xác định')+(data.detail?': '+data.detail:''));
     const perQTokens=results.reduce((s,r)=>s+((r.tokens&&r.tokens.total)||0),0);
     const summaryTokens=(data.tokens&&data.tokens.total)||0;
-    box.innerHTML=`<span class="score">Điểm trung bình: ${esc(String(data.averageScore))}/10 (dựa trên ${data.count} câu đã chấm)</span>`
+    // Liệt kê nhận xét từng câu đã chấm, theo đúng thứ tự câu trong đề.
+    const perQuestionHTML=state.map((s,i)=> s.aiResult
+      ? `<div style="margin-top:8px"><b>Câu ${i+1} · ${esc(s.aiResult.tag)}</b> — ${esc(String(s.aiResult.score))}/10<br>${esc(s.aiResult.summary||'')}</div>`
+      : ''
+    ).join('');
+    box.innerHTML=`<span class="score">Điểm trung bình: ${esc(String(data.averageScore))}/10 (dựa trên ${data.count} câu đã chấm${gradeFailed?`, ${gradeFailed} câu chấm lỗi bị bỏ qua`:''})</span>`
       +`<div style="margin-top:6px">${esc(data.overall||'')}</div>`
+      +`<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line)"><b>Chi tiết từng câu:</b>${perQuestionHTML}</div>`
       +`<div class="tok">🔢 Token tổng kết: ${summaryTokens} · Token ${data.count} câu đã chấm: ${perQTokens} · <b>Tổng cả đề: ${perQTokens+summaryTokens}</b></div>`;
   }catch(e){
     box.classList.add('err');
