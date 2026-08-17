@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +7,8 @@ const CORS = {
 };
 const JH = { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" };
 
-const client = new Anthropic();
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL = "gemini-2.5-flash";
 
 // Mỗi Part trong đề Aptis Writing có tiêu chí chấm khác nhau — Part 1 chỉ cần
 // đúng ý (1-5 từ), Part 4 cần đúng văn phong trang trọng/thân mật + lập luận.
@@ -57,8 +58,28 @@ Chấm riêng từng tiêu chí sau đây, mỗi tiêu chí một nhận xét ng
 ${rubric.criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 Sau đó cho điểm tổng trên thang 0-10 và một câu tóm tắt.
 Không chấm tuyệt đối theo đáp án mẫu — chấp nhận mọi cách diễn đạt đúng ngữ pháp và đúng ý.
-Trả lời CHỈ bằng JSON hợp lệ theo schema, không thêm text nào khác. Field "criteria" phải có đúng ${rubric.criteria.length} phần tử, theo đúng thứ tự và tên tiêu chí đã liệt kê ở trên.`;
+Field "criteria" phải có đúng ${rubric.criteria.length} phần tử, theo đúng thứ tự và tên tiêu chí đã liệt kê ở trên.`;
 }
+
+const SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    score: { type: Type.NUMBER, description: "Điểm tổng 0-10" },
+    criteria: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING },
+          comment: { type: Type.STRING },
+        },
+        required: ["name", "comment"],
+      },
+    },
+    summary: { type: Type.STRING, description: "Tóm tắt 1 câu" },
+  },
+  required: ["score", "criteria", "summary"],
+};
 
 export default async (req) => {
   if (req.method === "OPTIONS") return new Response("", { status: 204, headers: CORS });
@@ -86,42 +107,17 @@ export default async (req) => {
   ].filter(Boolean).join("\n");
 
   try {
-    const msg = await client.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 1024,
-      system: systemPromptFor(rubric),
-      output_config: {
-        format: {
-          type: "json_schema",
-          schema: {
-            type: "object",
-            properties: {
-              score: { type: "number", description: "Điểm tổng 0-10" },
-              criteria: {
-                type: "array",
-                description: `Nhận xét theo từng tiêu chí, đúng ${rubric.criteria.length} phần tử`,
-                items: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    comment: { type: "string" },
-                  },
-                  required: ["name", "comment"],
-                  additionalProperties: false,
-                },
-              },
-              summary: { type: "string", description: "Tóm tắt 1 câu" },
-            },
-            required: ["score", "criteria", "summary"],
-            additionalProperties: false,
-          },
-        },
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: userContent,
+      config: {
+        systemInstruction: systemPromptFor(rubric),
+        responseMimeType: "application/json",
+        responseSchema: SCHEMA,
       },
-      messages: [{ role: "user", content: userContent }],
     });
 
-    const text = msg.content.find((b) => b.type === "text")?.text ?? "{}";
-    const parsed = JSON.parse(text);
+    const parsed = JSON.parse(response.text);
     parsed.partName = rubric.name;
     return new Response(JSON.stringify(parsed), { status: 200, headers: JH });
   } catch (e) {

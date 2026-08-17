@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +7,8 @@ const CORS = {
 };
 const JH = { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" };
 
-const client = new Anthropic();
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL = "gemini-2.5-flash";
 
 // Tiết kiệm token: KHÔNG gửi lại toàn bộ bài làm, chỉ gửi kết quả đã chấm
 // từng câu (điểm + tóm tắt) để AI tổng hợp nhận xét chung cho cả đề.
@@ -16,8 +17,16 @@ Bạn sẽ nhận được kết quả đã chấm riêng của từng câu (đi
 Dựa trên các kết quả này, hãy:
 1. Tính điểm trung bình chung (0-10).
 2. Viết nhận xét tổng thể (3-4 câu) bằng tiếng Việt: xu hướng mạnh/yếu chung qua các phần, phần nào cần cải thiện nhất.
-Không lặp lại nhận xét từng câu, chỉ tổng hợp xu hướng chung.
-Trả lời CHỈ bằng JSON hợp lệ theo schema, không thêm text nào khác.`;
+Không lặp lại nhận xét từng câu, chỉ tổng hợp xu hướng chung.`;
+
+const SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    averageScore: { type: Type.NUMBER, description: "Điểm trung bình 0-10" },
+    overall: { type: Type.STRING, description: "Nhận xét tổng thể" },
+  },
+  required: ["averageScore", "overall"],
+};
 
 export default async (req) => {
   if (req.method === "OPTIONS") return new Response("", { status: 204, headers: CORS });
@@ -43,29 +52,17 @@ export default async (req) => {
   }));
 
   try {
-    const msg = await client.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 512,
-      system: SYSTEM_PROMPT,
-      output_config: {
-        format: {
-          type: "json_schema",
-          schema: {
-            type: "object",
-            properties: {
-              averageScore: { type: "number", description: "Điểm trung bình 0-10" },
-              overall: { type: "string", description: "Nhận xét tổng thể" },
-            },
-            required: ["averageScore", "overall"],
-            additionalProperties: false,
-          },
-        },
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: JSON.stringify(compact),
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        responseSchema: SCHEMA,
       },
-      messages: [{ role: "user", content: JSON.stringify(compact) }],
     });
 
-    const text = msg.content.find((b) => b.type === "text")?.text ?? "{}";
-    const parsed = JSON.parse(text);
+    const parsed = JSON.parse(response.text);
     parsed.count = compact.length;
     return new Response(JSON.stringify(parsed), { status: 200, headers: JH });
   } catch (e) {

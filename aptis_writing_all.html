@@ -497,7 +497,7 @@ async function gradeWithAI(it, answer, idx){
       }),
     });
     const data=await res.json();
-    if(!res.ok || data.error) throw new Error(data.error||'Lỗi không xác định');
+    if(!res.ok || data.error) throw new Error((data.error||'Lỗi không xác định')+(data.detail?': '+data.detail:''));
     const criteriaHTML=(data.criteria||[]).map(c=>
       `<div style="margin-top:6px"><b>${esc(c.name)}</b><br>${esc(c.comment)}</div>`
     ).join('');
@@ -536,7 +536,7 @@ async function gradeSummaryAI(){
       body:JSON.stringify({results}),
     });
     const data=await res.json();
-    if(!res.ok || data.error) throw new Error(data.error||'Lỗi không xác định');
+    if(!res.ok || data.error) throw new Error((data.error||'Lỗi không xác định')+(data.detail?': '+data.detail:''));
     box.innerHTML=`<span class="score">Điểm trung bình: ${esc(String(data.averageScore))}/10 (dựa trên ${data.count} câu đã chấm)</span>`
       +`<div style="margin-top:6px">${esc(data.overall||'')}</div>`;
   }catch(e){
