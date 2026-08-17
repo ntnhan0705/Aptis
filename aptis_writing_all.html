@@ -172,6 +172,7 @@
   .ot-tip b{color:var(--ink);}
   /* ===== từ vựng + flashcard (giống Speaking) ===== */
   .rvhl{background:var(--green-soft);border-radius:3px;padding:0 3px;color:var(--green);font-weight:600;}
+  .rvfw{background:var(--gold-soft);border-radius:3px;padding:0 3px;color:#5a4600;font-weight:700;}
   .vocintro{font-size:.84rem;line-height:1.6;color:#4a4438;background:var(--green-soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
   .vocintro b{color:var(--ink);}
   .vtag{font-size:.62rem;font-weight:700;color:var(--green);background:var(--green-soft);border-radius:99px;padding:2px 7px;}
@@ -258,11 +259,6 @@
     <button class="act" id="back" onclick="go(-1)">‹ Trước</button>
     <button class="link" onclick="reveal()">Hiện đáp án</button>
     <button class="act next" id="next" onclick="go(1)">Tiếp ›</button>
-  </div>
-
-  <div style="margin-top:14px">
-    <button class="aigrade-btn" id="aiAllBtn" onclick="gradeAllAI()">⚡ Chấm tất cả câu chưa chấm (AI)</button>
-    <div class="aigrade-box" id="aiAllBox"></div>
   </div>
 
   <div style="margin-top:14px">
@@ -448,7 +444,7 @@ function render(){
     `<div class="wordcount" id="wc"></div>`+
     `<button class="aigrade-btn" id="aiBtn">🤖 Chấm bằng AI</button>`+
     `<div class="aigrade-box" id="aiBox"></div>`+
-    `<div class="reveal" id="rv"><span class="lbl">Đáp án mẫu</span><b>${highlightVocab(it.answer, EXAMS[exam].vocab)}</b></div>`;
+    `<div class="reveal" id="rv"><span class="lbl">Đáp án mẫu · <span class="rvhl">từ vựng</span> · <span class="rvfw">khung dùng lại</span></span><b>${highlightAnswer(it.answer, EXAMS[exam].vocab, it.tag)}</b></div>`;
 
   const inp=$('inp'), editor=$('editor');
   inp.value=st.value;
@@ -540,33 +536,6 @@ async function gradeWithAI(it, answer, idx){
   }finally{
     btn.disabled=false; btn.textContent='🤖 Chấm bằng AI';
   }
-}
-
-// Chấm hàng loạt tất cả câu đã có bài làm nhưng chưa được AI chấm.
-async function gradeAllAI(){
-  const btn=$('aiAllBtn'), box=$('aiAllBox');
-  const todo=[];
-  state.forEach((s,i)=>{ if(s.value && s.value.trim() && !s.aiResult) todo.push(i); });
-  if(!todo.length){ alert('Không có câu nào cần chấm — các câu đã làm đều được chấm rồi, hoặc bạn chưa làm câu nào.'); return; }
-  btn.disabled=true;
-  box.classList.remove('err'); box.classList.add('show');
-  let done=0, failed=0, batchTokens=0;
-  for(const i of todo){
-    box.innerHTML=`Đang chấm câu ${done+1}/${todo.length} (${esc(ITEMS[i].tag)})...`;
-    try{
-      const data=await fetchGradeResult(ITEMS[i], state[i].value);
-      state[i].aiResult={tag:ITEMS[i].tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
-      batchTokens+=(data.tokens&&data.tokens.total)||0;
-      // Nếu câu này đang hiển thị trên màn hình, cập nhật luôn khối kết quả.
-      if(i===pos){ const b=$('aiBox'); if(b){ b.classList.remove('err'); b.classList.add('show'); b.innerHTML=aiResultHTML(data); } }
-    }catch(e){ failed++; }
-    done++;
-    refreshAiSummaryBtn();
-  }
-  box.classList.toggle('err', failed>0 && done===failed);
-  box.innerHTML=`Đã chấm xong ${done-failed}/${todo.length} câu`+(failed?`, ${failed} câu bị lỗi (bấm "Chấm bằng AI" ở từng câu đó để thử lại).`:'.')
-    +`<div class="tok">🔢 Tổng token đợt này: ${batchTokens}</div>`;
-  btn.disabled=false;
 }
 
 function refreshAiSummaryBtn(){
@@ -675,6 +644,42 @@ function highlightVocab(text, vocab){
     .sort((a,b)=>b.length-a.length).map(p=>p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
   try{ const re=new RegExp('\\b('+ph.join('|')+')(s|es|ing|ed)?\\b','gi');
     html=html.replace(re,m=>'<span class="rvhl">'+m+'</span>'); }catch(e){}
+  return html;
+}
+
+// Cụm "khung/dàn ý" — signpost cố định lặp lại giữa nhiều đề, dùng chung với tab "Dàn ý".
+// Tô vàng trong đáp án mẫu để HS nhận ra phần nào là khung dùng lại được, phần nào là nội dung riêng của đề.
+const FRAMEWORK_PHRASES={
+  Q1:["It's","I like"],
+  Q2:["I usually","We often","since"],
+  Q3:["To be honest,","Well,","In my opinion,","I completely agree,","I partly agree,",
+      "Yes, I have.","Yes, I do.","since"],
+  Q4:["Hi","Have you heard the news from our club? I'm really","about it, because",
+      "I think we should","It would","What do you think? Hope to hear from you soon!",
+      "Dear Sir/Madam,","I am writing regarding",
+      "I was glad to hear about this, and I would like to share my thoughts.",
+      "In my opinion,","offers two important benefits. First,","because","As an engineer,",
+      "Second,","since","I suggest","Thank you for considering my ideas. I look forward to your reply.",
+      "Best regards,","should focus on two important things. First"],
+};
+function reEsc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function highlightAnswer(text, vocab, tag){
+  let html=esc(text);
+  const fw=(FRAMEWORK_PHRASES[tag]||[]).slice().sort((a,b)=>b.length-a.length).map(reEsc);
+  const voc=(vocab||[]).map(v=>v.en.replace(/^(a|an|the)\s+/i,'')).filter(Boolean)
+    .sort((a,b)=>b.length-a.length).map(reEsc);
+  if(!fw.length && !voc.length) return html;
+  const alts=[];
+  if(fw.length) alts.push('(?<fw>'+fw.join('|')+')');
+  if(voc.length) alts.push('(?<voc>'+voc.join('|')+')(?:s|es|ing|ed)?');
+  try{
+    const re=new RegExp('(?<![A-Za-z0-9])(?:'+alts.join('|')+')(?![A-Za-z0-9])','gi');
+    html=html.replace(re,(...args)=>{
+      const groups=args[args.length-1];
+      const cls=(groups&&groups.fw)?'rvfw':'rvhl';
+      return '<span class="'+cls+'">'+args[0]+'</span>';
+    });
+  }catch(e){}
   return html;
 }
 function vocRow(v, reuse){
