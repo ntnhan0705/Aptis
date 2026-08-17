@@ -105,6 +105,18 @@
     letter-spacing:.1em;text-transform:uppercase;color:var(--green);display:block;margin-bottom:4px;}
   .reveal b{color:var(--ink);font-weight:600;}
 
+  .aigrade-btn{font-family:"SF Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.04em;
+    border:1.5px solid var(--green);background:transparent;color:var(--green);
+    padding:7px 14px;border-radius:4px;cursor:pointer;transition:.15s;margin-top:10px;}
+  .aigrade-btn:hover:not(:disabled){background:var(--green);color:#fff;}
+  .aigrade-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .aigrade-box{margin-top:10px;padding:12px 14px;background:var(--card);border:1.5px solid var(--line);
+    border-radius:6px;font-size:.9rem;line-height:1.6;display:none;}
+  .aigrade-box.show{display:block;}
+  .aigrade-box .score{font-family:"SF Mono",ui-monospace,monospace;font-size:.9rem;
+    color:var(--green);font-weight:700;margin-bottom:6px;display:block;}
+  .aigrade-box.err .score{color:var(--accent);}
+
   .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;}
   .act{font-family:"SF Mono",ui-monospace,monospace;font-size:.82rem;
     border:1.5px solid var(--ink);background:transparent;color:var(--ink);
@@ -244,6 +256,11 @@
     <button class="act" id="back" onclick="go(-1)">‹ Trước</button>
     <button class="link" onclick="reveal()">Hiện đáp án</button>
     <button class="act next" id="next" onclick="go(1)">Tiếp ›</button>
+  </div>
+
+  <div style="margin-top:14px">
+    <button class="aigrade-btn" id="aiSummaryBtn" disabled onclick="gradeSummaryAI()">📊 Tổng kết cả đề (AI)</button>
+    <div class="aigrade-box" id="aiSummaryBox"></div>
   </div>
 
   <div class="matrix" id="matrix"></div>
@@ -422,6 +439,8 @@ function render(){
         `placeholder="Gõ câu trả lời của bạn..."></textarea>`+
     `</div>`+
     `<div class="wordcount" id="wc"></div>`+
+    `<button class="aigrade-btn" id="aiBtn">🤖 Chấm bằng AI</button>`+
+    `<div class="aigrade-box" id="aiBox"></div>`+
     `<div class="reveal" id="rv"><span class="lbl">Đáp án mẫu</span><b>${highlightVocab(it.answer, EXAMS[exam].vocab)}</b></div>`;
 
   const inp=$('inp'), editor=$('editor');
@@ -452,10 +471,80 @@ function render(){
   paint();
   setTimeout(()=>{inp.focus(); resize();},50);
 
+  $('aiBtn').onclick=()=>gradeWithAI(it, inp.value, pos);
+
   $('back').disabled=(pos===0);
   $('next').disabled=(pos===ITEMS.length-1);
   $('next').textContent=(pos===ITEMS.length-1)?'Hết':'Tiếp ›';
   refreshMatrix();
+  refreshAiSummaryBtn();
+}
+
+async function gradeWithAI(it, answer, idx){
+  const btn=$('aiBtn'), box=$('aiBox');
+  if(!answer || !answer.trim()){ alert('Hãy gõ câu trả lời trước khi chấm.'); return; }
+  btn.disabled=true; btn.textContent='⏳ Đang chấm...';
+  box.classList.remove('err'); box.classList.add('show');
+  box.innerHTML='Đang gửi bài cho AI chấm, vui lòng đợi...';
+  try{
+    // Chỉ gửi đúng câu đang chấm (không kèm các câu khác) để tiết kiệm token.
+    const res=await fetch('/.netlify/functions/grade-writing',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        question: it.question, answer: answer, scenario: it.scenario||null,
+        range: it.range||null, tag: it.tag,
+      }),
+    });
+    const data=await res.json();
+    if(!res.ok || data.error) throw new Error(data.error||'Lỗi không xác định');
+    const criteriaHTML=(data.criteria||[]).map(c=>
+      `<div style="margin-top:6px"><b>${esc(c.name)}</b><br>${esc(c.comment)}</div>`
+    ).join('');
+    box.innerHTML=`<span class="score">${esc(data.partName||'')} · Điểm: ${esc(String(data.score))}/10</span>`
+      +criteriaHTML
+      +`<div style="margin-top:8px;font-style:italic">${esc(data.summary||'')}</div>`;
+    // Lưu kết quả gọn (không lưu bài làm gốc) để dùng khi tổng kết cả đề.
+    state[idx].aiResult={tag:it.tag, partName:data.partName, score:data.score, summary:data.summary};
+    refreshAiSummaryBtn();
+  }catch(e){
+    box.classList.add('err');
+    box.innerHTML=`<span class="score">Lỗi</span>Không chấm được: ${esc(e.message||String(e))}`;
+  }finally{
+    btn.disabled=false; btn.textContent='🤖 Chấm bằng AI';
+  }
+}
+
+function refreshAiSummaryBtn(){
+  const btn=$('aiSummaryBtn'); if(!btn) return;
+  const n=state.filter(s=>s.aiResult).length;
+  btn.disabled=n===0;
+  btn.textContent=`📊 Tổng kết cả đề (AI) — đã chấm ${n}/${ITEMS.length} câu`;
+}
+
+async function gradeSummaryAI(){
+  const box=$('aiSummaryBox'), btn=$('aiSummaryBtn');
+  const results=state.map(s=>s.aiResult).filter(Boolean);
+  if(!results.length){ alert('Chưa có câu nào được AI chấm. Hãy bấm "Chấm bằng AI" ở từng câu trước.'); return; }
+  btn.disabled=true;
+  box.classList.remove('err'); box.classList.add('show');
+  box.innerHTML='Đang tổng hợp kết quả (chỉ gửi điểm + tóm tắt đã chấm, không gửi lại bài làm)...';
+  try{
+    const res=await fetch('/.netlify/functions/grade-summary',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({results}),
+    });
+    const data=await res.json();
+    if(!res.ok || data.error) throw new Error(data.error||'Lỗi không xác định');
+    box.innerHTML=`<span class="score">Điểm trung bình: ${esc(String(data.averageScore))}/10 (dựa trên ${data.count} câu đã chấm)</span>`
+      +`<div style="margin-top:6px">${esc(data.overall||'')}</div>`;
+  }catch(e){
+    box.classList.add('err');
+    box.innerHTML=`<span class="score">Lỗi</span>Không tổng kết được: ${esc(e.message||String(e))}`;
+  }finally{
+    refreshAiSummaryBtn();
+  }
 }
 
 function go(d){ const max=hasVocab()?ITEMS.length:ITEMS.length-1; pos=Math.max(0,Math.min(max,pos+d)); render(); window.scrollTo({top:0,behavior:'smooth'}); }
