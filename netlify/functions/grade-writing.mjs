@@ -8,7 +8,7 @@ const CORS = {
 const JH = { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" };
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-flash-latest";
 
 // Mỗi Part trong đề Aptis Writing có tiêu chí chấm khác nhau — Part 1 chỉ cần
 // đúng ý (1-5 từ), Part 4 cần đúng văn phong trang trọng/thân mật + lập luận.

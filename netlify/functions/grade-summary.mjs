@@ -8,7 +8,7 @@ const CORS = {
 const JH = { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" };
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-flash-latest";
 
 // Tiết kiệm token: KHÔNG gửi lại toàn bộ bài làm, chỉ gửi kết quả đã chấm
 // từng câu (điểm + tóm tắt) để AI tổng hợp nhận xét chung cho cả đề.
