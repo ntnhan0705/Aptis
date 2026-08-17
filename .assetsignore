@@ -1,0 +1,5 @@
+node_modules
+.git
+netlify
+package.json
+package-lock.json
