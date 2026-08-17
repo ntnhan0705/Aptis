@@ -608,6 +608,9 @@ async function gradeSummaryAI(){
 function go(d){ const max=hasVocab()?ITEMS.length:ITEMS.length-1; pos=Math.max(0,Math.min(max,pos+d)); render(); window.scrollTo({top:0,behavior:'smooth'}); }
 
 document.addEventListener('keydown',e=>{
+  // Shift+Enter / Shift+mũi tên: chuyển câu ngay cả khi đang gõ trong ô trả lời.
+  if(e.shiftKey && (e.key==='Enter'||e.key==='ArrowRight')){ e.preventDefault(); go(1); return; }
+  if(e.shiftKey && e.key==='ArrowLeft'){ e.preventDefault(); go(-1); return; }
   const t=e.target.tagName;
   if(t==='TEXTAREA'||t==='INPUT'||t==='SELECT'||e.target.isContentEditable)return;
   if(e.key==='ArrowRight')go(1);
