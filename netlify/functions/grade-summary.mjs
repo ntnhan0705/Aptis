@@ -64,6 +64,13 @@ export default async (req) => {
 
     const parsed = JSON.parse(response.text);
     parsed.count = compact.length;
+    const u = response.usageMetadata || {};
+    parsed.tokens = {
+      prompt: u.promptTokenCount || 0,
+      output: u.candidatesTokenCount || 0,
+      thoughts: u.thoughtsTokenCount || 0,
+      total: u.totalTokenCount || 0,
+    };
     return new Response(JSON.stringify(parsed), { status: 200, headers: JH });
   } catch (e) {
     return new Response(JSON.stringify({ error: "summary failed", detail: String(e?.message || e) }), { status: 500, headers: JH });

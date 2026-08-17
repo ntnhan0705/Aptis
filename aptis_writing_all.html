@@ -116,6 +116,8 @@
   .aigrade-box .score{font-family:"SF Mono",ui-monospace,monospace;font-size:.9rem;
     color:var(--green);font-weight:700;margin-bottom:6px;display:block;}
   .aigrade-box.err .score{color:var(--accent);}
+  .aigrade-box .tok{font-family:"SF Mono",ui-monospace,monospace;font-size:.68rem;
+    color:var(--muted);margin-top:8px;letter-spacing:.02em;}
 
   .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;}
   .act{font-family:"SF Mono",ui-monospace,monospace;font-size:.82rem;
@@ -256,6 +258,11 @@
     <button class="act" id="back" onclick="go(-1)">‹ Trước</button>
     <button class="link" onclick="reveal()">Hiện đáp án</button>
     <button class="act next" id="next" onclick="go(1)">Tiếp ›</button>
+  </div>
+
+  <div style="margin-top:14px">
+    <button class="aigrade-btn" id="aiAllBtn" onclick="gradeAllAI()">⚡ Chấm tất cả câu chưa chấm (AI)</button>
+    <div class="aigrade-box" id="aiAllBox"></div>
   </div>
 
   <div style="margin-top:14px">
@@ -472,12 +479,44 @@ function render(){
   setTimeout(()=>{inp.focus(); resize();},50);
 
   $('aiBtn').onclick=()=>gradeWithAI(it, inp.value, pos);
+  // Nếu câu này đã được AI chấm trước đó (kể cả từ "Chấm tất cả"), hiện lại kết quả.
+  if(st.aiResult){ const b=$('aiBox'); b.classList.remove('err'); b.classList.add('show'); b.innerHTML=aiResultHTML(st.aiResult); }
 
   $('back').disabled=(pos===0);
   $('next').disabled=(pos===ITEMS.length-1);
   $('next').textContent=(pos===ITEMS.length-1)?'Hết':'Tiếp ›';
   refreshMatrix();
   refreshAiSummaryBtn();
+}
+
+// Gọi function chấm 1 câu — dùng chung cho nút chấm từng câu và chấm hàng loạt.
+async function fetchGradeResult(it, answer){
+  const res=await fetch('/.netlify/functions/grade-writing',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      question: it.question, answer: answer, scenario: it.scenario||null,
+      range: it.range||null, tag: it.tag,
+    }),
+  });
+  const data=await res.json();
+  if(!res.ok || data.error) throw new Error((data.error||'Lỗi không xác định')+(data.detail?': '+data.detail:''));
+  return data;
+}
+
+function tokenLine(tokens){
+  if(!tokens) return '';
+  return `<div class="tok">🔢 ${tokens.total||0} token (vào ${tokens.prompt||0} · ra ${tokens.output||0}${tokens.thoughts?' · suy luận '+tokens.thoughts:''})</div>`;
+}
+
+function aiResultHTML(data){
+  const criteriaHTML=(data.criteria||[]).map(c=>
+    `<div style="margin-top:6px"><b>${esc(c.name)}</b><br>${esc(c.comment)}</div>`
+  ).join('');
+  return `<span class="score">${esc(data.partName||'')} · Điểm: ${esc(String(data.score))}/10</span>`
+    +criteriaHTML
+    +`<div style="margin-top:8px;font-style:italic">${esc(data.summary||'')}</div>`
+    +tokenLine(data.tokens);
 }
 
 async function gradeWithAI(it, answer, idx){
@@ -488,24 +527,10 @@ async function gradeWithAI(it, answer, idx){
   box.innerHTML='Đang gửi bài cho AI chấm, vui lòng đợi...';
   try{
     // Chỉ gửi đúng câu đang chấm (không kèm các câu khác) để tiết kiệm token.
-    const res=await fetch('/.netlify/functions/grade-writing',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        question: it.question, answer: answer, scenario: it.scenario||null,
-        range: it.range||null, tag: it.tag,
-      }),
-    });
-    const data=await res.json();
-    if(!res.ok || data.error) throw new Error((data.error||'Lỗi không xác định')+(data.detail?': '+data.detail:''));
-    const criteriaHTML=(data.criteria||[]).map(c=>
-      `<div style="margin-top:6px"><b>${esc(c.name)}</b><br>${esc(c.comment)}</div>`
-    ).join('');
-    box.innerHTML=`<span class="score">${esc(data.partName||'')} · Điểm: ${esc(String(data.score))}/10</span>`
-      +criteriaHTML
-      +`<div style="margin-top:8px;font-style:italic">${esc(data.summary||'')}</div>`;
-    // Lưu kết quả gọn (không lưu bài làm gốc) để dùng khi tổng kết cả đề.
-    state[idx].aiResult={tag:it.tag, partName:data.partName, score:data.score, summary:data.summary};
+    const data=await fetchGradeResult(it, answer);
+    box.innerHTML=aiResultHTML(data);
+    // Lưu kết quả gọn (không lưu bài làm gốc) để dùng khi tổng kết cả đề / hiện lại khi quay về câu này.
+    state[idx].aiResult={tag:it.tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
     refreshAiSummaryBtn();
   }catch(e){
     box.classList.add('err');
@@ -513,6 +538,33 @@ async function gradeWithAI(it, answer, idx){
   }finally{
     btn.disabled=false; btn.textContent='🤖 Chấm bằng AI';
   }
+}
+
+// Chấm hàng loạt tất cả câu đã có bài làm nhưng chưa được AI chấm.
+async function gradeAllAI(){
+  const btn=$('aiAllBtn'), box=$('aiAllBox');
+  const todo=[];
+  state.forEach((s,i)=>{ if(s.value && s.value.trim() && !s.aiResult) todo.push(i); });
+  if(!todo.length){ alert('Không có câu nào cần chấm — các câu đã làm đều được chấm rồi, hoặc bạn chưa làm câu nào.'); return; }
+  btn.disabled=true;
+  box.classList.remove('err'); box.classList.add('show');
+  let done=0, failed=0, batchTokens=0;
+  for(const i of todo){
+    box.innerHTML=`Đang chấm câu ${done+1}/${todo.length} (${esc(ITEMS[i].tag)})...`;
+    try{
+      const data=await fetchGradeResult(ITEMS[i], state[i].value);
+      state[i].aiResult={tag:ITEMS[i].tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
+      batchTokens+=(data.tokens&&data.tokens.total)||0;
+      // Nếu câu này đang hiển thị trên màn hình, cập nhật luôn khối kết quả.
+      if(i===pos){ const b=$('aiBox'); if(b){ b.classList.remove('err'); b.classList.add('show'); b.innerHTML=aiResultHTML(data); } }
+    }catch(e){ failed++; }
+    done++;
+    refreshAiSummaryBtn();
+  }
+  box.classList.toggle('err', failed>0 && done===failed);
+  box.innerHTML=`Đã chấm xong ${done-failed}/${todo.length} câu`+(failed?`, ${failed} câu bị lỗi (bấm "Chấm bằng AI" ở từng câu đó để thử lại).`:'.')
+    +`<div class="tok">🔢 Tổng token đợt này: ${batchTokens}</div>`;
+  btn.disabled=false;
 }
 
 function refreshAiSummaryBtn(){
@@ -537,8 +589,11 @@ async function gradeSummaryAI(){
     });
     const data=await res.json();
     if(!res.ok || data.error) throw new Error((data.error||'Lỗi không xác định')+(data.detail?': '+data.detail:''));
+    const perQTokens=results.reduce((s,r)=>s+((r.tokens&&r.tokens.total)||0),0);
+    const summaryTokens=(data.tokens&&data.tokens.total)||0;
     box.innerHTML=`<span class="score">Điểm trung bình: ${esc(String(data.averageScore))}/10 (dựa trên ${data.count} câu đã chấm)</span>`
-      +`<div style="margin-top:6px">${esc(data.overall||'')}</div>`;
+      +`<div style="margin-top:6px">${esc(data.overall||'')}</div>`
+      +`<div class="tok">🔢 Token tổng kết: ${summaryTokens} · Token ${data.count} câu đã chấm: ${perQTokens} · <b>Tổng cả đề: ${perQTokens+summaryTokens}</b></div>`;
   }catch(e){
     box.classList.add('err');
     box.innerHTML=`<span class="score">Lỗi</span>Không tổng kết được: ${esc(e.message||String(e))}`;
