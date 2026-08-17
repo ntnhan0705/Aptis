@@ -600,6 +600,14 @@ document.querySelectorAll('.maintab').forEach(t=>{
 })();
 setSaveBar(); renderGrammar();
 progLoad().then(()=>{ renderDash(); renderList(); renderGrammar(); });
+
+document.addEventListener('keydown',e=>{
+  const t=e.target.tagName;
+  if(t==='TEXTAREA'||t==='INPUT'||t==='SELECT'||e.target.isContentEditable)return;
+  if(e.key!=='ArrowRight')return;
+  const qn=$('qzNext'); if(qn){ qn.click(); return; }
+  const gn=$('gNextBtn'); if(gn){ gn.click(); return; }
+});
 </script>
 </body>
 </html>

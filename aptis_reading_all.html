@@ -4021,6 +4021,13 @@ function subCorrectAt(ci,si){
 $('btnPrev').onclick=()=>{if(cur>0){cur--;renderQ();window.scrollTo(0,0);}};
 $('btnNext').onclick=()=>{if(cur<items.length-1){cur++;renderQ();window.scrollTo(0,0);}};
 
+document.addEventListener('keydown',e=>{
+  if(!items.length)return;
+  if(e.target.tagName==='SELECT')return;
+  if(e.key==='ArrowRight')$('btnNext').click();
+  else if(e.key==='ArrowLeft')$('btnPrev').click();
+});
+
 function doSubmit(auto){
   if(submitted)return;
   let unans=0;items.forEach((it,i)=>it.subs.forEach((_,s)=>{const v=responses[i+'_'+s];if(v===undefined||v==='')unans++;}));
