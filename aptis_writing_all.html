@@ -877,20 +877,39 @@ function progRecord(key,score,perQ){
   if(perQ)for(const k in perQ){const q=r.perQ[k]||{seen:0,wrong:0};q.seen++;if(perQ[k])q.wrong++;r.perQ[k]=q;}
   S[key]=r;progSave();return r;
 }
-// Ghi kết quả đề hiện tại: điểm = % câu gõ khớp đáp án mẫu
-function recordExam(){
-  let ok=0; const perQ={}, cnt={};
+// Ghi kết quả đề hiện tại: điểm = trung bình điểm AI đã chấm (không còn tính theo % khớp đáp án mẫu).
+// Câu nào đã làm nhưng chưa được AI chấm thì tự chấm nốt trước khi ghi.
+async function recordExam(){
+  const btn=$('btnRec'); const origBtnText=btn.textContent;
+  const todo=[];
+  state.forEach((s,i)=>{ if(s.value && s.value.trim() && !s.aiResult) todo.push(i); });
+  if(todo.length){
+    btn.disabled=true;
+    for(let k=0;k<todo.length;k++){
+      const i=todo[k];
+      btn.textContent=`⏳ Đang chấm câu ${k+1}/${todo.length}...`;
+      try{
+        const data=await fetchGradeResult(ITEMS[i], state[i].value);
+        state[i].aiResult={tag:ITEMS[i].tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
+        if(i===pos){ const b=$('aiBox'); if(b){ b.classList.remove('err'); b.classList.add('show'); b.innerHTML=aiResultHTML(data); } }
+      }catch(e){}
+    }
+    btn.textContent=origBtnText; btn.disabled=false;
+  }
+
+  let sumScore=0; const perQ={}, cnt={};
   ITEMS.forEach((it,i)=>{
-    const good = state[i].value.trim().length>0 && state[i].value.trim()===it.answer.trim();
-    if(good) ok++;
+    const sc=state[i].aiResult?(Number(state[i].aiResult.score)||0):0;
+    sumScore+=sc;
     const n=(cnt[it.tag]=(cnt[it.tag]||0)+1);
-    perQ[it.tag+'_'+n]=!good;
+    perQ[it.tag+'_'+n]=sc<8; // dưới 8/10 tính là câu cần cải thiện, cho thống kê "Hay sai"
   });
-  const pct=ITEMS.length?Math.round(ok/ITEMS.length*100):0;
+  const avg=ITEMS.length?sumScore/ITEMS.length:0;
+  const pct=Math.round(avg*10);
   const r=progRecord('de'+(exam+1),pct,perQ);
-  state.forEach(s=>{s.value='';}); pos=0;
+  state.forEach(s=>{s.value=''; delete s.aiResult;}); pos=0;
   buildExams(); buildMatrix(); render();
-  alert('Đã ghi: '+ok+'/'+ITEMS.length+' câu khớp ('+pct+'%) · lần thứ '+r.attempts+'\nĐề đã được xoá để bạn làm lại.');
+  alert('Đã ghi: điểm AI trung bình '+avg.toFixed(1)+'/10 ('+pct+'%) · lần thứ '+r.attempts+'\nĐề đã được xoá để bạn làm lại.');
 }
 function renderProgPanel(){
   const el=document.getElementById('progPanel'); if(!el)return;
