@@ -2,6 +2,7 @@
   "name": "aptis",
   "compatibility_date": "2024-11-01",
   "main": "_worker.js",
+  "placement": { "mode": "smart" },
   "assets": {
     "directory": "./",
     "binding": "ASSETS"
@@ -11,5 +12,13 @@
       "binding": "PROGRESS_KV",
       "id": "b33822a6c58948c0ab9b4f4c55c8871e"
     }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "GEMINI_PROXY", "class_name": "GeminiProxy" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GeminiProxy"] }
   ]
 }

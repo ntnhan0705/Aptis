@@ -118,7 +118,11 @@ function schemaFor(rubric) {
   };
 }
 
-async function callGemini(env, systemInstruction, userText, responseSchema, maxOutputTokens) {
+// Gọi thẳng Google Generative Language API. Chỉ được chạy bên trong
+// GeminiProxy (Durable Object ghim vùng "wnam") — KHÔNG gọi trực tiếp từ
+// handler ngoài, vì Worker thường chạy ở edge PoP gần người dùng và Google
+// chặn theo vị trí nguồn request ("User location is not supported").
+async function callGeminiDirect(env, systemInstruction, userText, responseSchema, maxOutputTokens) {
   const apiRes = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
     {
@@ -153,6 +157,39 @@ async function callGemini(env, systemInstruction, userText, responseSchema, maxO
       total: u.totalTokenCount || 0,
     },
   };
+}
+
+// Durable Object ghim vùng: buộc mọi lệnh gọi Gemini luôn xuất phát từ
+// cùng một vùng (locationHint "wnam" khi lấy stub), bất kể request gốc
+// tới Worker từ đâu — tránh bị Google chặn theo vị trí edge PoP.
+export class GeminiProxy {
+  constructor(ctx, env) {
+    this.env = env;
+  }
+  async fetch(request) {
+    const { systemInstruction, userText, responseSchema, maxOutputTokens } = await request.json();
+    try {
+      const result = await callGeminiDirect(this.env, systemInstruction, userText, responseSchema, maxOutputTokens);
+      return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: String(e?.message || e) }), {
+        status: 502,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+}
+
+async function callGemini(env, systemInstruction, userText, responseSchema, maxOutputTokens) {
+  const id = env.GEMINI_PROXY.idFromName("gemini-proxy");
+  const stub = env.GEMINI_PROXY.get(id, { locationHint: "wnam" });
+  const res = await stub.fetch("https://gemini-proxy.internal/generate", {
+    method: "POST",
+    body: JSON.stringify({ systemInstruction, userText, responseSchema, maxOutputTokens }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.error || `proxy HTTP ${res.status}`);
+  return json;
 }
 
 async function handleGradeWriting(request, env) {
