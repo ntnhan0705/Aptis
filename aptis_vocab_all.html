@@ -122,6 +122,14 @@
 .qz-letters{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin:12px 0 6px}
 .ql{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:32px;border-bottom:2px solid var(--ink);font-family:'SF Mono',ui-monospace,monospace;font-size:18px;font-weight:700}
 .ql-blank{border-bottom-color:var(--muted)}
+input.ql-in{width:28px;min-width:28px;padding:0;border:0;border-bottom:2px solid var(--muted);border-radius:0;background:transparent;text-align:center;color:var(--accent);outline:none;text-transform:lowercase}
+input.ql-in:focus{border-bottom-color:var(--accent);background:var(--accent-soft)}
+.ql-fix{color:var(--ink)!important}
+input.ql-in.ql-fix{color:var(--muted)!important}
+input.ql-in.ql-ok{color:var(--green)!important;border-bottom-color:var(--green)}
+input.ql-in.ql-bad{color:#fff!important;background:var(--accent);border-bottom-color:var(--accent)}
+.qz-letters.shake{animation:qlshake .3s}
+@keyframes qlshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .ql-gap{display:inline-block;width:14px}
 </style>
 </head>
@@ -473,39 +481,68 @@ function mode3(b,v){
     hint='<div class="qz-hintwrap"><div class="qz-sent" style="margin:0">'
       +(before?'… '+esc(before)+' ':'')+'<span class="qz-blank">_____</span>'+(after?' '+esc(after)+' …':'')+'</div></div>';
   }
-  b.innerHTML='<div class="qz-q">Nghe câu — gõ đúng chính tả từ còn thiếu</div>'
+  b.innerHTML='<div class="qz-q">Nghe câu — điền các chữ còn thiếu vào ô trống</div>'
     +'<div style="text-align:center"><button class="qz-play" id="qzPlay">🔊 Nghe lại câu</button></div>'
     +hint+'<div class="qz-vi">'+esc(v.vi)+'</div>'
     +'<div class="qz-letters" id="qzLetters"></div>'
-    +'<div style="text-align:center"><button class="fchip" id="qzMore">💡 Gợi ý thêm</button></div>'
-    +'<div class="qz-inrow"><input class="qz-in" id="qzIn" placeholder="Gõ từ còn thiếu…" autocomplete="off" spellcheck="false">'
+    +'<div class="qz-inrow" style="justify-content:center"><button class="fchip" id="qzMore">💡 Gợi ý thêm</button>'
     +'<button class="btn" id="qzChk">Kiểm tra</button></div><div id="qzFb"></div>';
   $('qzPlay').onclick=()=>say(v.eg);
   say(v.eg);
-  // Gợi ý ký tự: mở chữ đầu + chữ cuối mỗi từ, "Gợi ý thêm" mở dần các chữ còn lại theo thứ tự ngẫu nhiên
+  // Ô điền từng chữ: chữ đầu + chữ cuối mỗi từ mở sẵn và cố định — con trỏ tự bỏ qua.
+  // Gõ 1 chữ tự sang ô trống kế tiếp, Backspace ở ô trống lùi về ô trước, Enter để kiểm tra.
+  // "Gợi ý thêm" điền sẵn + khoá thêm 1 ô (luôn chừa ít nhất 1 ô để tự điền).
   const target=f?f.matched:coreOf(v.en), chars=[...target];
-  const open=new Set(); const hidden=[];
-  chars.forEach((c,i)=>{ if(!/[a-z]/i.test(c)){ open.add(i); return; }
+  const fixed=new Set(), hidden=[];
+  chars.forEach((c,i)=>{ if(!/[a-z]/i.test(c)){ fixed.add(i); return; }
     const first=i===0||!/[a-z]/i.test(chars[i-1]), last=i===chars.length-1||!/[a-z]/i.test(chars[i+1]);
-    if(first||(last&&chars.length>3)) open.add(i); else hidden.push(i); });
+    if(first||(last&&chars.length>3)) fixed.add(i); else hidden.push(i); });
   shuffle(hidden);
-  const paintLetters=()=>{ $('qzLetters').innerHTML=chars.map((c,i)=>c===' '?'<span class="ql-gap"></span>'
-      :'<span class="ql'+(open.has(i)?'':' ql-blank')+'">'+(open.has(i)?esc(c):'')+'</span>').join('');
-    const m=$('qzMore'); if(m) m.disabled=hidden.length<=1; };
-  paintLetters();
-  $('qzMore').onclick=()=>{ if(hidden.length>1){ open.add(hidden.pop()); paintLetters(); } try{$('qzIn').focus();}catch(e){} };
-  const inp=$('qzIn');
+  const box=$('qzLetters');
+  box.innerHTML=chars.map((c,i)=>c===' '?'<span class="ql-gap"></span>'
+    :fixed.has(i)?'<span class="ql ql-fix">'+esc(c)+'</span>'
+    :'<input class="ql ql-in" data-i="'+i+'" maxlength="1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">').join('');
+  const cells=[...box.querySelectorAll('input.ql-in')];
+  const editable=()=>cells.filter(x=>!x.readOnly);
+  const step=(el,dir)=>{ const a=editable(); const k=a.indexOf(el)+dir; return a[k]||null; };
+  const firstEmpty=()=>editable().find(x=>!x.value)||null;
+  const lockMore=()=>{ const m=$('qzMore'); if(m) m.disabled=qz.answered||editable().length<=1; };
+  cells.forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      inp.value=inp.value.replace(/\s/g,'').slice(-1);
+      if(inp.value){ const n=step(inp,1); if(n){ n.focus(); n.select&&n.select(); } }
+    });
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){ e.preventDefault(); submit(); }
+      else if(e.key==='Backspace'&&!inp.value){ e.preventDefault(); const pv=step(inp,-1); if(pv){ pv.value=''; pv.focus(); } }
+      else if(e.key==='ArrowLeft'){ e.preventDefault(); const pv=step(inp,-1); if(pv) pv.focus(); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); const nx=step(inp,1); if(nx) nx.focus(); }
+    });
+    inp.addEventListener('focus',()=>{ inp.select&&inp.select(); });
+  });
+  lockMore();
+  $('qzMore').onclick=()=>{
+    if(qz.answered||editable().length<=1) return;
+    const i=hidden.pop(), inp=cells.find(x=>+x.dataset.i===i);
+    if(inp){ inp.value=chars[i]; inp.readOnly=true; inp.classList.add('ql-fix'); }
+    lockMore(); const fe=firstEmpty(); if(fe) fe.focus();
+  };
+  const compose=()=>chars.map((c,i)=>{ const inp=cells.find(x=>+x.dataset.i===i); return inp?(inp.value||''):c; }).join('');
   const submit=()=>{
-    if(qz.answered)return; const t=inp.value.trim(); if(!t)return;
+    if(qz.answered)return;
+    const fe=firstEmpty(); if(fe){ fe.focus(); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); return; }
+    const t=compose();
     const cand=[v.en, coreOf(v.en)]; if(f)cand.push(f.matched);
     const ok=cand.some(c=>normW(t)===normW(c) || t.toLowerCase().trim()===c.toLowerCase().trim());
-    qz.answered=true; inp.className='qz-in '+(ok?'ok':'no'); inp.disabled=true;
-    chars.forEach((_,i)=>open.add(i)); paintLetters(); const m=$('qzMore'); if(m) m.disabled=true;
+    qz.answered=true;
+    // Tô từng ô: đúng xanh, sai đỏ và hiện chữ đúng
+    cells.forEach(inp=>{ const i=+inp.dataset.i, good=inp.value.toLowerCase()===chars[i].toLowerCase();
+      inp.readOnly=true; inp.classList.add(good?'ql-ok':'ql-bad'); if(!good) inp.value=chars[i]; });
+    lockMore();
     finish(ok,v);
   };
   $('qzChk').onclick=submit;
-  inp.addEventListener('keydown',e=>{ if(e.key==='Enter')submit(); });
-  setTimeout(()=>{ try{inp.focus();}catch(e){} },50);
+  setTimeout(()=>{ try{ const fe=firstEmpty(); if(fe) fe.focus(); }catch(e){} },50);
 }
 function finish(ok,v){
   qz.done++; if(ok)qz.right++;
