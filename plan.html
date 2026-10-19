@@ -286,7 +286,7 @@ function generateDays(from){
   const gq=groupsLeft();let lastWS=null;
   for(let d=from;d<=PHASE1_END;d=addDays(d,1)){
     const we=isWeekend(d),slots=we?7:WEEKDAY_MIN/60,list=[];
-    if(gq.length)list.push(task('vocab',0,'new',20,'',{group:gq.shift()}));
+    if(gq.length)list.push(task('vocab',0,'new',25,'',{group:gq.shift()}));
     else list.push(vocabRev(40,15));
     const lrs=!we?['listening','reading']:parseYmd(d).getDay()===6?['listening']:['reading'];
     const ws=[];
@@ -464,7 +464,7 @@ function buildSnapshot(){
   return {
     today:TODAY, todayDow:DOW[parseYmd(TODAY).getDay()], examDate:EXAM_DATE, daysLeft:daysBetween(TODAY,EXAM_DATE),
     capacity:'Thứ Hai–Sáu: '+WEEKDAY_MIN+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
-    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, học thuộc 1 nhóm từ vựng (11 từ) ~20 phút, 40 lượt ôn flashcard ~15 phút.',
+    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, học thuộc 1 nhóm từ vựng (11 từ, qua 3 chế độ) ~25 phút, 40 lượt ôn flashcard ~15 phút.',
     skills, vocab:{total:187,groups:VGROUPS,groupSize:11,groupsMastered:VGROUPS-groupsLeft().length,learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
     planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,

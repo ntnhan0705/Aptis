@@ -119,6 +119,10 @@
 .gchip b{font-size:15px}.gchip span{font-size:10.5px;color:var(--muted);font-family:'SF Mono',monospace}
 .gchip.done{background:#e3f4ec;border-color:#bfe3cf}.gchip.cur{border-color:var(--accent);box-shadow:0 0 0 2px rgba(224,83,61,.18)}
 .qz-grp{display:inline-block;background:#fbe8e3;color:#b23a26;border-radius:99px;padding:1px 8px;margin-right:4px;font-weight:700}
+.qz-letters{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin:12px 0 6px}
+.ql{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:32px;border-bottom:2px solid var(--ink);font-family:'SF Mono',ui-monospace,monospace;font-size:18px;font-weight:700}
+.ql-blank{border-bottom-color:var(--muted)}
+.ql-gap{display:inline-block;width:14px}
 </style>
 </head>
 <body>
@@ -251,15 +255,16 @@ function vRecord(en, ok){
 }
 
 /* ============ nhóm từ ============
-   187 từ chia theo thứ tự thành 17 nhóm × 11 từ. Một từ "đã thuộc" khi lên chế độ 3 (đã qua chọn nghĩa và
-   điền câu, mỗi bước đúng 3 lần liên tiếp). Nhóm "đã thuộc" khi mọi từ trong nhóm đã thuộc — ghi ngày vào
+   187 từ chia theo thứ tự thành 17 nhóm × 11 từ. Một từ "đã thuộc" khi qua đủ 3 chế độ: chọn nghĩa và điền câu
+   (mỗi bước đúng 3 lần liên tiếp) rồi gõ đúng chính tả 2 lần liên tiếp ở chế độ 3. Nhóm "đã thuộc" khi mọi từ đã thuộc — ghi ngày vào
    PROG.vgroup để trang Lộ trình kiểm tra; bản ghi có "seen" (= số từ đã thuộc) để merge giữ bản cao hơn. */
 const GROUP_SIZE=11;
 const GROUP_COUNT=Math.ceil(VOCAB.length/GROUP_SIZE);
 const VIDX={}; VOCAB.forEach((v,i)=>{ VIDX[KEY(v.en)]=i; });
 function groupOfWord(en){ const i=VIDX[KEY(en)]; return i==null?-1:Math.floor(i/GROUP_SIZE); }
 function groupWords(g){ return VOCAB.slice(g*GROUP_SIZE,(g+1)*GROUP_SIZE); }
-function isMastered(en){ const r=vRec(en); return !!(r&&r.mode===3); }
+const TYPE_OK=2; // số lần gõ đúng liên tiếp ở chế độ 3 để tính là thuộc
+function isMastered(en){ const r=vRec(en); return !!(r&&r.mode===3&&(r.sc||0)>=TYPE_OK); }
 function groupStat(g){ const w=groupWords(g); return {total:w.length, mastered:w.filter(v=>isMastered(v.en)).length}; }
 function groupDone(g){ const r=(PROG.vgroup||{})['g'+(g+1)]; return !!(r&&r.doneAt); }
 function updateGroup(g, day){
@@ -354,7 +359,7 @@ function groupsHTML(){
   }
   const rv=reviewPool(9999).length;
   return '<div class="dash-h" style="margin-top:18px">📦 Học theo nhóm — '+GROUP_COUNT+' nhóm × '+GROUP_SIZE+' từ · đã thuộc <b>'+doneN+'</b>/'+GROUP_COUNT+' nhóm</div>'
-    +'<div class="dash-s">Mỗi buổi học 1 nhóm. Từ <b>đã thuộc</b> = lên chế độ 3 (đúng 3 lần liên tiếp ở chế độ 1 rồi chế độ 2). Nhóm xong khi cả '+GROUP_SIZE+' từ đã thuộc.</div>'
+    +'<div class="dash-s">Mỗi buổi học 1 nhóm. Từ <b>đã thuộc</b> = qua đủ 3 chế độ: chọn nghĩa → điền câu (mỗi bước đúng 3 lần liên tiếp) → gõ đúng chính tả 2 lần liên tiếp. Nhóm xong khi cả '+GROUP_SIZE+' từ đã thuộc.</div>'
     +'<div class="gchips">'+chips+'</div>'
     +'<div class="btnrow">'+(ng>=0?'<button class="btn primary" id="btnGroup">▶ Học Nhóm '+(ng+1)+'</button>':'<span class="dash-s">🎉 Đã thuộc cả '+GROUP_COUNT+' nhóm!</span>')
     +'<button class="btn" id="btnReview"'+(rv?'':' disabled')+'>🔁 Ôn các nhóm đã thuộc'+(rv?' ('+rv+' từ)':'')+'</button></div>';
@@ -404,7 +409,7 @@ function distractors(en,n){
 function groupDoneScreen(){
   const g=qz.group, ng=nextGroup();
   $('trainer').innerHTML='<div class="qz-q" style="font-size:22px;margin:10px 0">🎉 Đã thuộc Nhóm '+(g+1)+'!</div>'
-    +'<div class="qz-vi">Cả '+groupStat(g).total+' từ đã lên chế độ 3 · đúng '+qz.right+'/'+qz.done+' câu trong buổi này.</div>'
+    +'<div class="qz-vi">Cả '+groupStat(g).total+' từ đã qua đủ 3 chế độ · đúng '+qz.right+'/'+qz.done+' câu trong buổi này.</div>'
     +'<div class="btnrow" style="justify-content:center;margin-top:14px">'
     +(ng>=0?'<button class="btn primary" id="gdNext">▶ Học Nhóm '+(ng+1)+'</button>':'')
     +'<button class="btn" id="gdMore">Ôn tiếp nhóm này</button><button class="btn" id="gdExit">Xong</button></div>';
@@ -471,16 +476,31 @@ function mode3(b,v){
   b.innerHTML='<div class="qz-q">Nghe câu — gõ đúng chính tả từ còn thiếu</div>'
     +'<div style="text-align:center"><button class="qz-play" id="qzPlay">🔊 Nghe lại câu</button></div>'
     +hint+'<div class="qz-vi">'+esc(v.vi)+'</div>'
+    +'<div class="qz-letters" id="qzLetters"></div>'
+    +'<div style="text-align:center"><button class="fchip" id="qzMore">💡 Gợi ý thêm</button></div>'
     +'<div class="qz-inrow"><input class="qz-in" id="qzIn" placeholder="Gõ từ còn thiếu…" autocomplete="off" spellcheck="false">'
     +'<button class="btn" id="qzChk">Kiểm tra</button></div><div id="qzFb"></div>';
   $('qzPlay').onclick=()=>say(v.eg);
   say(v.eg);
+  // Gợi ý ký tự: mở chữ đầu + chữ cuối mỗi từ, "Gợi ý thêm" mở dần các chữ còn lại theo thứ tự ngẫu nhiên
+  const target=f?f.matched:coreOf(v.en), chars=[...target];
+  const open=new Set(); const hidden=[];
+  chars.forEach((c,i)=>{ if(!/[a-z]/i.test(c)){ open.add(i); return; }
+    const first=i===0||!/[a-z]/i.test(chars[i-1]), last=i===chars.length-1||!/[a-z]/i.test(chars[i+1]);
+    if(first||(last&&chars.length>3)) open.add(i); else hidden.push(i); });
+  shuffle(hidden);
+  const paintLetters=()=>{ $('qzLetters').innerHTML=chars.map((c,i)=>c===' '?'<span class="ql-gap"></span>'
+      :'<span class="ql'+(open.has(i)?'':' ql-blank')+'">'+(open.has(i)?esc(c):'')+'</span>').join('');
+    const m=$('qzMore'); if(m) m.disabled=hidden.length<=1; };
+  paintLetters();
+  $('qzMore').onclick=()=>{ if(hidden.length>1){ open.add(hidden.pop()); paintLetters(); } try{$('qzIn').focus();}catch(e){} };
   const inp=$('qzIn');
   const submit=()=>{
     if(qz.answered)return; const t=inp.value.trim(); if(!t)return;
     const cand=[v.en, coreOf(v.en)]; if(f)cand.push(f.matched);
     const ok=cand.some(c=>normW(t)===normW(c) || t.toLowerCase().trim()===c.toLowerCase().trim());
     qz.answered=true; inp.className='qz-in '+(ok?'ok':'no'); inp.disabled=true;
+    chars.forEach((_,i)=>open.add(i)); paintLetters(); const m=$('qzMore'); if(m) m.disabled=true;
     finish(ok,v);
   };
   $('qzChk').onclick=submit;
