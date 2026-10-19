@@ -31,7 +31,8 @@
   .bar>span{display:block;height:100%;background:var(--ok);width:0;transition:width .5s}
   .task{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--line)}
   .task:first-child{border-top:0}
-  .task input{margin-top:5px;width:17px;height:17px;accent-color:var(--ok);flex:none}
+  .task .ck{width:20px;flex:none;text-align:center;padding-top:1px}
+  .task .by{font-family:'SF Mono',monospace;font-size:11.5px}
   .task .body{flex:1;min-width:0}
   .task .t{font-weight:700}
   .task .t a{color:inherit}
@@ -40,7 +41,6 @@
   .tag{display:inline-block;font-family:'SF Mono',monospace;font-size:10.5px;font-weight:700;border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:2px}
   .tag.new{background:var(--blue-soft);color:var(--blue)} .tag.redo{background:#fff4dc;color:#946200}
   .tag.drill{background:var(--accent-soft);color:var(--accent)} .tag.mock{background:var(--ink);color:#fff}
-  .tag.auto{background:var(--ok-soft);color:#1f7a52}
   .min{font-family:'SF Mono',monospace;font-size:11.5px;color:var(--muted);white-space:nowrap;padding-top:3px}
   .week{margin-top:10px}
   .week summary{cursor:pointer;font-weight:700;padding:10px 0;list-style:none}
@@ -96,6 +96,7 @@
   <div class="kpis" id="kpis"></div>
   <div class="bar"><span id="planBar"></span></div>
   <div class="mono muted" style="font-size:11.5px" id="planBarLbl"></div>
+  <div class="row" id="hours" style="margin-top:12px"></div>
 
   <h2>📌 Hôm nay</h2>
   <div class="box" id="today"></div>
@@ -120,9 +121,9 @@
   <div class="box hist" id="coachHist"></div>
 
   <div class="row" style="justify-content:center;margin-top:22px">
-    <button class="btn" id="resetPlan">↺ Khôi phục lịch gốc</button>
+    <button class="btn" id="resetPlan">↺ Xếp lại lịch từ hôm nay</button>
   </div>
-  <footer>Việc gắn với đề sẽ tự đánh dấu xong khi bạn bấm “Ghi kết quả” trong module · việc khác tick tay</footer>
+  <footer>Không có tick tay: việc chỉ được tính xong khi bạn làm bài và bấm <b>“Ghi kết quả”</b> trong module (từ vựng: tính theo lượt flashcard đã làm)</footer>
 </div>
 
 <script>
@@ -177,49 +178,15 @@ function parseYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-
 function addDays(s,n){const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d);}
 function daysBetween(a,b){return Math.round((parseYmd(b)-parseYmd(a))/86400000);}
 function isWeekend(s){const w=parseYmd(s).getDay();return w===0||w===6;}
-function capacity(s){return s>=EXAM_DATE?0:(isWeekend(s)?360:120);}
+// Quỹ phút ngày thường chỉnh được (2h hoặc 3h) — lưu trong lịch, đọc qua weekdayMin().
+function weekdayMin(){return (PROG.plan&&PROG.plan.cur&&PROG.plan.cur.weekdayMin)||120;}
+function capacity(s){return s>=EXAM_DATE?0:(isWeekend(s)?360:weekdayMin());}
 // ?today=YYYY-MM-DD để thử lịch ở một ngày khác
 const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date());
 
-/* ===== Lịch gốc ===== */
-const v=(a,b)=>({skill:'vocab',de:0,kind:'new',minutes:15,from:a,to:b,note:'Học từ '+a+'–'+b});
-const n=(s,d)=>({skill:s,de:d,kind:'new',minutes:s==='speaking'?45:50,note:''});
-const dr=(s,m,note)=>({skill:s,de:0,kind:'drill',minutes:m,note:note});
-const rd=(s,m,note)=>({skill:s,de:0,kind:'redo',minutes:m,note:note});
-const mk=(m,note)=>({skill:'all',de:0,kind:'mock',minutes:m,note:note});
-function defaultDays(){
-  const L=d=>n('listening',d),R=d=>n('reading',d),W=d=>n('writing',d),S=d=>n('speaking',d);
-  const D={
-    '2026-10-19':[v(1,13),W(1),S(1)], '2026-10-20':[v(14,26),W(2),S(2)], '2026-10-21':[v(27,39),W(3),S(3)],
-    '2026-10-22':[v(40,52),W(4),S(4)], '2026-10-23':[v(53,65),W(5),S(5)],
-    '2026-10-24':[L(1),L(2),R(1),R(2),W(16),S(16)],
-    '2026-10-25':[L(3),L(4),R(3),R(4),dr('all',105,'Ghi sổ lỗi tuần 1 + ôn lại từ 1–65')],
-    '2026-10-26':[v(66,78),W(6),S(6)], '2026-10-27':[v(79,91),W(7),S(7)], '2026-10-28':[v(92,104),W(8),S(8)],
-    '2026-10-29':[v(105,117),W(9),S(9)], '2026-10-30':[v(118,130),W(10),S(10)],
-    '2026-10-31':[L(5),L(6),R(5),R(6),W(17),S(17)],
-    '2026-11-01':[L(7),L(8),R(7),R(8),W(18),S(18)],
-    '2026-11-02':[v(131,143),W(11),S(11)], '2026-11-03':[v(144,156),W(12),S(12)], '2026-11-04':[v(157,169),W(13),S(13)],
-    '2026-11-05':[v(170,187),W(14),S(14)], '2026-11-06':[dr('vocab',20,'Flashcard ôn toàn bộ 187 từ'),W(15),S(15)],
-    '2026-11-07':[L(9),L(10),R(9),R(10),W(19),S(19)],
-    '2026-11-08':[L(11),L(12),R(11),R(12),W(20),S(20)],
-    '2026-11-09':[L(13),L(14)], '2026-11-10':[L(15),L(16)], '2026-11-11':[R(13),R(14)],
-    '2026-11-12':[R(15),dr('all',60,'Tổng hợp sổ lỗi — chọn 3–4 đề yếu nhất mỗi kỹ năng')],
-    '2026-11-13':[dr('speaking',60,'Part 1 bộ 29 câu'),rd('speaking',60,'Part 2–4 các đề yếu')],
-    '2026-11-14':[rd('listening',120,'Làm lại 3–4 đề Listening yếu nhất'),rd('reading',120,'Làm lại 3–4 đề Reading yếu nhất'),rd('writing',120,'Viết lại 2 đề yếu nhất (chú ý Q4) + chấm AI')],
-    '2026-11-15':[mk(120,'THI THỬ 1: L1 + R1 + S1 bấm giờ thật, rồi chữa'),{skill:'writing',de:1,kind:'redo',minutes:120,note:'Thi thử Writing 50 phút + chấm AI + chữa'},rd('speaking',120,'Luyện lại 5 đề Speaking yếu')],
-    '2026-11-16':[dr('writing',120,'Q4: thuộc khung email formal/informal, viết nhanh 2 email')],
-    '2026-11-17':[dr('speaking',120,'Part 3–4: so sánh tranh, nói 2 phút — 3 đề yếu')],
-    '2026-11-18':[dr('listening',60,'Part 3–4 các đề yếu'),dr('reading',60,'Part 4 (ghép người, tiêu đề)')],
-    '2026-11-19':[dr('vocab',60,'Tổng ôn 187 từ'),dr('writing',60,'Q2–Q3 nhanh 3 đề')],
-    '2026-11-20':[dr('speaking',60,'Part 1 bộ 29 câu'),dr('all',60,'Ôn nhẹ sổ lỗi')],
-    '2026-11-21':[mk(120,'THI THỬ 2: L2 + R2 + S2'),{skill:'writing',de:2,kind:'redo',minutes:120,note:'Writing mock + chữa'},dr('all',120,'Đọc lại sổ lỗi')],
-    '2026-11-22':[dr('all',120,'Ôn nhẹ khung Writing + cụm Speaking · chiều nghỉ · tối ngủ sớm')],
-  };
-  return D;
-}
-
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
+const PLAN_VER=2;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -234,10 +201,12 @@ async function load(){
   if(ACLOUD.on()){try{const m=await ACLOUD.syncOnLoad(d);if(m)d=m;}catch(e){}}
   PROG=d;
   // Một tab module mở từ trước có thể đã ghi đè bản lịch cũ — lấy bản mới nhất trong cả bản sao lưu riêng.
-  const plan=newer(PROG.plan&&PROG.plan.cur,_lsGet(PLAN_BK));
+  const p=newer(PROG.plan&&PROG.plan.cur,_lsGet(PLAN_BK));
   const coach=newer(PROG.coach&&PROG.coach.log,_lsGet(COACH_BK));
-  PROG.plan={cur:plan||{attempts:1,created:new Date().toISOString(),days:defaultDays()}};
+  PROG.plan={cur:p||{attempts:0,days:{}}};
   PROG.coach={log:coach||{attempts:0,reports:[]}};
+  // Lịch phiên bản cũ (xếp L/R dồn cuối tuần, cho tick tay) → xếp lại từ hôm nay theo tiến độ thật.
+  if(plan().v!==PLAN_VER)rebuildFrom(TODAY);
   save();
 }
 function save(){
@@ -248,25 +217,8 @@ function save(){
 }
 const plan=()=>PROG.plan.cur;
 function bumpPlan(){plan().attempts=(plan().attempts||0)+1;plan().updated=new Date().toISOString();}
-
-/* ===== Đánh dấu xong ===== */
 function rec(skill,de){return ((PROG[skill]||{})['de'+de])||null;}
 function vocabSeen(){const V=PROG.vocab||{};return Object.keys(V).filter(k=>V[k]&&V[k].seen>0).length;}
-// Trả về 'auto' nếu số liệu module cho thấy đã làm, 'manual' nếu tick tay, '' nếu chưa.
-function taskDone(t,date){
-  if(DE_SKILLS.includes(t.skill)&&t.de>0){
-    const r=rec(t.skill,t.de);
-    if(t.kind==='new'&&r&&r.attempts>0)return 'auto';
-    if(t.kind==='redo'&&r&&(r.history||[]).some(h=>h.date&&ymd(new Date(h.date))>=addDays(date,-7)))return 'auto';
-  }
-  if(t.skill==='vocab'&&t.to&&vocabSeen()>=t.to)return 'auto';
-  return t.done?'manual':'';
-}
-function allTasks(){
-  const D=plan().days,out=[];
-  Object.keys(D).sort().forEach(date=>D[date].forEach((t,i)=>out.push({date,i,t,done:taskDone(t,date)})));
-  return out;
-}
 
 /* ===== Thống kê theo kỹ năng ===== */
 function avg(a){return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;}
@@ -287,53 +239,176 @@ function skillStats(skill){
   return {done:des.length,total,firstAvg:avg(first),lastAvg:avg(last),weakParts,weakestDe,neverDone,
     lastActivity:lastDate?ymd(new Date(lastDate)):null};
 }
+// Đề đã làm, điểm gần nhất thấp nhất đứng trước
+function weakOrder(skill){
+  const S=PROG[skill]||{},a=[];
+  for(let i=1;i<=SK[skill].total;i++){const r=S['de'+i];if(r&&r.attempts>0)a.push({de:i,s:r.lastScore||0});}
+  return a.sort((x,y)=>x.s-y.s).map(x=>x.de);
+}
+
+/* ===== Xếp lịch =====
+   Vòng 1 (đến 12/11): mỗi buổi ~50 phút là 1 đề. Ngày thường 2 đề của 2 kỹ năng KHÁC nhau + 15 phút từ vựng,
+   cuối tuần 6 đề. Kỹ năng còn nhiều đề chưa làm được ưu tiên; Listening/Reading không bị bỏ quá 3 ngày.
+   Hết đề mới thì làm lại đề điểm thấp nhất. Giai đoạn 2 (13–22/11): làm lại đề yếu, 2 lần thi thử, giảm tải. */
+const PHASE1_END='2026-11-12';
+const MIN={listening:50,reading:50,writing:50,speaking:45};
+const PRIO={writing:0,speaking:1,listening:2,reading:3};
+const task=(skill,de,kind,minutes,note,extra)=>Object.assign({skill,de,kind,minutes,note:note||''},extra||{});
+const redoN=(s,need,m,note)=>task(s,0,'redo',m,note,{need});
+const vocabRev=(need,m)=>task('vocab',0,'drill',m,'Ôn flashcard '+need+' lượt',{need});
+function phase2(){
+  return {
+    '2026-11-13':[redoN('speaking',2,90,'Làm lại 2 đề Speaking điểm thấp nhất'),vocabRev(40,20)],
+    '2026-11-14':[redoN('listening',2,100,'Làm lại 2 đề điểm thấp nhất'),redoN('reading',2,100,'Làm lại 2 đề điểm thấp nhất'),redoN('writing',2,100,'Viết lại 2 đề điểm thấp nhất + chấm AI'),vocabRev(50,20)],
+    '2026-11-15':[task('all',0,'mock',120,'THI THỬ 1: 1 đề Listening + 1 Reading + 1 Speaking, bấm giờ thật'),redoN('writing',1,60,'Thi thử Writing 50 phút + chấm AI'),redoN('speaking',2,90,'Luyện lại 2 đề Speaking yếu'),vocabRev(50,20)],
+    '2026-11-16':[redoN('writing',1,60,'Tập trung Q4: email trang trọng / thân mật'),redoN('speaking',1,45,''),vocabRev(30,15)],
+    '2026-11-17':[redoN('speaking',2,90,'Part 3–4: so sánh tranh, nói 2 phút'),vocabRev(30,15)],
+    '2026-11-18':[redoN('listening',1,50,'Chú ý Part 3–4'),redoN('reading',1,50,'Chú ý Part 4 (ghép người, tiêu đề)'),vocabRev(30,15)],
+    '2026-11-19':[redoN('writing',1,50,'Q2–Q3'),redoN('speaking',1,45,''),vocabRev(30,15)],
+    '2026-11-20':[redoN('speaking',1,45,'Part 1 — trả lời nhanh, tự nhiên'),vocabRev(60,30)],
+    '2026-11-21':[task('all',0,'mock',120,'THI THỬ 2: 1 đề Listening + 1 Reading + 1 Speaking'),redoN('writing',1,60,'Writing thi thử + chữa'),redoN('speaking',2,90,''),vocabRev(40,20)],
+    '2026-11-22':[redoN('speaking',1,45,'Ôn nhẹ buổi sáng · chiều nghỉ · tối ngủ sớm'),vocabRev(30,15)],
+  };
+}
+function generateDays(from){
+  const days={},q={},cyc={},ptr={},lastOn={};
+  // Vòng làm lại: đề đã làm (điểm thấp trước), tiếp theo là các đề sẽ làm lần đầu trong lịch này.
+  DE_SKILLS.forEach(s=>{q[s]=skillStats(s).neverDone.slice();const w=weakOrder(s);cyc[s]=w.concat(q[s].filter(de=>!w.includes(de)));ptr[s]=0;});
+  const next=s=>{
+    if(q[s].length)return task(s,q[s].shift(),'new',MIN[s]);
+    return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý các câu sai lần trước');
+  };
+  let vTo=vocabSeen();
+  DE_SKILLS.forEach(s=>lastOn[s]=addDays(from,-1));
+  for(let d=from;d<=PHASE1_END;d=addDays(d,1)){
+    const list=[],used=new Set(),slots=isWeekend(d)?6:Math.round(weekdayMin()/60);let staleUsed=false;
+    if(vTo<187){const a=vTo+1;let b=Math.min(187,vTo+(isWeekend(d)?20:13));if(187-b<5)b=187;list.push(task('vocab',0,'new',15,'',{from:a,to:b}));vTo=b;}
+    else list.push(vocabRev(40,15));
+    for(let k=0;k<slots;k++){
+      const ago=s=>lastOn[s]?daysBetween(lastOn[s],d):99;
+      const stale=['listening','reading'].filter(s=>!used.has(s)&&ago(s)>=3).sort((a,b)=>ago(b)-ago(a));
+      let pick=staleUsed?null:stale[0];
+      if(pick)staleUsed=true;
+      if(!pick){
+        const c=DE_SKILLS.filter(s=>!used.has(s)),pool=c.length?c:DE_SKILLS;
+        pick=pool.slice().sort((a,b)=>(q[b].length-q[a].length)||(ago(b)-ago(a))||(PRIO[a]-PRIO[b]))[0];
+      }
+      if(used.size>=DE_SKILLS.length)used.clear();
+      used.add(pick);lastOn[pick]=d;list.push(next(pick));
+    }
+    days[d]=list;
+  }
+  const p2=phase2();Object.keys(p2).forEach(d=>{if(d>=from)days[d]=p2[d];});
+  return days;
+}
+// Giữ nguyên các ngày trước "from", xếp lại từ "from" đến hết lịch.
+function rebuildFrom(from){
+  const old=plan().days||{},days={};
+  Object.keys(old).forEach(d=>{if(d<from)days[d]=old[d];});
+  Object.assign(days,generateDays(from<PLAN_START?PLAN_START:from));
+  PROG.plan.cur={attempts:(plan().attempts||0)+1,v:PLAN_VER,weekdayMin:weekdayMin(),created:new Date().toISOString(),days};
+}
+
+/* ===== Kiểm tra hoàn thành — chỉ dựa trên bài đã nộp, không tick tay =====
+   Mỗi lần "Ghi kết quả" trong module chỉ được tính cho đúng 1 việc. Việc gắn đề cụ thể được ghép trước,
+   sau đó việc "làm lại N đề" dùng các lần nộp còn lại. Nộp sớm tối đa 6 ngày hoặc nộp trễ đều được tính. */
+function submissions(skill){
+  const S=PROG[skill]||{},ev=[];
+  for(let i=1;i<=SK[skill].total;i++){const r=S['de'+i];((r&&r.history)||[]).forEach(h=>{if(h.date)ev.push({day:ymd(new Date(h.date)),de:i,used:false});});}
+  return ev.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:0);
+}
+function computeStatus(){
+  const ev={};DE_SKILLS.forEach(s=>ev[s]=submissions(s));
+  const vlog=PROG.vlog||{},vSeen={},vNew={};
+  Object.keys(vlog).forEach(d=>{vSeen[d]=vlog[d].seen||0;vNew[d]=vlog[d].newWords||0;});
+  const take=(s,from,de)=>{const e=ev[s].find(x=>!x.used&&x.day>=from&&(!de||x.de===de));if(e)e.used=true;return e||null;};
+  const drain=(pool,from,need)=>{let got=0;Object.keys(pool).sort().forEach(d=>{if(d<from||got>=need)return;const g=Math.min(pool[d],need-got);pool[d]-=g;got+=g;});return got;};
+  const D=plan().days,dates=Object.keys(D).sort(),st={};
+  [1,2].forEach(pass=>dates.forEach(date=>D[date].forEach((t,i)=>{
+    const key=date+'|'+i,from=addDays(date,-6);
+    if(DE_SKILLS.includes(t.skill)&&t.de>0){
+      if(pass!==1)return;
+      if(t.kind==='new'){
+        const r=rec(t.skill,t.de);
+        if(r&&r.attempts>0){const e=ev[t.skill].find(x=>x.de===t.de&&!x.used);if(e)e.used=true;st[key]={done:true,by:'đã nộp'+(r.lastScore!=null?' · '+r.lastScore+'%':'')};}
+        else st[key]={done:false};
+      }else{const e=take(t.skill,from,t.de);st[key]=e?{done:true,by:'nộp '+fmt(e.day)}:{done:false};}
+      return;
+    }
+    if(pass!==2)return;
+    if(DE_SKILLS.includes(t.skill)){
+      const need=t.need||1,got=[];
+      for(let k=0;k<need;k++){const e=take(t.skill,from,0);if(!e)break;got.push(e);}
+      st[key]={done:got.length>=need,by:got.length?got.map(e=>'Đề '+e.de).join(', ')+' ('+got.length+'/'+need+')':'0/'+need+' đề'};
+    }else if(t.skill==='all'){
+      // Thi thử: cần 1 lần nộp mỗi kỹ năng Listening, Reading, Speaking
+      const ok=['listening','reading','speaking'].every(s=>ev[s].some(x=>!x.used&&x.day>=from));
+      if(ok)['listening','reading','speaking'].forEach(s=>take(s,from,0));
+      st[key]={done:ok,by:ok?'đã nộp L + R + S':'cần nộp 1 đề L, R, S'};
+    }else if(t.skill==='vocab'){
+      if(t.to){const n=vocabSeen();st[key]={done:n>=t.to,by:n+'/'+t.to+' từ đã học'};}
+      else if(t.kind==='new'){const need=t.need||13,g=drain(vNew,from,need);st[key]={done:g>=need,by:g+'/'+need+' từ mới'};}
+      else{const need=t.need||40,g=drain(vSeen,from,need);st[key]={done:g>=need,by:g+'/'+need+' lượt'};}
+    }else st[key]={done:false};
+  })));
+  return st;
+}
+let STATUS={};
+function allTasks(){
+  const D=plan().days,out=[];
+  Object.keys(D).sort().forEach(date=>D[date].forEach((t,i)=>{const s=STATUS[date+'|'+i]||{done:false};out.push({date,i,t,done:s.done,by:s.by||''});}));
+  return out;
+}
 
 /* ===== Render ===== */
 function taskTitle(t){
   const s=SK[t.skill]||SK.all;
-  if(t.skill==='vocab'&&t.to)return s.ic+' Từ vựng '+t.from+'–'+t.to;
+  if(t.skill==='vocab'&&t.to)return s.ic+' Từ vựng — học từ '+t.from+'–'+t.to;
+  if(t.skill==='vocab')return s.ic+' Từ vựng — '+(t.kind==='new'?(t.need||13)+' từ mới':'ôn '+(t.need||40)+' lượt');
   if(t.de>0)return s.ic+' '+s.name+' — Đề '+t.de;
-  return s.ic+' '+s.name;
+  if(t.skill==='all')return s.ic+' Thi thử';
+  return s.ic+' '+s.name+' — làm lại '+(t.need||1)+' đề';
 }
 function taskHTML(x,preview){
-  const t=x.t,s=SK[t.skill]||SK.all,auto=x.done==='auto';
-  const note=t.note&&!(t.skill==='vocab'&&t.to)?'<div class="n">'+esc(t.note)+'</div>':'';
+  const t=x.t,s=SK[t.skill]||SK.all;
+  let note=t.note||'';
+  if(!t.de&&t.kind==='redo'&&DE_SKILLS.includes(t.skill)){const w=weakOrder(t.skill).slice(0,3);if(w.length)note+=(note?' · ':'')+'gợi ý: Đề '+w.join(', ');}
   return '<div class="task'+(x.done?' done':'')+'">'
-    +(preview?'<input type="checkbox" disabled>':'<input type="checkbox" data-d="'+x.date+'" data-i="'+x.i+'"'+(x.done?' checked':'')+(auto?' disabled title="Tự đánh dấu từ kết quả module"':'')+'>')
+    +'<div class="ck" title="'+(preview?'':x.done?'Đã xong (theo bài đã nộp)':'Chưa có bài nộp')+'">'+(preview?'·':x.done?'✅':'⬜')+'</div>'
     +'<div class="body"><div class="t"><a href="'+s.file+'">'+esc(taskTitle(t))+'</a>'
-    +'<span class="tag '+t.kind+'">'+KIND_LBL[t.kind]+'</span>'+(auto?'<span class="tag auto">tự ✓</span>':'')+'</div>'+note+'</div>'
+    +'<span class="tag '+t.kind+'">'+KIND_LBL[t.kind]+'</span></div>'
+    +(note?'<div class="n">'+esc(note)+'</div>':'')
+    +(!preview&&x.by?'<div class="n by">'+(x.done?'✓ ':'… ')+esc(x.by)+'</div>':'')+'</div>'
     +'<div class="min">'+(t.minutes||0)+'′</div></div>';
 }
 function render(){
+  STATUS=computeStatus();
   const tasks=allTasks();
-  const due=tasks.filter(x=>x.date<=TODAY),dueDone=due.filter(x=>x.done).length;
+  // "Đến hạn" = việc của các ngày TRƯỚC hôm nay; việc hôm nay chưa tính là trễ.
+  const due=tasks.filter(x=>x.date<TODAY),dueDone=due.filter(x=>x.done).length;
   const doneAll=tasks.filter(x=>x.done).length;
   const diff=doneAll-due.length;
+  const td=tasks.filter(x=>x.date===TODAY),tdDone=td.filter(x=>x.done).length;
   const left=Math.max(0,daysBetween(TODAY,EXAM_DATE));
-  const k=$('kpis');
-  k.innerHTML='<div class="kpi"><div class="v">'+left+'</div><div class="l">ngày đến hôm thi</div></div>'
-    +'<div class="kpi '+(diff>0?'ahead':diff<0?'behind':'')+'"><div class="v">'+(diff>0?'+'+diff:diff)+'</div><div class="l">'+(diff>0?'việc vượt lịch':diff<0?'việc chậm lịch':'đúng lịch')+'</div></div>'
-    +'<div class="kpi"><div class="v">'+doneAll+'<span class="muted" style="font-size:15px">/'+tasks.length+'</span></div><div class="l">việc đã xong</div></div>';
+  $('kpis').innerHTML='<div class="kpi"><div class="v">'+left+'</div><div class="l">ngày đến hôm thi</div></div>'
+    +'<div class="kpi '+(diff>0?'ahead':diff<0?'behind':'')+'"><div class="v">'+(diff>0?'+'+diff:diff)+'</div><div class="l">'+(diff>0?'việc vượt lịch':diff<0?'việc trễ lịch':'đúng lịch')+'</div></div>'
+    +'<div class="kpi"><div class="v">'+tdDone+'<span class="muted" style="font-size:15px">/'+td.length+'</span></div><div class="l">việc hôm nay</div></div>';
   $('planBar').style.width=(tasks.length?Math.round(doneAll/tasks.length*100):0)+'%';
-  $('planBarLbl').textContent='Đến hôm nay cần xong '+due.length+' việc · đã xong '+dueDone+' trong số đó'+(diff>0?' · làm trước '+(doneAll-dueDone)+' việc của các ngày sau':'');
+  $('planBarLbl').textContent='Cả lộ trình: '+doneAll+'/'+tasks.length+' việc xong · các ngày trước còn '+(due.length-dueDone)+' việc chưa xong'
+    +(doneAll-dueDone-tdDone>0?' · đã làm trước '+(doneAll-dueDone-tdDone)+' việc của các ngày sau':'');
 
-  // Hôm nay + việc trễ chưa xong
   const late=tasks.filter(x=>x.date<TODAY&&!x.done);
-  const td=tasks.filter(x=>x.date===TODAY);
   let h='';
   if(TODAY>=EXAM_DATE)h='<div class="empty">'+(TODAY===EXAM_DATE?'Hôm nay thi — chúc bạn thi tốt! 🍀':'Lộ trình đã kết thúc.')+'</div>';
   else{
-    h+=td.length?td.map(taskHTML).join(''):'<div class="empty">Hôm nay không có việc trong lịch.</div>';
-    if(late.length)h+='<div class="warn">⏰ Còn <b>'+late.length+'</b> việc của các ngày trước chưa xong: '
-      +late.slice(0,6).map(x=>esc(taskTitle(x.t))+' ('+x.date.slice(8)+'/'+x.date.slice(5,7)+')').join(' · ')+(late.length>6?' …':'')
-      +'<br>Chạy <b>AI coach</b> để xếp lại.</div>';
+    h+=td.length?td.map(x=>taskHTML(x)).join(''):'<div class="empty">Hôm nay không có việc trong lịch.</div>';
+    if(late.length)h+='<div class="warn">⏰ Còn <b>'+late.length+'</b> việc của các ngày trước chưa có bài nộp: '
+      +late.slice(0,6).map(x=>esc(taskTitle(x.t))+' ('+fmt(x.date)+')').join(' · ')+(late.length>6?' …':'')
+      +'<br>Làm bù rồi bấm “Ghi kết quả” (vẫn được tính), hoặc chạy <b>AI coach</b> / <b>Xếp lại lịch</b>.</div>';
   }
   $('today').innerHTML=h;
 
   renderSkills(); renderCal(tasks); renderCoachHist();
-  document.querySelectorAll('input[type=checkbox][data-d]').forEach(cb=>cb.onchange=()=>{
-    const t=plan().days[cb.dataset.d][+cb.dataset.i];t.done=cb.checked;bumpPlan();save();render();
-  });
   const last=PROG.coach.log.reports.slice(-1)[0];
   $('coachLast').textContent=last?'Lần gần nhất: '+new Date(last.at).toLocaleString('vi-VN'):'Chưa chạy lần nào';
 }
@@ -346,8 +421,8 @@ function renderSkills(){
       +'<td class="num">'+(st.lastAvg==null?'—':st.lastAvg+'%')+(tr?' <span class="'+(tr>0?'up':'down')+'">'+(tr>0?'▲':'▼')+Math.abs(tr)+'</span>':'')+'</td>'
       +'<td class="num">'+(st.weakParts.length?st.weakParts.slice(0,2).map(p=>p.part+' '+p.wrongRate+'%').join(', '):'—')+'</td></tr>';
   });
-  const vs=vocabSeen();
-  h+='<tr><td>📚 Từ vựng</td><td class="num">'+vs+'/187</td><td colspan="3" class="muted" style="font-size:13px">từ đã gặp trong flashcard</td></tr></table>';
+  const vl=PROG.vlog&&PROG.vlog[TODAY];
+  h+='<tr><td>📚 Từ vựng</td><td class="num">'+vocabSeen()+'/187</td><td colspan="3" class="muted" style="font-size:13px">từ đã học'+(vl?' · hôm nay '+vl.seen+' lượt, '+vl.newWords+' từ mới':'')+'</td></tr></table>';
   $('skills').innerHTML=h;
 }
 function renderCal(tasks){
@@ -362,7 +437,7 @@ function renderCal(tasks){
     ds.forEach(d=>{
       const mins=byDate[d].reduce((a,x)=>a+(x.t.minutes||0),0),cap=capacity(d);
       h+='<div class="day'+(d===TODAY?' today':d<TODAY?' past':'')+'"><h3><span>'+DOW[parseYmd(d).getDay()]+' '+fmt(d)+(d===TODAY?' · hôm nay':'')+'</span>'
-        +'<span class="mono'+(mins>cap?' down':'')+'">'+mins+'/'+cap+' phút</span></h3>'+byDate[d].map(taskHTML).join('')+'</div>';
+        +'<span class="mono'+(mins>cap?' down':'')+'">'+mins+'/'+cap+' phút</span></h3>'+byDate[d].map(x=>taskHTML(x)).join('')+'</div>';
     });
     h+='</details>';
   });
@@ -372,23 +447,24 @@ function fmt(d){return d.slice(8)+'/'+d.slice(5,7);}
 
 /* ===== AI coach ===== */
 function buildSnapshot(){
-  const tasks=allTasks(),due=tasks.filter(x=>x.date<=TODAY);
+  const tasks=allTasks(),due=tasks.filter(x=>x.date<TODAY);
   const skills={};
   DE_SKILLS.forEach(s=>{skills[s]=skillStats(s);});
   const V=PROG.vocab||{},seen=Object.keys(V).filter(k=>V[k]&&V[k].seen>0);
   const vSeen=seen.reduce((a,k)=>a+V[k].seen,0),vOk=seen.reduce((a,k)=>a+(V[k].correct||0),0);
   const G=PROG.grammar||{},gk=Object.keys(G);
+  const vlog=PROG.vlog||{},last7=[];for(let i=-7;i<0;i++){const d=addDays(TODAY,i);if(vlog[d])last7.push({date:d,reviews:vlog[d].seen,newWords:vlog[d].newWords});}
   const upcoming=[];
   for(let i=0;i<7;i++){const d=addDays(TODAY,i);upcoming.push({date:d,capacity:capacity(d),
-    tasks:(plan().days[d]||[]).map(t=>({skill:t.skill,de:t.de,kind:t.kind,minutes:t.minutes,note:t.note,done:!!taskDone(t,d)}))});}
+    tasks:tasks.filter(x=>x.date===d).map(x=>({skill:x.t.skill,de:x.t.de,kind:x.t.kind,minutes:x.t.minutes,note:x.t.note,done:x.done}))});}
   const last=PROG.coach.log.reports.slice(-1)[0];
   return {
     today:TODAY, todayDow:DOW[parseYmd(TODAY).getDay()], examDate:EXAM_DATE, daysLeft:daysBetween(TODAY,EXAM_DATE),
-    capacity:'Thứ Hai–Sáu: 120 phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
-    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, 13 từ vựng ~15 phút.',
-    skills, vocab:{total:187,seenWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null},
+    capacity:'Thứ Hai–Sáu: '+weekdayMin()+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
+    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, 13 từ mới hoặc 40 lượt ôn flashcard ~15 phút.',
+    skills, vocab:{total:187,learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
-    planStatus:{dueToDate:due.length,doneDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
+    planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
       lateUndone:tasks.filter(x=>x.date<TODAY&&!x.done).map(x=>({date:x.date,skill:x.t.skill,de:x.t.de,kind:x.t.kind,note:x.t.note}))},
     currentNext7:upcoming,
     previousCoach:last?{date:last.at.slice(0,10),levels:last.levels,priorities:last.priorities.map(p=>p.title)}:null,
@@ -402,12 +478,18 @@ function validateNext7(next7){
     if(!win.includes(d.date)){issues.push('Bỏ qua ngày ngoài khung: '+d.date);return;}
     days[d.date]=(d.tasks||[]).filter(t=>SK[t.skill]).map(t=>{
       const total=SK[t.skill].total,de=(DE_SKILLS.includes(t.skill)&&t.de>=1&&t.de<=total)?t.de:0;
-      return {skill:t.skill,de,kind:['new','redo','drill','mock'].includes(t.kind)?t.kind:'drill',minutes:Math.max(0,Math.min(360,t.minutes|0)),note:String(t.note||'')};
+      let kind=['new','redo','drill','mock'].includes(t.kind)?t.kind:'redo';
+      if(t.skill==='all')kind='mock';
+      // Việc không gắn đề của 4 kỹ năng = "làm lại 1 đề bất kỳ" để còn kiểm tra được bằng bài nộp.
+      if(DE_SKILLS.includes(t.skill)&&!de)kind='redo';
+      const out={skill:t.skill,de,kind,minutes:Math.max(0,Math.min(360,t.minutes|0)),note:String(t.note||'')};
+      if(DE_SKILLS.includes(t.skill)&&!de)out.need=1;
+      if(t.skill==='vocab')out.need=kind==='new'?13:40;
+      return out;
     });
   });
   win.forEach(d=>{if(!days[d])days[d]=[];
     const m=days[d].reduce((a,t)=>a+t.minutes,0);if(m>capacity(d))issues.push(fmt(d)+': '+m+' phút > quỹ '+capacity(d)+' phút');});
-  // Đề chưa làm lần nào có còn được xếp ở đâu đó trong lịch (sau khi thay 7 ngày) không?
   const merged=Object.assign({},plan().days,days),missing=[];
   DE_SKILLS.forEach(s=>skillStats(s).neverDone.forEach(de=>{
     const found=Object.keys(merged).some(d=>d>=TODAY&&merged[d].some(t=>t.skill===s&&t.de===de));
@@ -445,10 +527,10 @@ function coachHTML(r,withApply){
     Object.keys(val.days).sort().forEach(d=>{
       const ts=val.days[d],m=ts.reduce((a,t)=>a+t.minutes,0);
       h+='<div class="day"><h3><span>'+DOW[parseYmd(d).getDay()]+' '+fmt(d)+'</span><span class="mono">'+m+'/'+capacity(d)+' phút</span></h3>'
-        +(ts.length?ts.map((t,i)=>taskHTML({date:d,i,t,done:''},true)).join(''):'<div class="empty">Nghỉ</div>')+'</div>';
+        +(ts.length?ts.map((t,i)=>taskHTML({date:d,i,t,done:false},true)).join(''):'<div class="empty">Nghỉ</div>')+'</div>';
     });
     if(val.issues.length)h+='<div class="warn">⚠️ '+val.issues.map(esc).join('<br>')+'</div>';
-    if(val.missing.length)h+='<div class="warn">⚠️ Sau khi áp dụng, các đề <b>chưa làm lần nào</b> sau sẽ không còn trong lịch: '+esc(val.missing.join(', '))+'. Chạy coach lại tuần sau để xếp nốt, hoặc tự làm thêm.</div>';
+    if(val.missing.length)h+='<div class="warn">⚠️ Sau khi áp dụng, các đề <b>chưa làm lần nào</b> sau sẽ không còn trong lịch: '+esc(val.missing.join(', '))+'. Chạy coach lại tuần sau để xếp nốt, hoặc bấm “Xếp lại lịch”.</div>';
     h+='<div class="row" style="margin-top:12px">'+(r.applied?'<span class="mono" style="color:var(--ok)">✓ Đã áp dụng</span>':'<button class="btn primary" id="applyBtn">✅ Áp dụng lịch này</button><span class="muted" style="font-size:13px">Thay lịch '+fmt(TODAY)+' → '+fmt(addDays(TODAY,6))+', giữ nguyên phần sau</span>')+'</div>';
   }
   return h;
@@ -459,9 +541,9 @@ function bindApply(){
     if(!pending)return;
     const val=validateNext7(pending.next7);
     if(val.missing.length&&!confirm('Một số đề chưa làm sẽ không còn trong lịch ('+val.missing.join(', ')+'). Vẫn áp dụng?'))return;
-    // Giữ nguyên các việc đã xong trong khung 7 ngày để không mất dấu tiến độ hôm nay.
+    // Giữ nguyên các việc đã xong trong khung 7 ngày để không mất dấu tiến độ.
     Object.keys(val.days).forEach(d=>{
-      const kept=(plan().days[d]||[]).filter(t=>taskDone(t,d));
+      const kept=(plan().days[d]||[]).filter((t,i)=>(STATUS[d+'|'+i]||{}).done);
       plan().days[d]=kept.concat(val.days[d].filter(nt=>!kept.some(k=>k.skill===nt.skill&&k.de===nt.de&&nt.de>0)));
     });
     pending.applied=true;bumpPlan();PROG.coach.log.attempts++;save();
@@ -476,11 +558,21 @@ function renderCoachHist(){
 }
 
 $('coachBtn').onclick=runCoach;
+function renderHours(){
+  const m=weekdayMin();
+  $('hours').innerHTML='Ngày thường học: '+[120,180].map(v=>'<button class="btn'+(v===m?' primary':'')+'" data-min="'+v+'">'+(v/60)+' tiếng</button>').join(' ')
+    +'<span class="muted" style="font-size:12.5px">'+(m===180?'mỗi tối 3 đề của 3 kỹ năng khác nhau':'mỗi tối 2 đề của 2 kỹ năng khác nhau')+'</span>';
+  document.querySelectorAll('#hours [data-min]').forEach(b=>b.onclick=()=>{
+    const v=+b.dataset.min;if(v===weekdayMin())return;
+    if(!confirm('Đổi sang '+(v/60)+' tiếng mỗi tối và xếp lại lịch từ hôm nay?'))return;
+    plan().weekdayMin=v;rebuildFrom(TODAY);save();render();renderHours();
+  });
+}
 $('resetPlan').onclick=()=>{
-  if(!confirm('Khôi phục lịch gốc? Các thay đổi từ AI coach và tick tay sẽ mất (điểm trong module vẫn giữ).'))return;
-  const rev=(plan().attempts||0)+1;PROG.plan.cur={attempts:rev,created:new Date().toISOString(),days:defaultDays()};save();render();
+  if(!confirm('Xếp lại lịch từ hôm nay theo tiến độ hiện tại? Lịch AI coach đã áp dụng cho các ngày tới sẽ bị thay.'))return;
+  rebuildFrom(TODAY);save();render();
 };
-(async()=>{await load();render();})();
+(async()=>{await load();render();renderHours();})();
 </script>
 </body>
 </html>

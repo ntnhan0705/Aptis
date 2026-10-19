@@ -234,7 +234,14 @@ function vRecord(en, ok){
   else if(r.mode===2){ if(r.sc>=3){ r.mode=3; r.sc=0; r.sw=0; } else if(r.sw>3){ r.mode=1; r.sc=0; r.sw=0; } }
   else if(r.mode===3){ if(r.sw>3){ r.mode=2; r.sc=0; r.sw=0; } }
   r.moved = r.mode!==before ? (r.mode>before?'up':'down') : '';
-  PROG.vocab[k]=r; progSave(); return r;
+  PROG.vocab[k]=r;
+  // Nhật ký theo ngày (giờ địa phương) để trang Lộ trình tự kiểm tra việc học từ — mỗi ngày là
+  // 1 bản ghi có "seen" nên hàm merge đồng bộ giữ bản có nhiều lượt hơn.
+  const d=new Date(), day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  if(!PROG.vlog)PROG.vlog={};
+  const lg=PROG.vlog[day]||(PROG.vlog[day]={seen:0,correct:0,newWords:0});
+  lg.seen++; if(ok)lg.correct++; if(r.seen===1)lg.newWords++;
+  progSave(); return r;
 }
 
 /* ============ tiện ích ============ */
