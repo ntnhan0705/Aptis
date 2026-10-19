@@ -268,6 +268,106 @@ async function handleGradeSummary(request, env) {
   }
 }
 
+// ---------- /coach — AI coach: phân tích tiến độ + đề xuất lịch 7 ngày tới ----------
+const COACH_SKILLS = ["listening", "reading", "writing", "speaking", "vocab", "all"];
+const COACH_SYSTEM_PROMPT = `Bạn là huấn luyện viên luyện thi Aptis General (mục tiêu B2) cho một người đi làm, đang ôn bằng một ứng dụng có sẵn bộ đề.
+Bạn nhận một bản tóm tắt tiến độ dạng JSON (KHÔNG có bài làm gốc): ngày hôm nay, ngày thi, quỹ thời gian mỗi ngày, số đề của từng kỹ năng, điểm từng đề (lần đầu / gần nhất / tốt nhất), Part hay sai (wrongRate = tỉ lệ câu sai), danh sách đề CHƯA LÀM LẦN NÀO, mức thuộc từ vựng, tình trạng so với lịch, lịch hiện tại 7 ngày tới, và lời khuyên lần trước (nếu có).
+Nhiệm vụ:
+1. "levels": ước tính trình độ CEFR hiện tại cho từng kỹ năng (A2, B1, B1+, B2, C) dựa trên điểm; ghi "Chưa đủ dữ liệu" nếu kỹ năng đó chưa có điểm.
+2. "overall": 3-5 câu tiếng Việt — đang vượt hay chậm lịch, tiến bộ ra sao so với lần đầu / lần coach trước, kỹ năng nào kéo điểm xuống. Đi thẳng vào vấn đề, không khen sáo rỗng.
+3. "priorities": đúng 3 ưu tiên cho 7 ngày tới, mỗi cái có "title" ngắn, "reason" (dẫn số liệu cụ thể trong JSON), "action" (việc làm cụ thể trong app).
+4. "next7": lịch cho ĐÚNG 7 ngày bắt đầu từ "today" (mỗi ngày một phần tử, "date" dạng YYYY-MM-DD).
+   - Tổng "minutes" của mỗi ngày không vượt quỹ thời gian của ngày đó (xem "capacity" trong JSON). Ngày thi và sau ngày thi không xếp việc.
+   - Mỗi task: "skill" ∈ listening|reading|writing|speaking|vocab|all; "de" = số đề (1..tổng số đề của kỹ năng) hoặc 0 nếu không gắn đề cụ thể; "kind": "new" (đề chưa làm lần nào), "redo" (làm lại đề đã làm, ưu tiên đề điểm thấp), "drill" (luyện chuyên sâu một Part/dạng yếu, ghi rõ trong note), "mock" (thi thử đủ kỹ năng, skill = "all").
+   - BẮT BUỘC: mọi đề trong "neverDone" phải được xếp hết trước ngày thi — nếu không vừa 7 ngày tới thì ưu tiên kỹ năng có nhiều đề chưa làm nhất; trong "note" của task cuối ghi đề nào còn lại để tuần sau.
+   - Kỹ năng điểm cao ổn định (≥90%) chỉ cần duy trì nhẹ; dồn thời gian cho kỹ năng/Part yếu nhất. Writing và Speaking thường là nơi kéo điểm Aptis xuống.
+   - Tuần cuối trước thi: giảm tải, có 1-2 buổi thi thử (mock), ngày trước thi chỉ ôn nhẹ.
+   - "note" ngắn gọn bằng tiếng Việt, nói rõ cần làm gì (VD: "Làm lại, tập trung Part 3 — sai 40%").
+5. "message": 1 câu động viên/nhắc nhở thực tế.`;
+const COACH_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    levels: {
+      type: "OBJECT",
+      properties: {
+        listening: { type: "STRING" },
+        reading: { type: "STRING" },
+        writing: { type: "STRING" },
+        speaking: { type: "STRING" },
+      },
+      required: ["listening", "reading", "writing", "speaking"],
+    },
+    overall: { type: "STRING" },
+    priorities: {
+      type: "ARRAY",
+      minItems: "3",
+      maxItems: "3",
+      items: {
+        type: "OBJECT",
+        properties: { title: { type: "STRING" }, reason: { type: "STRING" }, action: { type: "STRING" } },
+        required: ["title", "reason", "action"],
+      },
+    },
+    next7: {
+      type: "ARRAY",
+      minItems: "7",
+      maxItems: "7",
+      items: {
+        type: "OBJECT",
+        properties: {
+          date: { type: "STRING" },
+          tasks: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                skill: { type: "STRING", enum: COACH_SKILLS },
+                de: { type: "INTEGER" },
+                kind: { type: "STRING", enum: ["new", "redo", "drill", "mock"] },
+                minutes: { type: "INTEGER" },
+                note: { type: "STRING" },
+              },
+              required: ["skill", "de", "kind", "minutes", "note"],
+            },
+          },
+        },
+        required: ["date", "tasks"],
+      },
+    },
+    message: { type: "STRING" },
+  },
+  required: ["levels", "overall", "priorities", "next7", "message"],
+};
+
+async function handleCoach(request, env) {
+  if (request.method === "OPTIONS") return new Response("", { status: 204, headers: CORS });
+  if (request.method !== "POST") return new Response('{"error":"method"}', { status: 405, headers: JH });
+
+  let raw = "";
+  let body;
+  try {
+    raw = await request.text();
+    body = JSON.parse(raw);
+  } catch {
+    return new Response(JSON.stringify({ error: "invalid json" }), { status: 400, headers: JH });
+  }
+  if (!body?.snapshot || typeof body.snapshot !== "object") {
+    return new Response(JSON.stringify({ error: "missing snapshot" }), { status: 400, headers: JH });
+  }
+  // Snapshot chỉ là số liệu tóm tắt — chặn payload quá lớn để không đốt token.
+  if (raw.length > 40000) {
+    return new Response(JSON.stringify({ error: "snapshot too large" }), { status: 413, headers: JH });
+  }
+
+  try {
+    const { parsed, tokens } = await callGemini(env, COACH_SYSTEM_PROMPT, JSON.stringify(body.snapshot), COACH_SCHEMA, 6144);
+    parsed.tokens = tokens;
+    return new Response(JSON.stringify(parsed), { status: 200, headers: JH });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "coach failed", detail: String(e?.message || e) }), { status: 500, headers: JH });
+  }
+}
+
 // ---------- Router ----------
 export default {
   async fetch(request, env, ctx) {
@@ -275,6 +375,7 @@ export default {
     if (url.pathname === "/progress") return handleProgress(request, env);
     if (url.pathname === "/grade-writing") return handleGradeWriting(request, env);
     if (url.pathname === "/grade-summary") return handleGradeSummary(request, env);
+    if (url.pathname === "/coach") return handleCoach(request, env);
     return env.ASSETS.fetch(request);
   },
 };
