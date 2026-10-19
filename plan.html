@@ -96,7 +96,6 @@
   <div class="kpis" id="kpis"></div>
   <div class="bar"><span id="planBar"></span></div>
   <div class="mono muted" style="font-size:11.5px" id="planBarLbl"></div>
-  <div class="row" id="hours" style="margin-top:12px"></div>
 
   <h2>📌 Hôm nay</h2>
   <div class="box" id="today"></div>
@@ -178,15 +177,14 @@ function parseYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-
 function addDays(s,n){const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d);}
 function daysBetween(a,b){return Math.round((parseYmd(b)-parseYmd(a))/86400000);}
 function isWeekend(s){const w=parseYmd(s).getDay();return w===0||w===6;}
-// Quỹ phút ngày thường chỉnh được (2h hoặc 3h) — lưu trong lịch, đọc qua weekdayMin().
-function weekdayMin(){return (PROG.plan&&PROG.plan.cur&&PROG.plan.cur.weekdayMin)||180;}
-function capacity(s){return s>=EXAM_DATE?0:(isWeekend(s)?360:weekdayMin());}
+const WEEKDAY_MIN=180; // ngày thường 3 tiếng buổi tối
+function capacity(s){return s>=EXAM_DATE?0:(isWeekend(s)?360:WEEKDAY_MIN);}
 // ?today=YYYY-MM-DD để thử lịch ở một ngày khác
 const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date());
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=3;
+const PLAN_VER=4;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -207,7 +205,7 @@ async function load(){
   PROG.coach={log:coach||{attempts:0,reports:[]}};
   // Lịch phiên bản cũ (xếp L/R dồn cuối tuần, cho tick tay) → xếp lại từ hôm nay theo tiến độ thật.
   // v3: mặc định 3 tiếng ngày thường để ngày nào cũng có Listening + Reading.
-  if(plan().v!==PLAN_VER){if((plan().v||0)<3)plan().weekdayMin=180;rebuildFrom(TODAY);}
+  if(plan().v!==PLAN_VER)rebuildFrom(TODAY);
   save();
 }
 function save(){
@@ -248,9 +246,8 @@ function weakOrder(skill){
 }
 
 /* ===== Xếp lịch =====
-   Vòng 1 (đến 12/11): mỗi buổi ~50 phút là 1 đề. Ngày nào cũng có 1 đề Listening + 1 đề Reading (cần quỹ 3 tiếng
-   ngày thường; chế độ 2 tiếng thì L/R luân phiên), các buổi còn lại dành cho Writing/Speaking — kỹ năng còn nhiều
-   đề chưa làm hơn được ưu tiên, ngang nhau thì luân phiên. Hết đề mới thì làm lại đề điểm thấp nhất.
+   Vòng 1 (đến 12/11): mỗi buổi ~50 phút là 1 đề. Ngày nào cũng có 1 đề Listening + 1 đề Reading, các buổi còn lại
+   dành cho Writing/Speaking — kỹ năng còn nhiều đề chưa làm hơn được ưu tiên, ngang nhau thì luân phiên. Hết đề mới thì làm lại đề điểm thấp nhất.
    Giai đoạn 2 (13–22/11): làm lại đề yếu, 2 lần thi thử, giảm tải. */
 const PHASE1_END='2026-11-12';
 const MIN={listening:50,reading:50,writing:50,speaking:45};
@@ -281,15 +278,12 @@ function generateDays(from){
     if(q[s].length)return task(s,q[s].shift(),'new',MIN[s]);
     return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý các câu sai lần trước');
   };
-  const daily=weekdayMin()>=180; // đủ quỹ để ngày thường có cả L + R
-  let vTo=vocabSeen(),lastWS=null,lastLR='reading';
+  let vTo=vocabSeen(),lastWS=null;
   for(let d=from;d<=PHASE1_END;d=addDays(d,1)){
-    const we=isWeekend(d),slots=we?6:Math.round(weekdayMin()/60),list=[];
+    const we=isWeekend(d),slots=we?6:WEEKDAY_MIN/60,list=[];
     if(vTo<187){const a=vTo+1;let b=Math.min(187,vTo+(we?20:13));if(187-b<5)b=187;list.push(task('vocab',0,'new',15,'',{from:a,to:b}));vTo=b;}
     else list.push(vocabRev(40,15));
-    let lrs;
-    if(daily||we)lrs=['listening','reading'];
-    else{lastLR=lastLR==='listening'?'reading':'listening';lrs=[lastLR];}
+    const lrs=['listening','reading'];
     const ws=[];
     while(ws.length+lrs.length<slots){
       const cnt=x=>ws.filter(y=>y===x).length; // chia đều W/S trong cùng một ngày
@@ -300,13 +294,7 @@ function generateDays(from){
     days[d]=list;
   }
   const p2=phase2();
-  Object.keys(p2).forEach(d=>{
-    if(d<from)return;
-    let ts=p2[d];
-    // Chế độ 2 tiếng: ngày thường chỉ giữ 1 trong 2 kỹ năng L/R (luân phiên theo ngày)
-    if(!daily&&!isWeekend(d)){const drop=(+d.slice(8))%2?'listening':'reading';ts=ts.filter(t=>t.skill!==drop);}
-    days[d]=ts;
-  });
+  Object.keys(p2).forEach(d=>{if(d>=from)days[d]=p2[d];});
   return days;
 }
 // Giữ nguyên các ngày trước "from", xếp lại từ "from" đến hết lịch.
@@ -314,7 +302,7 @@ function rebuildFrom(from){
   const old=plan().days||{},days={};
   Object.keys(old).forEach(d=>{if(d<from)days[d]=old[d];});
   Object.assign(days,generateDays(from<PLAN_START?PLAN_START:from));
-  PROG.plan.cur={attempts:(plan().attempts||0)+1,v:PLAN_VER,weekdayMin:weekdayMin(),created:new Date().toISOString(),days};
+  PROG.plan.cur={attempts:(plan().attempts||0)+1,v:PLAN_VER,created:new Date().toISOString(),days};
 }
 
 /* ===== Kiểm tra hoàn thành — chỉ dựa trên bài đã nộp, không tick tay =====
@@ -468,7 +456,7 @@ function buildSnapshot(){
   const last=PROG.coach.log.reports.slice(-1)[0];
   return {
     today:TODAY, todayDow:DOW[parseYmd(TODAY).getDay()], examDate:EXAM_DATE, daysLeft:daysBetween(TODAY,EXAM_DATE),
-    capacity:'Thứ Hai–Sáu: '+weekdayMin()+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
+    capacity:'Thứ Hai–Sáu: '+WEEKDAY_MIN+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
     timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, 13 từ mới hoặc 40 lượt ôn flashcard ~15 phút.',
     skills, vocab:{total:187,learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
@@ -566,21 +554,11 @@ function renderCoachHist(){
 }
 
 $('coachBtn').onclick=runCoach;
-function renderHours(){
-  const m=weekdayMin();
-  $('hours').innerHTML='Ngày thường học: '+[120,180].map(v=>'<button class="btn'+(v===m?' primary':'')+'" data-min="'+v+'">'+(v/60)+' tiếng</button>').join(' ')
-    +'<span class="muted" style="font-size:12.5px">'+(m===180?'mỗi tối: Listening + Reading + 1 đề Writing/Speaking':'mỗi tối: 1 đề Writing/Speaking + Listening HOẶC Reading (luân phiên) — muốn đủ L + R mỗi ngày cần 3 tiếng')+'</span>';
-  document.querySelectorAll('#hours [data-min]').forEach(b=>b.onclick=()=>{
-    const v=+b.dataset.min;if(v===weekdayMin())return;
-    if(!confirm('Đổi sang '+(v/60)+' tiếng mỗi tối và xếp lại lịch từ hôm nay?'))return;
-    plan().weekdayMin=v;rebuildFrom(TODAY);save();render();renderHours();
-  });
-}
 $('resetPlan').onclick=()=>{
   if(!confirm('Xếp lại lịch từ hôm nay theo tiến độ hiện tại? Lịch AI coach đã áp dụng cho các ngày tới sẽ bị thay.'))return;
   rebuildFrom(TODAY);save();render();
 };
-(async()=>{await load();render();renderHours();})();
+(async()=>{await load();render();})();
 </script>
 </body>
 </html>
