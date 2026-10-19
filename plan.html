@@ -57,6 +57,8 @@
   th{font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:400}
   td.num{font-family:'SF Mono',monospace;font-size:13px}
   .up{color:var(--ok)} .down{color:var(--accent)}
+  .tp{display:inline-block;font-family:'SF Mono',monospace;font-size:11.5px;border:1px solid var(--line);border-radius:8px;padding:2px 7px;margin:2px 0;background:#fff}
+  .tp.tight{border-color:#e0a100;background:#fff7e0} .tp.hard{border-color:var(--accent);background:var(--accent-soft);color:#9b2c1c}
   .table-wrap{overflow-x:auto}
   .btn{font-family:'SF Mono',monospace;font-size:12.5px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);
     border-radius:99px;padding:9px 16px;cursor:pointer;text-decoration:none}
@@ -112,6 +114,9 @@
 
   <h2>📊 Điểm theo kỹ năng</h2>
   <div class="box table-wrap" id="skills"></div>
+
+  <h2>⏱ Thời gian làm bài thực tế</h2>
+  <div class="box table-wrap" id="timing"></div>
 
   <h2>🗓 Toàn bộ lịch</h2>
   <div id="cal"></div>
@@ -184,7 +189,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=6;
+const PLAN_VER=7;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -240,7 +245,22 @@ function skillStats(skill){
   let lastDate=null;des.forEach(x=>{if(x.r.lastDate&&(!lastDate||x.r.lastDate>lastDate))lastDate=x.r.lastDate;});
   const neverDone=[];for(let i=1;i<=total;i++){if(!S['de'+i]||!S['de'+i].attempts)neverDone.push(i);}
   return {done:des.length,total,firstAvg:avg(first),lastAvg:avg(last),weakParts,weakestDe,neverDone,
-    lastActivity:lastDate?ymd(new Date(lastDate)):null};
+    lastActivity:lastDate?ymd(new Date(lastDate)):null,timing:timingStats(des)};
+}
+// Thời gian thực tế ở chế độ thi bấm giờ: mỗi lần nộp lưu parts {P1:[giây dùng, giây cho phép, đúng, tổng]}
+// (Writing: "đúng" = điểm AI trung bình của Part, tổng = 10)
+function timingStats(des){
+  const tp={};let n=0,sec=0,lastAt=null;
+  des.forEach(x=>(x.r.history||[]).forEach(h=>{
+    if(!h.timed||!h.parts)return;n++;sec+=h.sec||0;if(!lastAt||h.date>lastAt)lastAt=h.date;
+    Object.keys(h.parts).forEach(p=>{const [u,b,ok,tot]=h.parts[p];const o=tp[p]||(tp[p]={n:0,used:0,budget:0,ok:0,tot:0});
+      o.n++;o.used+=u;o.budget+=b;o.ok+=ok;o.tot+=tot;});
+  }));
+  if(!n)return null;
+  const parts={};
+  Object.keys(tp).forEach(p=>{const o=tp[p];parts[p]={avgSec:Math.round(o.used/o.n),budgetSec:Math.round(o.budget/o.n),
+    timeUsedPct:Math.round(o.used/o.budget*100),accuracy:o.tot?Math.round(o.ok/o.tot*100):null};});
+  return {timedAttempts:n,avgSec:Math.round(sec/n),lastTimed:ymd(new Date(lastAt)),parts};
 }
 // Đề đã làm, điểm gần nhất thấp nhất đứng trước
 function weakOrder(skill){
@@ -280,8 +300,9 @@ function generateDays(from){
   // Vòng làm lại: đề đã làm (điểm thấp trước), tiếp theo là các đề sẽ làm lần đầu trong lịch này.
   DE_SKILLS.forEach(s=>{q[s]=skillStats(s).neverDone.slice();const w=weakOrder(s);cyc[s]=w.concat(q[s].filter(de=>!w.includes(de)));ptr[s]=0;});
   const next=s=>{
-    if(q[s].length)return task(s,q[s].shift(),'new',MIN[s]);
-    return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý các câu sai lần trước');
+    const tip=s==='speaking'?'':'chọn ⏱ Thi bấm giờ để lưu thời gian';
+    if(q[s].length)return task(s,q[s].shift(),'new',MIN[s],tip);
+    return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý câu sai lần trước'+(tip?' · '+tip:''));
   };
   const gq=groupsLeft();let lastWS=null;
   for(let d=from;d<=PHASE1_END;d=addDays(d,1)){
@@ -427,6 +448,22 @@ function renderSkills(){
   const vl=PROG.vlog&&PROG.vlog[TODAY];
   h+='<tr><td>📚 Từ vựng</td><td class="num">'+vocabSeen()+'/187</td><td colspan="3" class="muted" style="font-size:13px">từ đã học'+(vl?' · hôm nay '+vl.seen+' lượt, '+vl.newWords+' từ mới':'')+'</td></tr></table>';
   $('skills').innerHTML=h;
+  renderTiming();
+}
+function mmss(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function renderTiming(){
+  const rows=['listening','reading','writing'].map(s=>({s,t:skillStats(s).timing}));
+  let h='';
+  rows.forEach(({s,t})=>{
+    h+='<tr><td>'+SK[s].ic+' '+SK[s].name+'</td>';
+    if(!t){h+='<td colspan="2" class="muted" style="font-size:13px">Chưa có lần nào làm ở chế độ ⏱ Thi bấm giờ</td></tr>';return;}
+    h+='<td class="num">'+t.timedAttempts+' lần<br><span class="muted">TB '+mmss(t.avgSec)+'</span></td><td>'
+      +Object.keys(t.parts).map(p=>{const x=t.parts[p],hard=x.timeUsedPct>=90&&x.accuracy!=null&&x.accuracy<80;
+        return '<span class="tp'+(hard?' hard':x.timeUsedPct>=90?' tight':'')+'" title="Dùng '+x.timeUsedPct+'% thời gian cho phép">'
+          +esc(p)+' '+mmss(x.avgSec)+'/'+mmss(x.budgetSec)+' · '+(x.accuracy==null?'—':x.accuracy+'%')+(hard?' · khó':'')+'</span>';}).join(' ')+'</td></tr>';
+  });
+  $('timing').innerHTML='<table><tr><th>Kỹ năng</th><th>Thi bấm giờ</th><th>Thời gian TB theo Part · độ chính xác</th></tr>'+h+'</table>'
+    +'<div class="muted" style="font-size:12.5px;margin-top:8px">Chỉ tính các lần chọn <b>⏱ Thi bấm giờ</b> rồi nộp trọn đề. <span class="tp tight">vàng</span> = dùng ≥90% thời gian · <span class="tp hard">đỏ</span> = gần hết giờ mà đúng dưới 80% → Part khó nhất. Writing: % = điểm AI trung bình × 10.</div>';
 }
 function renderCal(tasks){
   const byDate={};tasks.forEach(x=>(byDate[x.date]=byDate[x.date]||[]).push(x));

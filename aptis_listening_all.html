@@ -119,6 +119,9 @@
   .prog-wrong b{color:var(--ink);}
   .redo-btn{margin-top:14px;}
   .save-note{font-family:'SF Mono',monospace;font-size:10.5px;color:var(--muted);text-align:center;margin-top:6px;}
+.tparts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.tpart{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:#fff}
+.tpart.tight{border-color:#e0a100;background:#fff7e0}.tpart.over{border-color:var(--bad,#c0392b);background:#fde8e5}
 </style>
 </head>
 <body>
@@ -8184,7 +8187,13 @@ function doSubmit(auto){
   let parts='';['P1','P2','P3','P4'].forEach(p=>{if(ps[p][1])parts+='<span>'+p+' <b>'+ps[p][0]+'/'+ps[p][1]+'</b></span>';});
   const sc=document.createElement('div');sc.className='card score-card';
   let timeLine='';
-  if(sel.mode==='exam'){ const used=Object.keys(PART_BUDGET).reduce((a,k)=>a+(PART_BUDGET[k]-pLeft[k]),0); timeLine='<div class="score-sub">Tổng thời gian đã dùng: <b>'+fmt(used)+'</b> / 40:00</div>'; }
+  let timing=null;
+  if(sel.mode==='exam'){ const used=Object.keys(PART_BUDGET).reduce((a,k)=>a+(PART_BUDGET[k]-pLeft[k]),0);
+    timing={sec:used,parts:{}};
+    timeLine='<div class="score-sub">Tổng thời gian đã dùng: <b>'+fmt(used)+'</b> / 40:00</div><div class="tparts">'
+      +['P1','P2','P3','P4'].filter(p=>ps[p][1]).map(p=>{const u=PART_BUDGET[p]-pLeft[p],r=u/PART_BUDGET[p];
+        timing.parts[p]=[u,PART_BUDGET[p],ps[p][0],ps[p][1]];
+        return '<span class="tpart'+(pDead[p]?' over':r>=.85?' tight':'')+'">'+p+' ⏱ '+fmt(u)+'/'+fmt(PART_BUDGET[p])+' · '+ps[p][0]+'/'+ps[p][1]+'</span>';}).join('')+'</div>'; }
   let extra='';
   if(sel.part==='all'){
     const perQ={}, cnt={};
@@ -8193,7 +8202,7 @@ function doSubmit(auto){
       const n=(cnt[it.part]=(cnt[it.part]||0)+1);   // đánh số liên tục trong part -> không đè khoá
       perQ[it.part+'_'+n]=!ok;
     }));
-    extra=progScoreExtra(progRecord('de'+sel.test,pct,perQ));
+    extra=progScoreExtra(progRecord('de'+sel.test,pct,perQ,timing));
   }
   sc.innerHTML='<div class="score-big">'+correct+'/'+total+'</div><div class="score-sub">Đúng '+pct+'% · '+(sel.part==='all'?'Đề '+sel.test:'Trộn 15 đề '+sel.part.toUpperCase())+'</div><div class="partscore">'+parts+'</div>'+timeLine+extra;
   $('runner').insertBefore(sc,$('runner').children[1]);
@@ -8262,13 +8271,14 @@ async function progSave(){
   ACLOUD.push(APTIS_PROG);
 }
 function progGet(key){return (APTIS_PROG[APTIS_SKILL]||{})[key]||null;}
-function progRecord(key,score,perQ){
+// timing (tuỳ chọn, chế độ thi bấm giờ): {sec, parts:{P1:[giây dùng, giây cho phép, đúng, tổng câu]}}
+function progRecord(key,score,perQ,timing){
   if(!APTIS_PROG[APTIS_SKILL])APTIS_PROG[APTIS_SKILL]={};
   const S=APTIS_PROG[APTIS_SKILL];
   const r=S[key]||{attempts:0,bestScore:0,lastScore:0,history:[],perQ:{}};
   const now=new Date().toISOString();
   r.attempts++;r.lastScore=score;r.bestScore=Math.max(r.bestScore||0,score);r.lastDate=now;
-  r.history.push({date:now,score:score});if(r.history.length>50)r.history=r.history.slice(-50);
+  r.history.push(timing?{date:now,score:score,timed:true,sec:timing.sec,parts:timing.parts}:{date:now,score:score});if(r.history.length>50)r.history=r.history.slice(-50);
   if(perQ)for(const k in perQ){const q=r.perQ[k]||{seen:0,wrong:0};q.seen++;if(perQ[k])q.wrong++;r.perQ[k]=q;}
   S[key]=r;progSave();return r;
 }

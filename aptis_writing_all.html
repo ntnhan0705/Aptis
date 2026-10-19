@@ -222,6 +222,12 @@
   .save-note{font-family:"SF Mono",monospace;font-size:.65rem;color:var(--muted);margin-top:6px;}
   .btn-rec{border:1.5px solid var(--green);background:var(--green);color:#fff;border-radius:99px;
     padding:7px 15px;cursor:pointer;font:inherit;font-size:.78rem;font-weight:700;}
+.wtimers{display:none;gap:6px;flex-wrap:wrap;margin:10px 0}
+.wt{font-family:"SF Mono",ui-monospace,monospace;font-size:13px;font-weight:700;padding:4px 9px;border:1.5px solid var(--line);border-radius:8px;background:#fff;text-align:center;line-height:1.2;min-width:66px}
+.wt .pl{display:block;font-size:9px;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.wt.active{border-color:var(--accent);background:var(--accent-soft)}
+.wt.warn{color:#b07a00;border-color:#e0a100}
+.wt.over{color:#fff;background:var(--accent);border-color:var(--accent)}.wt.over .pl{color:#fff}
 </style>
 </head>
 <body>
@@ -249,12 +255,14 @@
     <div class="modebar">
       <button id="mPractice" class="on" onclick="setMode('practice')">✎ Luyện tập</button>
       <button id="mTest" onclick="setMode('test')">◷ Kiểm tra</button>
+      <button id="mExam" onclick="setMode('exam')">⏱ Thi bấm giờ</button>
     </div>
     <button class="pill link" onclick="resetAll()">Xóa hết</button>
     <button class="btn-rec" id="btnRec">💾 Ghi kết quả &amp; làm lại</button>
     <span class="stat" id="stat"></span>
   </div>
 
+  <div class="wtimers" id="wTimers"></div>
   <div class="card" id="card"></div>
 
   <div class="nav">
@@ -849,7 +857,7 @@ function switchExam(i){
   exam=i;
   ITEMS=EXAMS[exam].items;
   state=ITEMS.map(()=>({value:''}));
-  pos=0;
+  pos=0; wTimerReset();
   buildExams(); buildMatrix(); render();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -858,7 +866,32 @@ function setMode(m){
   mode=m;
   $('mPractice').classList.toggle('on', m==='practice');
   $('mTest').classList.toggle('on', m==='test');
+  $('mExam').classList.toggle('on', m==='exam');
+  if(m==='exam') wTimerStart(); else wTimerStop();
   render();
+}
+
+/* ===== Thi bấm giờ: 50 phút như đề thật — Part 1 3′, Part 2 7′, Part 3 10′, Part 4 30′.
+   Đồng hồ của Part đang mở chạy; hết giờ Part vẫn cho viết tiếp nhưng tính là quá giờ (đỏ). ===== */
+const WBUDGET={Q1:3*60,Q2:7*60,Q3:10*60,Q4:30*60};
+const WPART={Q1:'Part 1',Q2:'Part 2',Q3:'Part 3',Q4:'Part 4'};
+let wUsed={Q1:0,Q2:0,Q3:0,Q4:0}, wInt=null;
+function wFmt(s){ const neg=s<0; s=Math.abs(s); return (neg?'+':'')+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function wTimerReset(){ wUsed={Q1:0,Q2:0,Q3:0,Q4:0}; renderWTimers(); }
+function wTimerStart(){
+  if(wInt) return;
+  wInt=setInterval(()=>{ const it=ITEMS[pos]; if(it&&wUsed[it.tag]!=null){ wUsed[it.tag]++; renderWTimers(); } },1000);
+  renderWTimers();
+}
+function wTimerStop(){ if(wInt){ clearInterval(wInt); wInt=null; } renderWTimers(); }
+function renderWTimers(){
+  const el=$('wTimers'); if(!el) return;
+  if(mode!=='exam'){ el.style.display='none'; return; }
+  el.style.display='flex';
+  const cur=ITEMS[pos]?ITEMS[pos].tag:null, total=Object.values(wUsed).reduce((a,b)=>a+b,0);
+  el.innerHTML='<span class="wt total'+(total>3000?' over':'')+'"><span class="pl">TỔNG</span>'+wFmt(3000-total)+'</span>'
+    +Object.keys(WBUDGET).map(t=>{ const left=WBUDGET[t]-wUsed[t];
+      return '<span class="wt'+(t===cur?' active':'')+(left<0?' over':left<=WBUDGET[t]*.15?' warn':'')+'"><span class="pl">'+WPART[t].toUpperCase()+'</span>'+wFmt(left)+'</span>'; }).join('');
 }
 
 function hasVocab(){ return !!(EXAMS[exam].vocab && EXAMS[exam].vocab.length); }
@@ -1094,7 +1127,7 @@ function updateStat(){
 }
 
 function resetAll(){
-  state.forEach(s=>{s.value='';});
+  state.forEach(s=>{s.value='';}); wTimerReset();
   pos=0; buildMatrix(); render();
 }
 
@@ -1337,13 +1370,14 @@ async function progSave(){
   ACLOUD.push(APTIS_PROG);
 }
 function progGet(key){return (APTIS_PROG[APTIS_SKILL]||{})[key]||null;}
-function progRecord(key,score,perQ){
+// timing (tuỳ chọn, chế độ thi bấm giờ): {sec, parts:{P1:[giây dùng, giây cho phép, đúng, tổng câu]}}
+function progRecord(key,score,perQ,timing){
   if(!APTIS_PROG[APTIS_SKILL])APTIS_PROG[APTIS_SKILL]={};
   const S=APTIS_PROG[APTIS_SKILL];
   const r=S[key]||{attempts:0,bestScore:0,lastScore:0,history:[],perQ:{}};
   const now=new Date().toISOString();
   r.attempts++;r.lastScore=score;r.bestScore=Math.max(r.bestScore||0,score);r.lastDate=now;
-  r.history.push({date:now,score:score});if(r.history.length>50)r.history=r.history.slice(-50);
+  r.history.push(timing?{date:now,score:score,timed:true,sec:timing.sec,parts:timing.parts}:{date:now,score:score});if(r.history.length>50)r.history=r.history.slice(-50);
   if(perQ)for(const k in perQ){const q=r.perQ[k]||{seen:0,wrong:0};q.seen++;if(perQ[k])q.wrong++;r.perQ[k]=q;}
   S[key]=r;progSave();return r;
 }
@@ -1376,10 +1410,23 @@ async function recordExam(){
   });
   const avg=ITEMS.length?sumScore/ITEMS.length:0;
   const pct=Math.round(avg*10);
-  const r=progRecord('de'+(exam+1),pct,perQ);
+  // Chế độ thi bấm giờ: lưu thời gian từng Part kèm điểm AI trung bình của Part đó (thang 10)
+  let timing=null, timeMsg='';
+  if(mode==='exam'){
+    timing={sec:Object.values(wUsed).reduce((a,b)=>a+b,0),parts:{}};
+    Object.keys(WBUDGET).forEach(t=>{
+      const idx=ITEMS.map((it,i)=>it.tag===t?i:-1).filter(i=>i>=0); if(!idx.length) return;
+      const sc=idx.map(i=>state[i].aiResult?(Number(state[i].aiResult.score)||0):0);
+      timing.parts[t]=[wUsed[t],WBUDGET[t],Math.round(sc.reduce((a,b)=>a+b,0)/sc.length*10)/10,10];
+      timeMsg+='\n'+WPART[t]+': '+wFmt(wUsed[t])+' / '+wFmt(WBUDGET[t])+(wUsed[t]>WBUDGET[t]?' (quá giờ)':'');
+    });
+    timeMsg='\n\n⏱ Thời gian: '+wFmt(timing.sec)+' / 50:00'+timeMsg;
+  }
+  const r=progRecord('de'+(exam+1),pct,perQ,timing);
   state.forEach(s=>{s.value=''; delete s.aiResult;}); pos=0;
   buildExams(); buildMatrix(); render();
-  alert('Đã ghi: điểm AI trung bình '+avg.toFixed(1)+'/10 ('+pct+'%) · lần thứ '+r.attempts+'\nĐề đã được xoá để bạn làm lại.');
+  wTimerReset();
+  alert('Đã ghi: điểm AI trung bình '+avg.toFixed(1)+'/10 ('+pct+'%) · lần thứ '+r.attempts+timeMsg+'\nĐề đã được xoá để bạn làm lại.');
 }
 function renderProgPanel(){
   const el=document.getElementById('progPanel'); if(!el)return;
