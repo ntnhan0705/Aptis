@@ -114,6 +114,11 @@
     border:1px solid var(--gold);border-radius:9px;padding:10px 13px;text-align:left;}
   .gr-why b{color:#5a4600;}
   footer{text-align:center;color:var(--muted);font-size:.75rem;margin-top:26px;}
+.gchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin:10px 0}
+.gchip{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:6px 2px;cursor:pointer;font:inherit;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.gchip b{font-size:15px}.gchip span{font-size:10.5px;color:var(--muted);font-family:'SF Mono',monospace}
+.gchip.done{background:#e3f4ec;border-color:#bfe3cf}.gchip.cur{border-color:var(--accent);box-shadow:0 0 0 2px rgba(224,83,61,.18)}
+.qz-grp{display:inline-block;background:#fbe8e3;color:#b23a26;border-radius:99px;padding:1px 8px;margin-right:4px;font-weight:700}
 </style>
 </head>
 <body>
@@ -241,7 +246,33 @@ function vRecord(en, ok){
   if(!PROG.vlog)PROG.vlog={};
   const lg=PROG.vlog[day]||(PROG.vlog[day]={seen:0,correct:0,newWords:0});
   lg.seen++; if(ok)lg.correct++; if(r.seen===1)lg.newWords++;
+  r.last=day; updateGroup(groupOfWord(en), day);
   progSave(); return r;
+}
+
+/* ============ nhóm từ ============
+   187 từ chia theo thứ tự thành 17 nhóm × 11 từ. Một từ "đã thuộc" khi lên chế độ 3 (đã qua chọn nghĩa và
+   điền câu, mỗi bước đúng 3 lần liên tiếp). Nhóm "đã thuộc" khi mọi từ trong nhóm đã thuộc — ghi ngày vào
+   PROG.vgroup để trang Lộ trình kiểm tra; bản ghi có "seen" (= số từ đã thuộc) để merge giữ bản cao hơn. */
+const GROUP_SIZE=11;
+const GROUP_COUNT=Math.ceil(VOCAB.length/GROUP_SIZE);
+const VIDX={}; VOCAB.forEach((v,i)=>{ VIDX[KEY(v.en)]=i; });
+function groupOfWord(en){ const i=VIDX[KEY(en)]; return i==null?-1:Math.floor(i/GROUP_SIZE); }
+function groupWords(g){ return VOCAB.slice(g*GROUP_SIZE,(g+1)*GROUP_SIZE); }
+function isMastered(en){ const r=vRec(en); return !!(r&&r.mode===3); }
+function groupStat(g){ const w=groupWords(g); return {total:w.length, mastered:w.filter(v=>isMastered(v.en)).length}; }
+function groupDone(g){ const r=(PROG.vgroup||{})['g'+(g+1)]; return !!(r&&r.doneAt); }
+function updateGroup(g, day){
+  if(g<0)return;
+  if(!PROG.vgroup)PROG.vgroup={};
+  const k='g'+(g+1), st=groupStat(g), old=PROG.vgroup[k]||{};
+  PROG.vgroup[k]={seen:st.mastered, total:st.total, doneAt:old.doneAt||(st.mastered===st.total?day:'')};
+}
+function nextGroup(){ for(let g=0;g<GROUP_COUNT;g++) if(!groupDone(g)) return g; return -1; }
+// Ôn: từ thuộc các nhóm đã xong — yếu trước, lâu chưa gặp trước
+function reviewPool(n){
+  const w=[]; for(let g=0;g<GROUP_COUNT;g++) if(groupDone(g)) w.push(...groupWords(g));
+  return w.sort((a,b)=>(vLevel(a.en)-vLevel(b.en))||(((vRec(a.en)||{}).last||'')<((vRec(b.en)||{}).last||'')?-1:1)).slice(0,n);
 }
 
 /* ============ tiện ích ============ */
@@ -301,8 +332,11 @@ function renderDash(){
   $('dash').innerHTML='<div class="dash-h">🎯 Mức thuần thục — '+VOCAB.length+' từ</div>'
     +'<div class="dash-s">Đã học <b>'+learned+'</b> · thuần thục (Lv4–5) <b>'+(counts[4]+counts[5])+'</b> · chưa học <b>'+neu+'</b></div>'
     +'<div class="lvbars">'+bars+'</div>'
-    +'<div class="btnrow"><button class="btn primary" id="btnStart">🎲 Học ngẫu nhiên toàn bộ</button>'
+    +groupsHTML()
+    +'<div class="dash-h" style="margin-top:18px">Luyện tự do</div>'
+    +'<div class="btnrow"><button class="btn" id="btnStart">🎲 Học ngẫu nhiên toàn bộ</button>'
     +'<button class="btn" id="btnWeak">⚠️ Ôn từ yếu (Lv0–2 + chưa học)</button></div>';
+  bindGroups();
   $('btnStart').onclick=()=>startQuiz(VOCAB.slice());
   $('btnWeak').onclick=()=>{
     const w=VOCAB.filter(v=>{ const l=vLevel(v.en); return l<0||l<=2; });
@@ -310,9 +344,34 @@ function renderDash(){
   };
 }
 
+function groupsHTML(){
+  const ng=nextGroup(), doneN=Array.from({length:GROUP_COUNT},(_,g)=>g).filter(groupDone).length;
+  let chips='';
+  for(let g=0;g<GROUP_COUNT;g++){
+    const st=groupStat(g), d=groupDone(g);
+    chips+='<button class="gchip'+(d?' done':'')+(g===ng?' cur':'')+'" data-g="'+g+'" title="Nhóm '+(g+1)+': đã thuộc '+st.mastered+'/'+st.total+'">'
+      +'<b>'+(d?'✅':(g+1))+'</b><span>'+st.mastered+'/'+st.total+'</span></button>';
+  }
+  const rv=reviewPool(9999).length;
+  return '<div class="dash-h" style="margin-top:18px">📦 Học theo nhóm — '+GROUP_COUNT+' nhóm × '+GROUP_SIZE+' từ · đã thuộc <b>'+doneN+'</b>/'+GROUP_COUNT+' nhóm</div>'
+    +'<div class="dash-s">Mỗi buổi học 1 nhóm. Từ <b>đã thuộc</b> = lên chế độ 3 (đúng 3 lần liên tiếp ở chế độ 1 rồi chế độ 2). Nhóm xong khi cả '+GROUP_SIZE+' từ đã thuộc.</div>'
+    +'<div class="gchips">'+chips+'</div>'
+    +'<div class="btnrow">'+(ng>=0?'<button class="btn primary" id="btnGroup">▶ Học Nhóm '+(ng+1)+'</button>':'<span class="dash-s">🎉 Đã thuộc cả '+GROUP_COUNT+' nhóm!</span>')
+    +'<button class="btn" id="btnReview"'+(rv?'':' disabled')+'>🔁 Ôn các nhóm đã thuộc'+(rv?' ('+rv+' từ)':'')+'</button></div>';
+}
+function bindGroups(){
+  const b=$('btnGroup'); if(b) b.onclick=()=>startGroup(nextGroup());
+  const r=$('btnReview'); if(r) r.onclick=()=>{ const p=reviewPool(22); if(p.length) startQuiz(p,{review:true}); };
+  document.querySelectorAll('.gchip').forEach(c=>c.onclick=()=>startGroup(+c.dataset.g));
+}
+function startGroup(g){ if(g<0)return; startQuiz(groupWords(g),{group:g}); }
+
 /* ============ trainer ============ */
-let qz={pool:[],order:[],oi:0,cur:null,mode:1,answered:false,done:0,right:0};
-function startQuiz(pool){
+let qz={pool:[],order:[],oi:0,cur:null,mode:1,answered:false,done:0,right:0,group:-1,review:false,celebrated:false,last:null};
+function startQuiz(pool,opt){
+  opt=opt||{};
+  qz.group=opt.group!=null?opt.group:-1; qz.review=!!opt.review; qz.last=null;
+  qz.celebrated=qz.group>=0&&groupStat(qz.group).mastered===groupStat(qz.group).total;
   qz.pool=pool; if(!qz.pool.length)return;
   qz.order=shuffle(qz.pool.map((_,i)=>i)); qz.oi=0; qz.done=0; qz.right=0;
   $('trainer').classList.remove('hide'); $('listCard').classList.add('hide');
@@ -321,8 +380,19 @@ function startQuiz(pool){
 }
 function endQuiz(){ if(synth)synth.cancel(); $('trainer').classList.add('hide'); $('listCard').classList.remove('hide'); renderDash(); renderList(); }
 function nextQ(){
-  if(qz.oi>=qz.order.length){ qz.order=shuffle(qz.pool.map((_,i)=>i)); qz.oi=0; }
-  qz.cur=qz.pool[qz.order[qz.oi]]; qz.oi++;
+  if(qz.group>=0){
+    // Học theo nhóm: chỉ hỏi từ chưa thuộc; nhóm vừa xong thì chúc mừng rồi cho ôn tiếp cả nhóm.
+    const st=groupStat(qz.group);
+    if(st.mastered===st.total&&!qz.celebrated){ qz.celebrated=true; groupDoneScreen(); return; }
+    const todo=qz.pool.filter(v=>!isMastered(v.en)), src=todo.length?todo:qz.pool;
+    let c=src[Math.floor(Math.random()*src.length)];
+    if(src.length>1&&qz.last&&c.en===qz.last){ const rest=src.filter(v=>v.en!==qz.last); c=rest[Math.floor(Math.random()*rest.length)]; }
+    qz.cur=c;
+  }else{
+    if(qz.oi>=qz.order.length){ qz.order=shuffle(qz.pool.map((_,i)=>i)); qz.oi=0; }
+    qz.cur=qz.pool[qz.order[qz.oi]]; qz.oi++;
+  }
+  qz.last=qz.cur.en;
   const r=vRec(qz.cur.en); let m=r?r.mode:1;
   if(!qz.cur.gap) m=1;                 // từ không tách được chỗ trống -> chỉ chế độ 1
   qz.mode=m; qz.answered=false; renderQ();
@@ -331,10 +401,21 @@ function distractors(en,n){
   const pool=(VOCAB.length>=n+1?VOCAB:qz.pool).map(v=>v.en).filter(e=>e.toLowerCase()!==en.toLowerCase());
   return shuffle(pool).slice(0,n);
 }
+function groupDoneScreen(){
+  const g=qz.group, ng=nextGroup();
+  $('trainer').innerHTML='<div class="qz-q" style="font-size:22px;margin:10px 0">🎉 Đã thuộc Nhóm '+(g+1)+'!</div>'
+    +'<div class="qz-vi">Cả '+groupStat(g).total+' từ đã lên chế độ 3 · đúng '+qz.right+'/'+qz.done+' câu trong buổi này.</div>'
+    +'<div class="btnrow" style="justify-content:center;margin-top:14px">'
+    +(ng>=0?'<button class="btn primary" id="gdNext">▶ Học Nhóm '+(ng+1)+'</button>':'')
+    +'<button class="btn" id="gdMore">Ôn tiếp nhóm này</button><button class="btn" id="gdExit">Xong</button></div>';
+  if($('gdNext')) $('gdNext').onclick=()=>startGroup(ng);
+  $('gdMore').onclick=nextQ; $('gdExit').onclick=endQuiz;
+}
 function renderQ(){
   const v=qz.cur, m=qz.mode;
   const mname=m===1?'Chế độ 1 · Nghĩa → chọn từ':m===2?'Chế độ 2 · Điền vào câu':'Chế độ 3 · Nghe & gõ';
-  let head='<div class="qz-top"><span class="qz-mode">'+mname+'</span>'
+  const tag=qz.group>=0?'<span class="qz-grp">Nhóm '+(qz.group+1)+' · đã thuộc '+groupStat(qz.group).mastered+'/'+groupStat(qz.group).total+'</span> ':qz.review?'<span class="qz-grp">Ôn nhóm đã thuộc</span> ':'';
+  let head='<div class="qz-top"><span class="qz-mode">'+tag+mname+'</span>'
     +'<span class="qz-prog">'+levelBadge(v.en)+' · đúng '+qz.right+'/'+qz.done
     +' <button class="fchip" id="qzExit" style="margin-left:6px">Thoát</button></span></div><div id="qzBody"></div>';
   $('trainer').innerHTML=head;

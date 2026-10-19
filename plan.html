@@ -184,7 +184,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=5;
+const PLAN_VER=6;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -217,6 +217,10 @@ function save(){
 const plan=()=>PROG.plan.cur;
 function bumpPlan(){plan().attempts=(plan().attempts||0)+1;plan().updated=new Date().toISOString();}
 function rec(skill,de){return ((PROG[skill]||{})['de'+de])||null;}
+// Nhóm từ vựng (17 nhóm × 11 từ) — module Từ vựng ghi ngày thuộc vào PROG.vgroup.g1..g17
+const VGROUPS=17;
+function vgroup(k){return (PROG.vgroup||{})['g'+k]||null;}
+function groupsLeft(){const a=[];for(let k=1;k<=VGROUPS;k++){const r=vgroup(k);if(!r||!r.doneAt)a.push(k);}return a;}
 function vocabSeen(){const V=PROG.vocab||{};return Object.keys(V).filter(k=>V[k]&&V[k].seen>0).length;}
 
 /* ===== Thống kê theo kỹ năng ===== */
@@ -279,10 +283,10 @@ function generateDays(from){
     if(q[s].length)return task(s,q[s].shift(),'new',MIN[s]);
     return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý các câu sai lần trước');
   };
-  let vTo=vocabSeen(),lastWS=null;
+  const gq=groupsLeft();let lastWS=null;
   for(let d=from;d<=PHASE1_END;d=addDays(d,1)){
     const we=isWeekend(d),slots=we?7:WEEKDAY_MIN/60,list=[];
-    if(vTo<187){const a=vTo+1;let b=Math.min(187,vTo+(we?20:13));if(187-b<5)b=187;list.push(task('vocab',0,'new',15,'',{from:a,to:b}));vTo=b;}
+    if(gq.length)list.push(task('vocab',0,'new',20,'',{group:gq.shift()}));
     else list.push(vocabRev(40,15));
     const lrs=!we?['listening','reading']:parseYmd(d).getDay()===6?['listening']:['reading'];
     const ws=[];
@@ -343,7 +347,8 @@ function computeStatus(){
       if(ok)['listening','reading','speaking'].forEach(s=>take(s,from,0));
       st[key]={done:ok,by:ok?'đã nộp L + R + S':'cần nộp 1 đề L, R, S'};
     }else if(t.skill==='vocab'){
-      if(t.to){const n=vocabSeen();st[key]={done:n>=t.to,by:n+'/'+t.to+' từ đã học'};}
+      if(t.group){const r=vgroup(t.group);st[key]={done:!!(r&&r.doneAt),by:r&&r.doneAt?'thuộc ngày '+fmt(r.doneAt):(r?r.seen:0)+'/11 từ đã thuộc'};}
+      else if(t.to){const n=vocabSeen();st[key]={done:n>=t.to,by:n+'/'+t.to+' từ đã học'};}
       else if(t.kind==='new'){const need=t.need||13,g=drain(vNew,from,need);st[key]={done:g>=need,by:g+'/'+need+' từ mới'};}
       else{const need=t.need||40,g=drain(vSeen,from,need);st[key]={done:g>=need,by:g+'/'+need+' lượt'};}
     }else st[key]={done:false};
@@ -360,6 +365,7 @@ function allTasks(){
 /* ===== Render ===== */
 function taskTitle(t){
   const s=SK[t.skill]||SK.all;
+  if(t.skill==='vocab'&&t.group)return s.ic+' Từ vựng — học thuộc Nhóm '+t.group;
   if(t.skill==='vocab'&&t.to)return s.ic+' Từ vựng — học từ '+t.from+'–'+t.to;
   if(t.skill==='vocab')return s.ic+' Từ vựng — '+(t.kind==='new'?(t.need||13)+' từ mới':'ôn '+(t.need||40)+' lượt');
   if(t.de>0)return s.ic+' '+s.name+' — Đề '+t.de;
@@ -458,8 +464,8 @@ function buildSnapshot(){
   return {
     today:TODAY, todayDow:DOW[parseYmd(TODAY).getDay()], examDate:EXAM_DATE, daysLeft:daysBetween(TODAY,EXAM_DATE),
     capacity:'Thứ Hai–Sáu: '+WEEKDAY_MIN+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
-    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, 13 từ mới hoặc 40 lượt ôn flashcard ~15 phút.',
-    skills, vocab:{total:187,learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
+    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, học thuộc 1 nhóm từ vựng (11 từ) ~20 phút, 40 lượt ôn flashcard ~15 phút.',
+    skills, vocab:{total:187,groups:VGROUPS,groupSize:11,groupsMastered:VGROUPS-groupsLeft().length,learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
     planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
       lateUndone:tasks.filter(x=>x.date<TODAY&&!x.done).map(x=>({date:x.date,skill:x.t.skill,de:x.t.de,kind:x.t.kind,note:x.t.note}))},
@@ -470,8 +476,8 @@ function buildSnapshot(){
 // Kiểm tra lịch AI trả về: đúng ngày, đúng kỹ năng/đề, không làm rơi đề chưa làm.
 function validateNext7(next7){
   const win=[];for(let i=0;i<7;i++)win.push(addDays(TODAY,i));
-  const days={},issues=[];
-  (next7||[]).forEach(d=>{
+  const days={},issues=[],gq=groupsLeft();
+  (next7||[]).slice().sort((a,b)=>a.date<b.date?-1:1).forEach(d=>{
     if(!win.includes(d.date)){issues.push('Bỏ qua ngày ngoài khung: '+d.date);return;}
     days[d.date]=(d.tasks||[]).filter(t=>SK[t.skill]).map(t=>{
       const total=SK[t.skill].total,de=(DE_SKILLS.includes(t.skill)&&t.de>=1&&t.de<=total)?t.de:0;
@@ -481,7 +487,7 @@ function validateNext7(next7){
       if(DE_SKILLS.includes(t.skill)&&!de)kind='redo';
       const out={skill:t.skill,de,kind,minutes:Math.max(0,Math.min(360,t.minutes|0)),note:String(t.note||'')};
       if(DE_SKILLS.includes(t.skill)&&!de)out.need=1;
-      if(t.skill==='vocab')out.need=kind==='new'?13:40;
+      if(t.skill==='vocab'){if(kind==='new'&&gq.length)out.group=gq.shift();else{out.kind='drill';out.need=40;}}
       return out;
     });
   });
