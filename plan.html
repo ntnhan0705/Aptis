@@ -189,7 +189,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=7;
+const PLAN_VER=8;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -295,7 +295,10 @@ function phase2(){
     '2026-11-22':[redoN('speaking',1,45,'Ôn nhẹ'),redoN('reading',1,50,'Ôn nhẹ'),vocabRev(30,15)],
   };
 }
-function generateDays(from){
+// skip: số việc mỗi kỹ năng đã làm xong trong HÔM NAY — không xếp thêm kỹ năng đó cho hôm nay
+// và không lấy đề/nhóm khỏi hàng đợi cho nó.
+function generateDays(from,skip){
+  skip=skip||{};
   const days={},q={},cyc={},ptr={};
   // Vòng làm lại: đề đã làm (điểm thấp trước), tiếp theo là các đề sẽ làm lần đầu trong lịch này.
   DE_SKILLS.forEach(s=>{q[s]=skillStats(s).neverDone.slice();const w=weakOrder(s);cyc[s]=w.concat(q[s].filter(de=>!w.includes(de)));ptr[s]=0;});
@@ -306,12 +309,13 @@ function generateDays(from){
   };
   const gq=groupsLeft();let lastWS=null;
   for(let d=from;d<=PHASE1_END;d=addDays(d,1)){
-    const we=isWeekend(d),slots=we?7:WEEKDAY_MIN/60,list=[];
-    if(gq.length)list.push(task('vocab',0,'new',25,'',{group:gq.shift()}));
-    else list.push(vocabRev(40,15));
-    const lrs=!we?['listening','reading']:parseYmd(d).getDay()===6?['listening']:['reading'];
+    const we=isWeekend(d),list=[],isToday=d===TODAY,sk=x=>isToday?(skip[x]||0):0;
+    if(!sk('vocab')){if(gq.length)list.push(task('vocab',0,'new',25,'',{group:gq.shift()}));else list.push(vocabRev(40,15));}
+    const lrAll=!we?['listening','reading']:parseYmd(d).getDay()===6?['listening']:['reading'];
+    const lrs=lrAll.filter(x=>!sk(x));
+    const wsSlots=Math.max(0,(we?7:WEEKDAY_MIN/60)-lrAll.length-sk('writing')-sk('speaking'));
     const ws=[];
-    while(ws.length+lrs.length<slots){
+    while(ws.length<wsSlots){
       const cnt=x=>ws.filter(y=>y===x).length; // chia đều W/S trong cùng một ngày
       const s=['writing','speaking'].sort((a,b)=>(cnt(a)-cnt(b))||(q[b].length-q[a].length)||((a===lastWS)-(b===lastWS))||(PRIO[a]-PRIO[b]))[0];
       ws.push(s);lastWS=s;
@@ -320,14 +324,28 @@ function generateDays(from){
     days[d]=list;
   }
   const p2=phase2();
-  Object.keys(p2).forEach(d=>{if(d>=from)days[d]=p2[d];});
+  Object.keys(p2).forEach(d=>{if(d>=from)days[d]=d===TODAY?p2[d].filter(t=>!skip[t.skill]):p2[d];});
   return days;
+}
+// Những gì đã làm xong trong hôm nay (đề đã nộp, nhóm từ đã thuộc) — giữ lại khi xếp lại lịch.
+function doneTodayTasks(){
+  const out=[];
+  DE_SKILLS.forEach(s=>submissions(s).filter(e=>e.day===TODAY).forEach(e=>{
+    const h=(rec(s,e.de).history||[])[0],first=h&&ymd(new Date(h.date))===TODAY;
+    out.push(task(s,e.de,first?'new':'redo',MIN[s],'đã làm hôm nay'));
+  }));
+  for(let k=1;k<=VGROUPS;k++){const r=vgroup(k);if(r&&r.doneAt===TODAY)out.push(task('vocab',0,'new',25,'',{group:k}));}
+  return out;
 }
 // Giữ nguyên các ngày trước "from", xếp lại từ "from" đến hết lịch.
 function rebuildFrom(from){
   const old=plan().days||{},days={};
   Object.keys(old).forEach(d=>{if(d<from)days[d]=old[d];});
-  Object.assign(days,generateDays(from<PLAN_START?PLAN_START:from));
+  // Xếp lại tính cả hôm nay thì giữ nguyên việc đã làm hôm nay, chỉ xếp thêm kỹ năng chưa làm.
+  const keep=from<=TODAY?doneTodayTasks():[],skip={};
+  keep.forEach(t=>{skip[t.skill]=(skip[t.skill]||0)+1;});
+  Object.assign(days,generateDays(from<PLAN_START?PLAN_START:from,skip));
+  if(keep.length)days[TODAY]=keep.concat(days[TODAY]||[]);
   PROG.plan.cur={attempts:(plan().attempts||0)+1,v:PLAN_VER,created:new Date().toISOString(),days};
 }
 
@@ -411,7 +429,8 @@ function render(){
   // "Đến hạn" = việc của các ngày TRƯỚC hôm nay; việc hôm nay chưa tính là trễ.
   const due=tasks.filter(x=>x.date<TODAY),dueDone=due.filter(x=>x.done).length;
   const doneAll=tasks.filter(x=>x.done).length;
-  const diff=doneAll-due.length;
+  // Vượt = việc của các ngày SAU đã làm xong; trễ = việc của các ngày TRƯỚC chưa xong. Việc hôm nay không tính.
+  const ahead=tasks.filter(x=>x.date>TODAY&&x.done).length,diff=ahead-(due.length-dueDone);
   const td=tasks.filter(x=>x.date===TODAY),tdDone=td.filter(x=>x.done).length;
   const left=Math.max(0,daysBetween(TODAY,EXAM_DATE));
   $('kpis').innerHTML='<div class="kpi"><div class="v">'+left+'</div><div class="l">ngày đến hôm thi</div></div>'
@@ -419,7 +438,7 @@ function render(){
     +'<div class="kpi"><div class="v">'+tdDone+'<span class="muted" style="font-size:15px">/'+td.length+'</span></div><div class="l">việc hôm nay</div></div>';
   $('planBar').style.width=(tasks.length?Math.round(doneAll/tasks.length*100):0)+'%';
   $('planBarLbl').textContent='Cả lộ trình: '+doneAll+'/'+tasks.length+' việc xong · các ngày trước còn '+(due.length-dueDone)+' việc chưa xong'
-    +(doneAll-dueDone-tdDone>0?' · đã làm trước '+(doneAll-dueDone-tdDone)+' việc của các ngày sau':'');
+    +(ahead>0?' · đã làm trước '+ahead+' việc của các ngày sau':'');
 
   const late=tasks.filter(x=>x.date<TODAY&&!x.done);
   let h='';
