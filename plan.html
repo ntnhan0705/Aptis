@@ -163,7 +163,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const SERVED=/^https?:$/.test(location.protocol);
 const EXAM_DATE='2026-11-23';
-const PLAN_START='2026-10-19';
+const PLAN_START='2026-10-21'; // ngày đầu tiên của lộ trình (xếp lại 21/10)
 const SK={
   listening:{name:'Listening',ic:'🎧',file:'aptis_listening_all.html',total:16},
   reading:  {name:'Reading',  ic:'📖',file:'aptis_reading_all.html',  total:15},
@@ -189,7 +189,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=10;
+const PLAN_VER=11;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -343,7 +343,8 @@ function doneTodayTasks(){
 // Giữ nguyên các ngày trước "from", xếp lại từ "from" đến hết lịch.
 function rebuildFrom(from){
   const old=plan().days||{},days={};
-  Object.keys(old).forEach(d=>{if(d<from)days[d]=old[d];});
+  // Giữ các ngày đã qua trong lộ trình; bỏ các ngày trước PLAN_START (lộ trình cũ trước khi xếp lại)
+  Object.keys(old).forEach(d=>{if(d<from&&d>=PLAN_START)days[d]=old[d];});
   // Xếp lại tính cả hôm nay thì giữ nguyên việc đã làm hôm nay, chỉ xếp thêm kỹ năng chưa làm.
   const keep=from<=TODAY?doneTodayTasks():[],skip={};
   keep.forEach(t=>{skip[t.skill]=(skip[t.skill]||0)+1;});
