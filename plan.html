@@ -189,7 +189,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=9;
+const PLAN_VER=10;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -282,7 +282,7 @@ const MIN={listening:50,reading:50,writing:50,speaking:45};
 const PRIO={writing:0,speaking:1,listening:2,reading:3};
 const task=(skill,de,kind,minutes,note,extra)=>Object.assign({skill,de,kind,minutes,note:note||''},extra||{});
 const redoN=(s,need,m,note)=>task(s,0,'redo',m,note,{need});
-const vocabRev=()=>task('vocab',0,'new',20,'',{pack:true});
+const vocabRev=()=>task('vocab',0,'new',25,'40–45 từ: từ đến hạn ôn + ≥8 từ mới của đề hôm nay (lặp lại ngắt quãng)',{pack:true});
 const lr=(lNote,rNote)=>[redoN('listening',1,50,lNote||'Làm lại đề điểm thấp'),redoN('reading',1,50,rNote||'Làm lại đề điểm thấp')];
 function phase2(){
   return {
@@ -389,7 +389,7 @@ function computeStatus(){
       if(ok)['listening','reading','speaking'].forEach(s=>take(s,from,0));
       st[key]={done:ok,by:ok?'đã nộp L + R + S':'cần nộp 1 đề L, R, S'};
     }else if(t.skill==='vocab'){
-      if(t.pack){const pk=vpack(date);st[key]={done:!!(pk&&pk.doneAt),by:pk?pk.seen+'/'+pk.total+' từ đã đúng'+(pk.doneAt?' · xong':''):'chưa mở gói ngày này'};}
+      if(t.pack){const pk=vpack(date);st[key]={done:!!(pk&&pk.doneAt),by:pk?pk.seen+'/'+pk.total+' từ đã xong'+(pk.doneAt?' · xong':''):'chưa mở gói ngày này'};}
       else if(t.group){const r=vgroup(t.group);st[key]={done:!!(r&&r.doneAt),by:r&&r.doneAt?'thuộc ngày '+fmt(r.doneAt):(r?r.seen:0)+'/11 từ đã thuộc'};}
       else if(t.to){const n=vocabSeen();st[key]={done:n>=t.to,by:n+'/'+t.to+' từ đã học'};}
       else if(t.kind==='new'){const need=t.need||13,g=drain(vNew,from,need);st[key]={done:g>=need,by:g+'/'+need+' từ mới'};}
@@ -525,8 +525,8 @@ function buildSnapshot(){
   return {
     today:TODAY, todayDow:DOW[parseYmd(TODAY).getDay()], examDate:EXAM_DATE, daysLeft:daysBetween(TODAY,EXAM_DATE),
     capacity:'Thứ Hai–Sáu: '+WEEKDAY_MIN+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
-    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, gói từ vựng hằng ngày (20–25 từ của các đề trong ngày) ~20 phút.',
-    skills, vocab:{total:VTOTAL,dailyPack:'20–25 từ B2+ lấy từ các đề của ngày (tối đa 10 từ mới + từ cần ôn)',packsDoneLast7:(()=>{let n=0;for(let i=-7;i<0;i++){const k=vpack(addDays(TODAY,i));if(k&&k.doneAt)n++;}return n;})(),learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
+    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, gói từ vựng hằng ngày (40–45 từ: từ đến hạn ôn theo lặp lại ngắt quãng + ≥8 từ mới của các đề trong ngày) ~25 phút.',
+    skills, vocab:{total:VTOTAL,dailyPack:'40–45 từ B2+ (≥8 từ mới): từ đến hạn ôn (Lv1–5 ôn sau 1/2/4/7/14 ngày) + từ mới của các đề trong ngày',packsDoneLast7:(()=>{let n=0;for(let i=-7;i<0;i++){const k=vpack(addDays(TODAY,i));if(k&&k.doneAt)n++;}return n;})(),learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
     planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
       lateUndone:tasks.filter(x=>x.date<TODAY&&!x.done).map(x=>({date:x.date,skill:x.t.skill,de:x.t.de,kind:x.t.kind,note:x.t.note}))},

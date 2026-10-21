@@ -133,6 +133,7 @@ input.ql-in.ql-bad{color:#fff!important;background:var(--accent);border-bottom-c
 .ql-gap{display:inline-block;width:14px}
 .pchips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .pchip{font-size:13px;border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:3px 10px}
+.pchip em{font-style:normal;font-size:10px;font-weight:700;color:var(--muted);margin-left:5px}
 .pchip i{font-style:normal;font-size:10px;font-weight:700;color:var(--accent);margin-left:5px;text-transform:uppercase}
 .pchip.done{background:#e3f4ec;border-color:#bfe3cf;text-decoration:line-through;color:var(--muted)}
 .desel{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff}
@@ -234,33 +235,44 @@ function setSaveBar(){
 /* ============ mastery ============ */
 const KEY = en => en.toLowerCase();
 function vRec(en){ return PROG.vocab[KEY(en)]||null; }
-function vLevel(en){
-  const r=vRec(en); if(!r||!r.seen) return -1;      // -1 = chưa học
-  const a=r.correct/r.seen;
-  return a>=1?5 : a>=.9?4 : a>=.8?3 : a>=.7?2 : a>=.6?1 : 0;
-}
-const LVNAME=['<60% — chưa nhớ','60% — mới nhớ','70% — lõm bõm','80% — khá','90% — tốt','100% — thuần thục'];
+/* ============ lặp lại ngắt quãng (hộp Leitner) ============
+   Lv0 = đang học: chọn nghĩa đúng (chế độ 1) rồi điền câu đúng (chế độ 2) → lên Lv1.
+   Lv1–5 = đã nhớ, ôn lại sau INTERVAL[Lv] ngày; Lv1 ôn bằng điền câu, Lv2–5 bằng điền ô chữ.
+   Ôn đúng hạn: đúng → lên 1 Lv, sai → về Lv0 (học lại ngay: cần đúng 1 lần ở chế độ điền câu để về Lv1).
+   Làm thêm khi chưa đến hạn chỉ cộng số liệu, không đổi Lv — giữ đúng khoảng cách ôn. */
+const INTERVAL=[0,1,2,4,7,14];
+function ymdOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return ymdOf(new Date()); }
+function addDaysStr(day,n){ const [y,m,dd]=day.split('-').map(Number); return ymdOf(new Date(y,m-1,dd+n)); }
+// Bản ghi cũ (chưa có Lv): suy Lv từ chế độ cũ và cho đến hạn ôn ngay hôm nay
+function srs(r){ if(r&&r.seen&&r.box==null){ r.box=(r.mode===3&&(r.sc||0)>=2)?3:r.mode===2?2:1; r.due=todayStr(); r.step=0; } return r; }
+function vLevel(en){ const r=vRec(en); if(!r||!r.seen) return -1; return srs(r).box; }
+function isDue(r,day){ return !!(r&&r.seen&&(srs(r).box===0||(r.due||'')<=day)); }
+function modeOf(r){ if(!r||!r.seen) return 1; srs(r); return r.box===0?((r.step||0)>=1?2:1):(r.box===1?2:3); }
+const LVNAME=['đang học','ôn sau 1 ngày','ôn sau 2 ngày','ôn sau 4 ngày','ôn sau 7 ngày','ôn sau 14 ngày — nhớ lâu'];
 function levelBadge(en){
   const l=vLevel(en);
   if(l<0) return '<span class="lv lvnew">chưa học</span>';
   return '<span class="lv lv'+l+'" title="'+LVNAME[l]+'">Lv'+l+'</span>';
 }
-// Máy trạng thái: M1 --3 đúng liên tiếp--> M2 --3 đúng liên tiếp--> M3
-//                 M2 <--quá 3 sai liên tiếp-- M3 ; M1 <--quá 3 sai liên tiếp-- M2
 function vRecord(en, ok){
-  const k=KEY(en);
-  const r=PROG.vocab[k]||{en:en,seen:0,correct:0,mode:1,sc:0,sw:0};
+  const k=KEY(en), day=todayStr();
+  const r=srs(PROG.vocab[k]||{en:en,seen:0,correct:0,box:0,step:0,due:day});
+  const before=r.box;
   r.seen++;
-  if(ok){ r.correct++; r.sc++; r.sw=0; } else { r.sw++; r.sc=0; }
-  const before=r.mode;
-  if(r.mode===1){ if(r.sc>=3){ r.mode=2; r.sc=0; r.sw=0; } }
-  else if(r.mode===2){ if(r.sc>=3){ r.mode=3; r.sc=0; r.sw=0; } else if(r.sw>3){ r.mode=1; r.sc=0; r.sw=0; } }
-  else if(r.mode===3){ if(r.sw>3){ r.mode=2; r.sc=0; r.sw=0; } }
-  r.moved = r.mode!==before ? (r.mode>before?'up':'down') : '';
+  if(ok){ r.correct++; r.sc=(r.sc||0)+1; r.sw=0; } else { r.sw=(r.sw||0)+1; r.sc=0; }
+  if(r.box===0){
+    if(ok){ r.step=(r.step||0)+1; if(r.step>=2){ r.box=1; r.step=0; r.due=addDaysStr(day,INTERVAL[1]); r.bday=day; } }
+    else r.step=0;
+  }else if((r.due||'')<=day&&r.graded!==day){
+    r.graded=day;
+    if(ok){ r.box=Math.min(5,r.box+1); r.due=addDaysStr(day,INTERVAL[r.box]); r.bday=day; }
+    else { r.box=0; r.step=1; }
+  }
+  r.moved=r.box!==before?(r.box>before?'up':'down'):'';
+  r.mode=modeOf(r);
   PROG.vocab[k]=r;
-  // Nhật ký theo ngày (giờ địa phương) để trang Lộ trình tự kiểm tra việc học từ — mỗi ngày là
-  // 1 bản ghi có "seen" nên hàm merge đồng bộ giữ bản có nhiều lượt hơn.
-  const d=new Date(), day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  // Nhật ký theo ngày (giờ địa phương); mỗi ngày là 1 bản ghi có "seen" nên hàm merge đồng bộ giữ bản có nhiều lượt hơn.
   if(!PROG.vlog)PROG.vlog={};
   const lg=PROG.vlog[day]||(PROG.vlog[day]={seen:0,correct:0,newWords:0});
   lg.seen++; if(ok)lg.correct++; if(r.seen===1)lg.newWords++;
@@ -268,51 +280,46 @@ function vRecord(en, ok){
   progSave(); return r;
 }
 
-/* ============ gói từ theo đề ============
+/* ============ gói từ hằng ngày ============
    Mỗi từ có v.src = các đề chứa từ đó (L1–L16, R1–R15, W1–W20, S1–S20).
-   Gói hôm nay = từ thuộc các đề có trong Lộ trình hôm nay: tối đa PACK_NEW từ mới + từ cũ cần ôn (Lv thấp / lâu chưa gặp),
-   tổng PACK_MIN–PACK_MAX từ; thiếu thì bù từ yếu của đề khác. Gói chốt một lần mỗi ngày trong PROG.vpack[ngày]
-   (bản ghi có "seen" = số từ đã xong để merge giữ bản cao hơn). Gói xong khi mọi từ được trả lời đúng ít nhất 1 lần trong ngày. */
-const PACK_MIN=20, PACK_MAX=25, PACK_NEW=10;
+   Gói PACK_MIN–PACK_MAX từ = từ đến hạn ôn (ưu tiên, hạn sớm trước) + từ mới (từ của các đề hôm nay trong Lộ trình trước),
+   ít nhất NEW_MIN từ mới/ngày. Gói chốt một lần mỗi ngày trong PROG.vpack[ngày]; "attempts" = phiên bản luật để merge
+   đồng bộ ưu tiên bản mới. Một từ xong trong ngày khi được lên Lv hôm nay (từ mới lên Lv1, từ ôn lên Lv kế tiếp). */
+const PACK_MIN=40, PACK_MAX=45, NEW_MIN=8, NEW_MAX=12, PACK_RULE=3;
 const VIDX={}; VOCAB.forEach((v,i)=>{ VIDX[KEY(v.en)]=i; });
 const SKL={listening:'L',reading:'R',writing:'W',speaking:'S'};
 const SKNAME={L:'Listening',R:'Reading',W:'Writing',S:'Speaking'};
-function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function todayStr(){ return ymd(new Date()); }
-function daysSince(day){ if(!day) return 99; const [y,m,dd]=day.split('-').map(Number); return Math.round((new Date(new Date().toDateString())-new Date(y,m-1,dd))/86400000); }
 function planDeKeys(day){
   const days=(PROG.plan&&PROG.plan.cur&&PROG.plan.cur.days)||{}, ks=[];
   (days[day]||[]).forEach(t=>{ if(SKL[t.skill]&&t.de>0&&!ks.includes(SKL[t.skill]+t.de)) ks.push(SKL[t.skill]+t.de); });
   return ks;
 }
 function isNewWord(v){ const r=vRec(v.en); return !r||!r.seen; }
-function needReview(v){ const r=vRec(v.en); return !!(r&&r.seen&&(vLevel(v.en)<=3||daysSince(r.last)>=3)); }
-function doneToday(en,day){ const r=vRec(en); return !!(r&&r.seen&&r.last===day&&r.sw===0); }
+function doneToday(en,day){ const r=vRec(en); return !!(r&&r.bday===day&&srs(r).box>=1); }
+function modeTag(en){ const r=vRec(en); if(!r||!r.seen) return 'mới'; return srs(r).box===0?'Lv0':'Lv'+r.box; }
 function buildPack(day){
   const keys=planDeKeys(day), inDe=v=>(v.src||[]).filter(k=>keys.includes(k)).length;
-  const today=VOCAB.filter(v=>inDe(v)>0);
-  const fresh=today.filter(isNewWord).sort((a,b)=>inDe(b)-inDe(a)).slice(0,PACK_NEW);
-  const review=today.filter(v=>!isNewWord(v)&&needReview(v)).sort((a,b)=>vLevel(a.en)-vLevel(b.en));
-  let pack=fresh.concat(review).slice(0,PACK_MAX);
-  if(pack.length<PACK_MIN){   // bù: từ cũ yếu của đề khác
-    pack=pack.concat(VOCAB.filter(v=>!pack.includes(v)&&!isNewWord(v)&&needReview(v)).sort((a,b)=>vLevel(a.en)-vLevel(b.en)).slice(0,PACK_MIN-pack.length));
-  }
-  let newCount=fresh.length;
-  if(pack.length<PACK_MIN&&newCount<PACK_NEW){   // bù: từ mới của đề khác (vẫn giữ tối đa PACK_NEW từ mới)
-    const extra=VOCAB.filter(v=>!pack.includes(v)&&isNewWord(v)).slice(0,Math.min(PACK_NEW-newCount,PACK_MIN-pack.length));
-    pack=pack.concat(extra); newCount+=extra.length;
-  }
-  return {seen:0,total:pack.length,words:pack.map(v=>KEY(v.en)),newWords:pack.filter(isNewWord).map(v=>KEY(v.en)),de:keys,doneAt:''};
+  const due=VOCAB.filter(v=>isDue(vRec(v.en),day))
+    .sort((a,b)=>(((vRec(a.en).due||'')<(vRec(b.en).due||''))?-1:((vRec(a.en).due||'')>(vRec(b.en).due||''))?1:0)||(inDe(b)-inDe(a)));
+  const fresh=VOCAB.filter(isNewWord).sort((a,b)=>inDe(b)-inDe(a));   // từ của đề hôm nay trước, rồi theo thứ tự danh sách
+  const newQuota=Math.min(fresh.length,Math.max(NEW_MIN,Math.min(NEW_MAX,PACK_MAX-due.length)));
+  const dueTake=due.slice(0,PACK_MAX-newQuota);
+  let newTake=fresh.slice(0,newQuota);
+  if(dueTake.length+newTake.length<PACK_MIN) newTake=fresh.slice(0,Math.min(fresh.length,PACK_MIN-dueTake.length));
+  const pack=dueTake.concat(newTake);
+  return {attempts:PACK_RULE,seen:0,total:pack.length,words:pack.map(v=>KEY(v.en)),newWords:newTake.map(v=>KEY(v.en)),
+          dueWords:dueTake.map(v=>KEY(v.en)),de:keys,doneAt:''};
 }
 function getPack(day){
   if(!PROG.vpack) PROG.vpack={};
   let pk=PROG.vpack[day];
-  if(!pk||!pk.words||!pk.words.length){ pk=PROG.vpack[day]=buildPack(day); updatePack(day,true); progSave(); }
+  // chưa có gói, hoặc gói tạo theo luật cũ → chốt gói mới theo luật hiện tại
+  if(!pk||!pk.words||!pk.words.length||pk.attempts!==PACK_RULE){ pk=PROG.vpack[day]=buildPack(day); updatePack(day); progSave(); }
   return pk;
 }
 function packWords(pk){ return pk.words.map(k=>VOCAB[VIDX[k]]).filter(Boolean); }
-function updatePack(day,noSave){
-  const pk=PROG.vpack&&PROG.vpack[day]; if(!pk) return;
+function updatePack(day){
+  const pk=PROG.vpack&&PROG.vpack[day]; if(!pk||pk.attempts!==PACK_RULE) return;
   const n=packWords(pk).filter(v=>doneToday(v.en,day)).length;
   pk.seen=n; if(n>=pk.total&&pk.total>0&&!pk.doneAt) pk.doneAt=day;
 }
@@ -389,17 +396,18 @@ function renderDash(){
 
 function packHTML(){
   const day=todayStr(), pk=getPack(day), words=packWords(pk);
-  const done=words.filter(v=>doneToday(v.en,day)).length, nNew=pk.newWords.length;
+  const done=words.filter(v=>doneToday(v.en,day)).length, nNew=pk.newWords.length, nDue=(pk.dueWords||[]).length;
+  const dueLater=VOCAB.filter(v=>{const r=vRec(v.en);return r&&r.seen&&srs(r).box>0&&r.due===addDaysStr(day,1);}).length;
   const chips=words.map(v=>'<span class="pchip'+(doneToday(v.en,day)?' done':'')+'" title="'+esc(v.vi)+'">'+esc(v.en)
-    +(pk.newWords.includes(KEY(v.en))?'<i>mới</i>':'')+'</span>').join('');
+    +'<em>'+modeTag(v.en)+'</em></span>').join('');
   const deTxt=pk.de.length?pk.de.map(k=>'<b>'+k+'</b>').join(' · '):'chưa có đề nào trong Lộ trình hôm nay → gói ôn tổng hợp';
   let opts='';
   ['L','R','W','S'].forEach(c=>{
     const n={L:16,R:15,W:20,S:20}[c];
     for(let i=1;i<=n;i++){ const k=c+i, w=deWords(k).length; if(w) opts+='<option value="'+k+'">'+SKNAME[c]+' Đề '+i+' — '+w+' từ</option>'; }
   });
-  return '<div class="dash-h" style="margin-top:18px">📅 Gói từ hôm nay — '+pk.total+' từ ('+nNew+' mới · '+(pk.total-nNew)+' ôn)</div>'
-    +'<div class="dash-s">Lấy từ các đề của hôm nay trong Lộ trình: '+deTxt+'. Gói <b>xong</b> khi mỗi từ được trả lời đúng ít nhất 1 lần hôm nay — đã xong <b>'+done+'/'+pk.total+'</b>'+(pk.doneAt?' ✅':'')+'.</div>'
+  return '<div class="dash-h" style="margin-top:18px">📅 Gói từ hôm nay — '+pk.total+' từ ('+nDue+' đến hạn ôn · '+nNew+' mới)</div>'
+    +'<div class="dash-s">Lấy từ các đề của hôm nay trong Lộ trình: '+deTxt+'. Lặp lại ngắt quãng: từ mới đúng 2 lần (chọn nghĩa → điền câu) lên <b>Lv1</b>; từ đến hạn làm 1 lần — đúng lên Lv, sai về Lv0 học lại. Lv1→5 ôn sau 1 · 2 · 4 · 7 · 14 ngày. Đã xong <b>'+done+'/'+pk.total+'</b>'+' · ngày mai đến hạn '+dueLater+' từ'+(pk.doneAt?' ✅':'')+'.</div>'
     +'<div class="pchips">'+chips+'</div>'
     +'<div class="btnrow"><button class="btn primary" id="btnPack">'+(pk.doneAt?'🔁 Ôn lại gói hôm nay':'▶ Học gói hôm nay')+'</button></div>'
     +'<div class="dash-h" style="margin-top:18px">📚 Từ theo đề</div>'
@@ -437,7 +445,7 @@ function nextQ(){
     qz.cur=qz.pool[qz.order[qz.oi]]; qz.oi++;
   }
   qz.last=qz.cur.en;
-  const r=vRec(qz.cur.en); let m=r?r.mode:1;
+  let m=modeOf(vRec(qz.cur.en));
   if(!qz.cur.gap) m=1;                 // từ không tách được chỗ trống -> chỉ chế độ 1
   qz.mode=m; qz.answered=false; renderQ();
 }
@@ -447,7 +455,7 @@ function distractors(en,n){
 }
 function packDoneScreen(){
   $('trainer').innerHTML='<div class="qz-q" style="font-size:22px;margin:10px 0">🎉 Xong gói từ hôm nay!</div>'
-    +'<div class="qz-vi">Cả '+qz.pool.length+' từ đã được trả lời đúng · đúng '+qz.right+'/'+qz.done+' câu trong buổi này. Trang Lộ trình đã tự đánh dấu xong.</div>'
+    +'<div class="qz-vi">Cả '+qz.pool.length+' từ đã lên Lv hôm nay · đúng '+qz.right+'/'+qz.done+' câu trong buổi này. Các từ sẽ tự quay lại đúng hạn ôn. Trang Lộ trình đã tự đánh dấu xong.</div>'
     +'<div class="btnrow" style="justify-content:center;margin-top:14px"><button class="btn" id="gdMore">Ôn tiếp gói này</button><button class="btn primary" id="gdExit">Xong</button></div>';
   $('gdMore').onclick=nextQ; $('gdExit').onclick=endQuiz;
 }
@@ -575,8 +583,9 @@ function finish(ok,v){
   qz.done++; if(ok)qz.right++;
   say(v.en);                    // tự phát âm đáp án đúng khi hiện đáp án
   const r=vRecord(v.en, ok);
-  const moved = r.moved==='up' ? ' <b style="color:var(--green)">▲ lên chế độ '+r.mode+'</b>'
-              : r.moved==='down' ? ' <b style="color:var(--accent)">▼ về chế độ '+r.mode+'</b>' : '';
+  const moved = r.moved==='up' ? ' <b style="color:var(--green)">▲ lên Lv'+r.box+' · ôn lại sau '+INTERVAL[r.box]+' ngày</b>'
+              : r.moved==='down' ? ' <b style="color:var(--accent)">▼ về Lv0 — học lại</b>'
+              : (r.box===0&&ok&&r.step===1) ? ' <b style="color:var(--green)">· đúng thêm 1 lần (điền câu) để lên Lv1</b>' : '';
   const fb=$('qzFb');
   fb.innerHTML='<div class="qz-fb '+(ok?'ok':'no')+'">'
       +(ok?'✓ Chính xác!':'✗ Chưa đúng — đáp án: <span class="ans">'+esc(v.en)+'</span>')+'</div>'
@@ -606,7 +615,7 @@ function renderList(){
     const row=document.createElement('div'); row.className='wrow';
     row.innerHTML='<span class="wen">'+esc(v.en)+'</span>'+posBadge(v.pos)+'<span class="wipa">'+esc(v.ipa||'')+'</span>'
       +'<span class="wvi">'+esc(v.vi)+'</span>'+levelBadge(v.en)
-      +'<span class="wstat">'+(r?('đúng '+r.correct+'/'+r.seen+' · M'+r.mode):'—')+'</span>'
+      +'<span class="wstat">'+(r&&r.seen?('đúng '+r.correct+'/'+r.seen+' · '+(srs(r).box?'ôn '+r.due.slice(8)+'/'+r.due.slice(5,7):'đang học')):'—')+'</span>'
       +'<span class="wsrc" title="Có trong các đề">'+esc((v.src||[]).slice(0,5).join(' ')+((v.src||[]).length>5?' …':''))+'</span>';
     const p=document.createElement('button'); p.className='wplay'; p.textContent='🔊'; p.onclick=()=>say(v.en);
     row.appendChild(p); wl.appendChild(row);
