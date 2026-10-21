@@ -189,7 +189,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=11;
+const PLAN_VER=12;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -303,8 +303,13 @@ function phase2(){
 function generateDays(from,skip){
   skip=skip||{};
   const days={},q={},cyc={},ptr={};
-  // Vòng làm lại: đề đã làm (điểm thấp trước), tiếp theo là các đề sẽ làm lần đầu trong lịch này.
-  DE_SKILLS.forEach(s=>{q[s]=skillStats(s).neverDone.slice();const w=weakOrder(s);cyc[s]=w.concat(q[s].filter(de=>!w.includes(de)));ptr[s]=0;});
+  // Vòng làm lại: đi tiếp theo thứ tự đề, bắt đầu từ đề ngay sau đề gần nhất đã nộp trong đợt ôn này (từ STUDY_START),
+  // quay vòng 1 → N. Đề chưa làm lần nào (q) luôn được xếp trước.
+  DE_SKILLS.forEach(s=>{
+    q[s]=skillStats(s).neverDone.slice();
+    const N=SK[s].total,start=nextDeAfterRecent(s);
+    cyc[s]=Array.from({length:N},(_,i)=>((start-1+i)%N)+1);ptr[s]=0;
+  });
   const next=s=>{
     const tip=s==='speaking'?'':'chọn ⏱ Thi bấm giờ để lưu thời gian';
     if(q[s].length)return task(s,q[s].shift(),'new',MIN[s],tip);
@@ -356,6 +361,13 @@ function rebuildFrom(from){
 /* ===== Kiểm tra hoàn thành — chỉ dựa trên bài đã nộp, không tick tay =====
    Mỗi lần "Ghi kết quả" trong module chỉ được tính cho đúng 1 việc. Việc gắn đề cụ thể được ghép trước,
    sau đó việc "làm lại N đề" dùng các lần nộp còn lại. Nộp sớm tối đa 6 ngày hoặc nộp trễ đều được tính. */
+// Đợt ôn hiện tại bắt đầu 19/10 (lộ trình đầu tiên) — dùng để biết đã làm tới đề nào
+const STUDY_START='2026-10-19';
+function nextDeAfterRecent(skill){
+  const S=PROG[skill]||{},N=SK[skill].total;let last=null,lastDe=0;
+  for(let i=1;i<=N;i++){((S['de'+i]&&S['de'+i].history)||[]).forEach(h=>{if(h.date&&ymd(new Date(h.date))>=STUDY_START&&(!last||h.date>last)){last=h.date;lastDe=i;}});}
+  return lastDe?(lastDe%N)+1:1;
+}
 function submissions(skill){
   const S=PROG[skill]||{},ev=[];
   for(let i=1;i<=SK[skill].total;i++){const r=S['de'+i];((r&&r.history)||[]).forEach(h=>{if(h.date)ev.push({day:ymd(new Date(h.date)),de:i,used:false});});}
