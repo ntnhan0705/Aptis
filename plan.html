@@ -78,6 +78,11 @@
   .prio .act{font-size:14px;margin-top:4px}
   .msg{font-style:italic;margin-top:10px}
   .warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px}
+  .fc{margin-top:12px;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55}
+  .fc.ok{background:var(--ok-soft);border:1px solid #cfe6d6;color:#1f5f43}
+  .fc.warn{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12}
+  .fc.bad{background:var(--accent-soft);border:1px solid #f4c4b9;color:#7f1d12}
+  .fc-fix{margin-top:6px}
   .err{background:var(--accent-soft);border:1px solid #f4c4b9;color:#9b2c1c;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px}
   .tok{font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);margin-top:8px}
   .hist{font-size:13.5px}
@@ -98,6 +103,7 @@
   <div class="kpis" id="kpis"></div>
   <div class="bar"><span id="planBar"></span></div>
   <div class="mono muted" style="font-size:11.5px" id="planBarLbl"></div>
+  <div class="fc" id="forecast"></div>
 
   <h2>📌 Hôm nay</h2>
   <div class="box" id="today"></div>
@@ -402,7 +408,8 @@ function computeStatus(){
       if(ok)['listening','reading','speaking'].forEach(s=>take(s,from,0));
       st[key]={done:ok,by:ok?'đã nộp L + R + S':'cần nộp 1 đề L, R, S'};
     }else if(t.skill==='vocab'){
-      if(t.pack){const pk=vpack(date);st[key]={done:!!(pk&&pk.doneAt),by:pk?pk.seen+'/'+pk.total+' từ đã xong'+(pk.doneAt?' · xong':''):'chưa mở gói ngày này'};}
+      if(t.pack&&date<TODAY&&!(vpack(date)&&vpack(date).doneAt)){st[key]={done:false,skip:true,by:'ngày đã qua — từ đến hạn tự dồn sang gói hôm nay, không tính trễ'};}
+      else if(t.pack){const pk=vpack(date);st[key]={done:!!(pk&&pk.doneAt),by:pk?pk.seen+'/'+pk.total+' từ đã xong'+(pk.doneAt?' · xong':''):'chưa mở gói ngày này'};}
       else if(t.group){const r=vgroup(t.group);st[key]={done:!!(r&&r.doneAt),by:r&&r.doneAt?'thuộc ngày '+fmt(r.doneAt):(r?r.seen:0)+'/11 từ đã thuộc'};}
       else if(t.to){const n=vocabSeen();st[key]={done:n>=t.to,by:n+'/'+t.to+' từ đã học'};}
       else if(t.kind==='new'){const need=t.need||13,g=drain(vNew,from,need);st[key]={done:g>=need,by:g+'/'+need+' từ mới'};}
@@ -414,7 +421,7 @@ function computeStatus(){
 let STATUS={};
 function allTasks(){
   const D=plan().days,out=[];
-  Object.keys(D).sort().forEach(date=>D[date].forEach((t,i)=>{const s=STATUS[date+'|'+i]||{done:false};out.push({date,i,t,done:s.done,by:s.by||''});}));
+  Object.keys(D).sort().forEach(date=>D[date].forEach((t,i)=>{const s=STATUS[date+'|'+i]||{done:false};out.push({date,i,t,done:s.done,skip:!!s.skip,by:s.by||''});}));
   return out;
 }
 
@@ -434,18 +441,61 @@ function taskHTML(x,preview){
   let note=t.note||'';
   if(!t.de&&t.kind==='redo'&&DE_SKILLS.includes(t.skill)){const w=weakOrder(t.skill).slice(0,3);if(w.length)note+=(note?' · ':'')+'gợi ý: Đề '+w.join(', ');}
   return '<div class="task'+(x.done?' done':'')+'">'
-    +'<div class="ck" title="'+(preview?'':x.done?'Đã xong (theo bài đã nộp)':'Chưa có bài nộp')+'">'+(preview?'·':x.done?'✅':'⬜')+'</div>'
+    +'<div class="ck" title="'+(preview?'':x.done?'Đã xong (theo bài đã nộp)':'Chưa có bài nộp')+'">'+(preview?'·':x.done?'✅':x.skip?'⏭':'⬜')+'</div>'
     +'<div class="body"><div class="t"><a href="'+s.file+'">'+esc(taskTitle(t))+'</a>'
     +'<span class="tag '+t.kind+'">'+(t.pack?'gói từ':KIND_LBL[t.kind])+'</span></div>'
     +(note?'<div class="n">'+esc(note)+'</div>':'')
     +(!preview&&x.by?'<div class="n by">'+(x.done?'✓ ':'… ')+esc(x.by)+'</div>':'')+'</div>'
     +'<div class="min">'+(t.minutes||0)+'′</div></div>';
 }
+/* ===== Dự báo đến ngày thi =====
+   Chỉ tính việc làm đề (L/R/W/S, thi thử) — gói từ vựng tự điều chỉnh theo lặp lại ngắt quãng.
+   Tốc độ = tỉ lệ việc của các ngày đã qua đã xong. Nếu giữ tốc độ này cho phần còn lại, ước tính % lộ trình xong vào ngày thi;
+   phần trễ quy ra phút để biết cần bù thêm bao nhiêu mỗi ngày. */
+function forecast(tasks){
+  const work=tasks.filter(x=>x.t.skill!=='vocab'&&x.date<EXAM_DATE);
+  const past=work.filter(x=>x.date<TODAY), pastDone=past.filter(x=>x.done).length;
+  // Làm mượt khi mới có ít ngày dữ liệu: coi như đã có PRIOR việc xong đúng hạn — ảnh hưởng mờ dần khi dữ liệu thật tăng
+  const PRIOR=4, pace=(pastDone+PRIOR)/(past.length+PRIOR);
+  const pastDays=new Set(past.map(x=>x.date)).size;
+  const late=past.filter(x=>!x.done), lateMin=late.reduce((a,x)=>a+(x.t.minutes||0),0);
+  const future=work.filter(x=>x.date>=TODAY&&!x.done), futureMin=future.reduce((a,x)=>a+(x.t.minutes||0),0);
+  const doneAll=work.filter(x=>x.done).length;
+  const projected=Math.min(work.length,doneAll+Math.round(pace*future.length));
+  const pct=work.length?Math.round(projected/work.length*100):100;
+  const daysLeft=Math.max(0,daysBetween(TODAY,EXAM_DATE)), d7=Math.min(7,daysLeft);
+  let capLeft=0;for(let i=0;i<daysLeft;i++)capLeft+=capacity(addDays(TODAY,i));
+  const bySkill={};late.forEach(x=>{const k=x.t.skill==='all'?'thi thử':SK[x.t.skill].name;bySkill[k]=(bySkill[k]||0)+1;});
+  return {pacePct:Math.round(pace*100),pastDays,behindPct:past.length?Math.round(late.length/past.length*100):0,lateCount:late.length,lateMin,lateBySkill:bySkill,projectedPct:pct,shortfallPct:100-pct,
+    missingTasks:work.length-projected,daysLeft,extraMinPerDay7:d7?Math.ceil(lateMin/d7):lateMin,
+    extraMinPerDayToExam:daysLeft?Math.ceil(lateMin/daysLeft):lateMin,needMin:futureMin+lateMin,capacityMin:capLeft};
+}
+function renderForecast(tasks){
+  const f=forecast(tasks),el=$('forecast');if(!el)return;
+  if(TODAY>=EXAM_DATE){el.innerHTML='';return;}
+  const h=m=>m>=60?Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):''):m+' phút';
+  if(!f.lateCount){
+    el.className='fc ok';
+    el.innerHTML='✅ <b>Đúng tiến độ.</b> Giữ nhịp này sẽ hoàn thành <b>100%</b> lộ trình trước ngày thi — còn '+f.daysLeft+' ngày, '+h(f.needMin)+' việc làm đề trong quỹ '+h(f.capacityMin)+'.';
+    return;
+  }
+  const over=f.needMin>f.capacityMin;
+  el.className='fc '+(f.shortfallPct>=15?'bad':'warn');
+  el.innerHTML='⚠️ <b>Dự báo đến ngày thi:</b> đang trễ <b>'+f.lateCount+' việc</b> (~'+h(f.lateMin)+': '
+    +Object.entries(f.lateBySkill).map(([k,n])=>k+' '+n).join(', ')+'). '
+    +'Tức là đang trễ <b>'+f.behindPct+'%</b> so với kế hoạch tính tới hôm nay. '
+    +'Nếu giữ tốc độ hiện tại (~'+f.pacePct+'% việc xong đúng hạn, tính trên '+f.pastDays+' ngày), đến 23/11 sẽ xong khoảng <b>'+f.projectedPct+'%</b> lộ trình — '
+    +'<b>thiếu '+f.shortfallPct+'%</b> (~'+f.missingTasks+' việc).'
+    +'<div class="fc-fix"><b>Cách bù:</b> thêm <b>~'+f.extraMinPerDay7+' phút/ngày trong 7 ngày tới</b>'
+    +' · hoặc <b>~'+f.extraMinPerDayToExam+' phút/ngày</b> tới ngày thi'
+    +' · hoặc bấm <b>🤖 AI coach</b> để dồn lại lịch 7 ngày tới.'
+    +(over?' <span class="down">Tổng việc còn lại ('+h(f.needMin)+') đã vượt quỹ thời gian ('+h(f.capacityMin)+') — cần tăng giờ học hoặc bỏ bớt đề làm lại.</span>':'')+'</div>';
+}
 function render(){
   STATUS=computeStatus();
   const tasks=allTasks();
   // "Đến hạn" = việc của các ngày TRƯỚC hôm nay; việc hôm nay chưa tính là trễ.
-  const due=tasks.filter(x=>x.date<TODAY),dueDone=due.filter(x=>x.done).length;
+  const due=tasks.filter(x=>x.date<TODAY&&!x.skip),dueDone=due.filter(x=>x.done).length;
   const doneAll=tasks.filter(x=>x.done).length;
   // Vượt = việc của các ngày SAU đã làm xong; trễ = việc của các ngày TRƯỚC chưa xong. Việc hôm nay không tính.
   const ahead=tasks.filter(x=>x.date>TODAY&&x.done).length,diff=ahead-(due.length-dueDone);
@@ -458,7 +508,8 @@ function render(){
   $('planBarLbl').textContent='Cả lộ trình: '+doneAll+'/'+tasks.length+' việc xong · các ngày trước còn '+(due.length-dueDone)+' việc chưa xong'
     +(ahead>0?' · đã làm trước '+ahead+' việc của các ngày sau':'');
 
-  const late=tasks.filter(x=>x.date<TODAY&&!x.done);
+  const late=tasks.filter(x=>x.date<TODAY&&!x.done&&!x.skip);
+  renderForecast(tasks);
   let h='';
   if(TODAY>=EXAM_DATE)h='<div class="empty">'+(TODAY===EXAM_DATE?'Hôm nay thi — chúc bạn thi tốt! 🍀':'Lộ trình đã kết thúc.')+'</div>';
   else{
@@ -524,7 +575,7 @@ function fmt(d){return d.slice(8)+'/'+d.slice(5,7);}
 
 /* ===== AI coach ===== */
 function buildSnapshot(){
-  const tasks=allTasks(),due=tasks.filter(x=>x.date<TODAY);
+  const tasks=allTasks(),due=tasks.filter(x=>x.date<TODAY&&!x.skip);
   const skills={};
   DE_SKILLS.forEach(s=>{skills[s]=skillStats(s);});
   const V=PROG.vocab||{},seen=Object.keys(V).filter(k=>V[k]&&V[k].seen>0);
@@ -542,7 +593,8 @@ function buildSnapshot(){
     skills, vocab:{total:VTOTAL,dailyPack:'40–45 từ B2+ (≥8 từ mới): từ đến hạn ôn (Lv1–5 ôn sau 1/2/4/7/14 ngày) + từ mới của các đề trong ngày',packsDoneLast7:(()=>{let n=0;for(let i=-7;i<0;i++){const k=vpack(addDays(TODAY,i));if(k&&k.doneAt)n++;}return n;})(),learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
     planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
-      lateUndone:tasks.filter(x=>x.date<TODAY&&!x.done).map(x=>({date:x.date,skill:x.t.skill,de:x.t.de,kind:x.t.kind,note:x.t.note}))},
+      lateUndone:tasks.filter(x=>x.date<TODAY&&!x.done&&!x.skip).map(x=>({date:x.date,skill:x.t.skill,de:x.t.de,kind:x.t.kind,note:x.t.note})),
+      forecast:forecast(tasks)},
     currentNext7:upcoming,
     previousCoach:last?{date:last.at.slice(0,10),levels:last.levels,priorities:last.priorities.map(p=>p.title)}:null,
   };
