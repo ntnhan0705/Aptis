@@ -92,8 +92,10 @@
   .skcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
   @media(max-width:700px){.skcards{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .skc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;font-size:13px;line-height:1.5}
-  .skh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:2px 6px;font-weight:700;font-size:14px}
-  .st{font-family:'SF Mono',monospace;font-size:11px;font-weight:700;white-space:nowrap}
+  .skh{display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:center;gap:6px;font-weight:700;font-size:14px}
+  .skh>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .skh .st{flex:none}
+  .st{font-family:'SF Mono',monospace;font-size:10.5px;font-weight:700;white-space:nowrap}
   .st.ok{color:#006300} .st.bad{color:#d03b3b} .st.up{color:#006300}
   .meter{height:8px;border-radius:99px;background:#cde2fb;overflow:hidden;margin:8px 0 4px}
   .meter>span{display:block;height:100%;background:#2a78d6;border-radius:99px}
@@ -596,7 +598,7 @@ function skillPlan(tasks,skill){
   const done=t.filter(x=>x.done).length, late=t.filter(x=>x.date<TODAY&&!x.done).length, ahead=t.filter(x=>x.date>TODAY&&x.done).length;
   return {total:t.length,done,pct:t.length?Math.round(done/t.length*100):0,diff:ahead-late};
 }
-function stTag(diff){return diff>0?'<span class="st up">▲ Vượt '+diff+'</span>':diff<0?'<span class="st bad">▼ Chậm '+(-diff)+'</span>':'<span class="st ok">✓ Đúng lịch</span>';}
+function stTag(diff){return diff>0?'<span class="st up" title="Vượt lịch '+diff+' việc">▲ Vượt '+diff+'</span>':diff<0?'<span class="st bad" title="Chậm lịch '+(-diff)+' việc">▼ Chậm '+(-diff)+'</span>':'<span class="st ok" title="Đúng lịch">✓ Đúng</span>';}
 function renderSkillCards(tasks){
   $('skcards').innerHTML=DE_SKILLS.map(sk=>{
     const p=skillPlan(tasks,sk),ab=abilityOf(sk),st=skillStats(sk),w=st.weakParts[0];
