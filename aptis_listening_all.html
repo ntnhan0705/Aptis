@@ -8308,6 +8308,8 @@ function renderProgPanel(){
   el.innerHTML=msg;
 }
 
+// Mở từ Lộ trình: ?de=N chọn sẵn trọn đề N
+{ const n=+new URLSearchParams(location.search).get('de'); if(n>=1&&TESTS.some(t=>t.num===n)){ sel.test=n; sel.part='all'; } }
 buildSetup();
 startRun();
 progLoad().then(()=>buildSetup());

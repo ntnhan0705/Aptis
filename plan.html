@@ -133,7 +133,8 @@
   .cal-d{font-weight:700;font-size:12.5px;margin-bottom:2px} .cal-d small{font-weight:400;color:var(--muted)}
   .cal-c.exam .cal-d small{color:#c3c2b7}
   .cal-k{display:flex;flex-wrap:wrap;gap:2px 4px;font-family:'SF Mono',ui-monospace,monospace;font-size:10.5px}
-  .cc{white-space:nowrap} .cc.d{color:#006300;font-weight:700} .cc.sk{color:var(--muted);text-decoration:line-through}
+  .cc{white-space:nowrap;color:inherit;text-decoration:none;border-radius:4px;padding:0 1px} a.cc:hover{background:#1a2238;color:#fff}
+  a.ck.go{text-decoration:none;cursor:pointer;border-radius:4px} a.ck.go:hover{background:var(--accent-soft)} .cc.d{color:#006300;font-weight:700} .cc.sk{color:var(--muted);text-decoration:line-through}
   .cal-c.late .cc:not(.d):not(.sk){color:#b23a26;font-weight:700}
   .cal-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12px;color:var(--ink)}
   .cal-leg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid var(--line)}
@@ -182,7 +183,6 @@
     <div class="coach" id="coachOut"></div>
   </div>
 
-  <details class="sec"><summary>📊 Bảng điểm theo kỹ năng</summary><div class="box table-wrap" id="skills"></div></details>
   <details class="sec"><summary>⏱ Thời gian làm bài thực tế</summary><div class="box table-wrap" id="timing"></div></details>
 
   <h2>🗓 Toàn bộ lịch</h2>
@@ -502,8 +502,9 @@ function taskHTML(x,preview){
   let note=t.note||'';
   if(!t.de&&t.kind==='redo'&&DE_SKILLS.includes(t.skill)){const w=weakOrder(t.skill).slice(0,3);if(w.length)note+=(note?' · ':'')+'gợi ý: Đề '+w.join(', ');}
   return '<div class="task'+(x.done?' done':'')+'">'
-    +'<div class="ck" title="'+(preview?'':x.done?'Đã xong (theo bài đã nộp)':'Chưa có bài nộp')+'">'+(preview?'·':x.done?'✅':x.skip?'⏭':'⬜')+'</div>'
-    +'<div class="body"><div class="t"><a href="'+s.file+'">'+esc(taskTitle(t))+'</a>'
+    +(preview||x.skip?'<div class="ck">'+(preview?'·':'⏭')+'</div>'
+      :'<a class="ck go" href="'+taskHref(t)+'" title="'+(x.done?'Đã xong — bấm để làm lại':'Bấm để làm ngay')+'">'+(x.done?'✅':'⬜')+'</a>')
+    +'<div class="body"><div class="t"><a href="'+taskHref(t)+'">'+esc(taskTitle(t))+'</a>'
     +'<span class="tag '+t.kind+'">'+(t.pack?'gói từ':KIND_LBL[t.kind])+'</span></div>'
     +(note?'<div class="n">'+esc(note)+'</div>':'')
     +(!preview&&x.by?'<div class="n by">'+(x.done?'✓ ':'… ')+esc(x.by)+'</div>':'')+'</div>'
@@ -721,24 +722,10 @@ function render(){
   }
   $('today').innerHTML=h;
 
-  renderSkills(); renderCal(tasks); renderCoachHist();
+  renderTiming(); renderCal(tasks); renderCoachHist();
   renderSkillCards(tasks); renderVocabCard(); renderCefr(); renderTrend();
   const last=PROG.coach.log.reports.slice(-1)[0];
   $('coachLast').textContent=last?'Lần gần nhất: '+new Date(last.at).toLocaleString('vi-VN'):'Chưa chạy lần nào';
-}
-function renderSkills(){
-  let h='<table><tr><th>Kỹ năng</th><th>Đề đã làm</th><th>Lần đầu TB</th><th>Gần nhất TB</th><th>Part hay sai</th></tr>';
-  DE_SKILLS.forEach(s=>{
-    const st=skillStats(s),tr=(st.firstAvg!=null&&st.lastAvg!=null)?st.lastAvg-st.firstAvg:null;
-    h+='<tr><td>'+SK[s].ic+' '+SK[s].name+'</td><td class="num">'+st.done+'/'+st.total+'</td>'
-      +'<td class="num">'+(st.firstAvg==null?'—':st.firstAvg+'%')+'</td>'
-      +'<td class="num">'+(st.lastAvg==null?'—':st.lastAvg+'%')+(tr?' <span class="'+(tr>0?'up':'down')+'">'+(tr>0?'▲':'▼')+Math.abs(tr)+'</span>':'')+'</td>'
-      +'<td class="num">'+(st.weakParts.length?st.weakParts.slice(0,2).map(p=>p.part+' '+p.wrongRate+'%').join(', '):'—')+'</td></tr>';
-  });
-  const vl=PROG.vlog&&PROG.vlog[TODAY];
-  h+='<tr><td>📚 Từ vựng</td><td class="num">'+vocabSeen()+'/'+VTOTAL+'</td><td colspan="3" class="muted" style="font-size:13px">từ đã học'+(vl?' · hôm nay '+vl.seen+' lượt, '+vl.newWords+' từ mới':'')+'</td></tr></table>';
-  $('skills').innerHTML=h;
-  renderTiming();
 }
 function mmss(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 function renderTiming(){
@@ -758,6 +745,12 @@ function renderTiming(){
     +'<div class="muted" style="font-size:12.5px;margin-top:8px">Chỉ tính các lần chọn <b>⏱ Thi bấm giờ</b> rồi nộp trọn đề. <span class="tp tight">vàng</span> = dùng ≥90% thời gian · <span class="tp hard">đỏ</span> = gần hết giờ mà đúng dưới 80% → Part khó nhất. Writing: % = điểm AI trung bình × 10.</div>';
 }
 // Ký hiệu ngắn cho ô lịch: V = gói từ vựng, L4 = Listening đề 4, L+2 = làm lại 2 đề Listening bất kỳ, M = thi thử
+// Link mở thẳng việc đó: đề cụ thể → ?de=N; "làm lại N đề bất kỳ" → đề điểm thấp nhất
+function taskHref(t){
+  const base=(SK[t.skill]||SK.all).file;
+  const de=t.de>0?t.de:(DE_SKILLS.includes(t.skill)?(weakOrder(t.skill)[0]||0):0);
+  return de?base+'?de='+de:base;
+}
 function taskCode(t){
   if(t.skill==='vocab')return 'V';
   if(t.skill==='all')return 'M';
@@ -781,7 +774,8 @@ function renderCal(tasks){
       else cls='fut';
     }else if(inPlan)cls='fut';
     const mins=list.reduce((a,x)=>a+(x.skip?0:taskMin(x.t)),0);
-    const codes=list.map(x=>'<span class="cc'+(x.done?' d':'')+(x.skip?' sk':'')+'">'+taskCode(x.t)+(x.done?'✓':x.skip?'⏭':'')+'</span>').join('');
+    const codes=list.map(x=>x.skip?'<span class="cc sk">'+taskCode(x.t)+'⏭</span>'
+      :'<a class="cc'+(x.done?' d':'')+'" href="'+taskHref(x.t)+'" title="'+svgEsc(taskTitle(x.t))+' — bấm để mở">'+taskCode(x.t)+(x.done?'✓':'')+'</a>').join('');
     const tip=[DOW[parseYmd(d).getDay()]+' '+fmt(d)+(d===TODAY?' · hôm nay':'')+(d===EXAM_DATE?' · NGÀY THI':'')
       +(real.length?' · '+done+'/'+real.length+' việc xong · '+mins+'′':'')]
       .concat(list.map(x=>(x.done?'✓ ':x.skip?'⏭ ':(d<TODAY?'✗ ':'○ '))+taskTitle(x.t).replace(/^\S+\s/,'')+(x.skip?' (dồn sang gói mới)':' · '+taskMin(x.t)+'′')));
@@ -791,7 +785,7 @@ function renderCal(tasks){
       +(inPlan?'<div class="cal-k">'+codes+'</div>':'')+'</div>';
   }
   h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
-    +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới</span></div>';
+    +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span></div>';
   $('cal').innerHTML=h;
   bindTips($('cal'));
 }

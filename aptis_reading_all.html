@@ -4155,6 +4155,8 @@ function renderProgPanel(){
   el.innerHTML=msg;
 }
 
+// Mở từ Lộ trình: ?de=N chọn sẵn trọn đề N
+{ const n=+new URLSearchParams(location.search).get('de'); if(n>=1&&n<=TESTS.length){ sel.test=n-1; sel.part='all'; } }
 buildSetup();
 startRun();
 progLoad().then(()=>buildSetup());
