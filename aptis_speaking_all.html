@@ -343,6 +343,20 @@
   .ot-share th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px;border-bottom:1.5px solid var(--line)}
   .ot-share td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
   .ot-share td:last-child{white-space:nowrap;font-weight:700}
+  .ai-speak{margin-bottom:14px}
+  .ai-speak:empty{display:none}
+  .ai-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .ai-meta{font-size:12px;color:var(--muted)}
+  .ai-sum{margin:8px 0;font-style:italic}
+  .ai-crit{margin:6px 0;font-size:14px}
+  .ai-cs{display:inline-block;min-width:38px;text-align:center;font-weight:700;border-radius:8px;padding:1px 6px;background:#eef1f5}
+  .ai-cs.good{background:#e3f4ec;color:#1f7a52} .ai-cs.mid{background:#fff4dc;color:#946200} .ai-cs.low{background:#fde8e5;color:#b23a26}
+  .ai-cc{font-size:13px;color:#4a4438;margin:2px 0 0 46px}
+  .ai-sec{margin-top:10px;font-size:14px;line-height:1.55}
+  .ai-w{font-weight:700;color:#b23a26} .ai-tip{font-size:12.5px;color:var(--muted)}
+  .ai-better{background:#f3f6ee;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .ai-say{border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;padding:0 6px}
+  .ai-load{color:var(--muted);font-style:italic} .ai-err{color:#b23a26}
   .ot-panel{display:none}
   .ot-panel.show{display:block}
   .ot-memo{background:#fffbf0;border:1px solid var(--gold);border-radius:10px;padding:11px 14px;margin:4px 0 10px;font-size:13.5px;line-height:2;color:#5b4a1f}
@@ -433,13 +447,14 @@
   </div>
 
   <div class="practice-bar">
-    <button class="rec-btn" id="recBtn">🎙 Thu âm &amp; kiểm tra</button>
+    <button class="rec-btn" id="recBtn">🎙 Thu âm &amp; chấm AI</button>
     <button class="playback-btn" id="playbackBtn">🔁 Nghe lại bản thu</button>
-    <span class="rec-hint" id="recHint">Bấm rồi đọc to cả đoạn bằng tiếng Anh.</span>
+    <span class="rec-hint" id="recHint">Bấm rồi trả lời bằng tiếng Anh (tự nói hoặc đọc bài mẫu) — bấm Dừng để AI chấm.</span>
   </div>
 
   <div class="rec-result" id="recResult">
-    <h4>Kết quả đối chiếu theo từng câu</h4>
+    <div class="ai-speak" id="aiSpeak"></div>
+    <h4>Đối chiếu với bài mẫu (luyện đọc theo)</h4>
     <div id="recSentences"></div>
     <div class="rec-heard" id="recHeard"></div>
     <div id="recScoreWrap"></div>
@@ -1236,7 +1251,7 @@ timerBtn.onclick = function(){
 };
 // reset timer khi chuyển câu
 const _origRenderCard = renderCard;
-renderCard = function(){ _origRenderCard(); resetTimer(); hideRecResult(); if(typeof playbackBtn!=='undefined' && playbackBtn) playbackBtn.classList.remove('show'); if(typeof recognizing!=='undefined' && recognizing && typeof stopRecording==='function') stopRecording(); if(typeof oneRecognizing!=='undefined' && oneRecognizing && typeof stopRecordOne==='function') stopRecordOne(); };
+renderCard = function(){ _origRenderCard(); resetTimer(); hideRecResult(); const _ai=document.getElementById('aiSpeak'); if(_ai) _ai.innerHTML=''; if(typeof playbackBtn!=='undefined' && playbackBtn) playbackBtn.classList.remove('show'); if(typeof recognizing!=='undefined' && recognizing && typeof stopRecording==='function') stopRecording(); if(typeof oneRecognizing!=='undefined' && oneRecognizing && typeof stopRecordOne==='function') stopRecordOne(); };
 
 // ---------- SPEECH RECOGNITION + AUDIO RECORDING ----------
 const recBtn = document.getElementById('recBtn');
@@ -1246,6 +1261,7 @@ const playbackBtn = document.getElementById('playbackBtn');
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null, recognizing = false;
 let mediaRecorder = null, audioChunks = [], audioURL = null, audioEl = null;
+let recStartT = 0, lastBlob = null, blobWaiters = [];
 
 function hideRecResult(){ recResult.classList.remove('show'); }
 
@@ -1306,11 +1322,13 @@ if(!SR || !navigator.mediaDevices){
       mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) audioChunks.push(e.data); };
       mediaRecorder.onstop = ()=>{
-        const blob = new Blob(audioChunks, {type:'audio/webm'});
+        const blob = new Blob(audioChunks, {type:(mediaRecorder&&mediaRecorder.mimeType)||'audio/webm'});
         audioURL = URL.createObjectURL(blob);
+        lastBlob = blob; blobWaiters.splice(0).forEach(f=>f(blob));
         playbackBtn.classList.add('show');
         stream.getTracks().forEach(t=>t.stop());
       };
+      lastBlob = null; recStartT = Date.now();
       mediaRecorder.start();
     }catch(e){
       recHint.textContent = 'Không truy cập được micro. Hãy cho phép quyền micro.';
@@ -1339,9 +1357,11 @@ if(!SR || !navigator.mediaDevices){
     recognition.onend = ()=>{
       recognizing = false;
       recBtn.classList.remove('recording');
-      recBtn.textContent = '🎙 Thu âm & kiểm tra';
-      recHint.textContent = 'Bấm rồi đọc to cả đoạn bằng tiếng Anh.';
+      recBtn.textContent = '🎙 Thu âm & chấm AI';
+      recHint.textContent = 'Bấm rồi trả lời bằng tiếng Anh (tự nói hoặc đọc bài mẫu) — bấm Dừng để AI chấm.';
+      const dur = recStartT ? (Date.now()-recStartT)/1000 : 0;
       showComparison(finalText.trim());
+      gradeSpeakingAI(finalText.trim(), dur);
     };
     recognition.start();
   };
@@ -1353,6 +1373,57 @@ function stopRecording(){
 }
 
 function scoreClass(pct){ return pct>=85?'good':pct>=65?'mid':'low'; }
+
+// ---- CHẤM BẰNG AI (Gemini nghe file ghi âm) ----
+const PART_SEC={P1:30,P2:45,P3:45,P4:120};
+function waitBlob(ms){ return lastBlob?Promise.resolve(lastBlob):new Promise(res=>{ blobWaiters.push(res); setTimeout(()=>res(lastBlob),ms); }); }
+// webm/ogg từ MediaRecorder → WAV 16 kHz mono (định dạng Gemini đọc chắc chắn, dung lượng nhỏ)
+async function blobToWavBase64(blob){
+  const AC=window.AudioContext||window.webkitAudioContext;
+  const ac=new AC(); const audio=await ac.decodeAudioData(await blob.arrayBuffer()); try{ ac.close(); }catch(e){}
+  const rate=16000, len=Math.max(1,Math.ceil(audio.duration*rate));
+  const off=new OfflineAudioContext(1,len,rate); const src=off.createBufferSource(); src.buffer=audio; src.connect(off.destination); src.start();
+  const ch=(await off.startRendering()).getChannelData(0);
+  const buf=new ArrayBuffer(44+ch.length*2), v=new DataView(buf);
+  const ws=(o,t)=>{ for(let i=0;i<t.length;i++) v.setUint8(o+i,t.charCodeAt(i)); };
+  ws(0,'RIFF'); v.setUint32(4,36+ch.length*2,true); ws(8,'WAVE'); ws(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true);
+  v.setUint16(22,1,true); v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  ws(36,'data'); v.setUint32(40,ch.length*2,true);
+  for(let i=0;i<ch.length;i++){ const x=Math.max(-1,Math.min(1,ch[i])); v.setInt16(44+i*2,x<0?x*0x8000:x*0x7FFF,true); }
+  const bytes=new Uint8Array(buf); let bin=''; for(let i=0;i<bytes.length;i+=0x8000) bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+  return btoa(bin);
+}
+function escH(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+async function gradeSpeakingAI(transcript, durationSec){
+  const box=document.getElementById('aiSpeak'); if(!box) return;
+  const d=DATA[current], part=/^P\d/.test(d.badge||'')?d.badge.slice(0,2):'P1';   // bộ 29 câu Part 1 có badge dạng số
+  recResult.classList.add('show');
+  box.innerHTML='<div class="ai-load">🤖 AI đang nghe bản thu và chấm…</div>';
+  let audio=null;
+  try{ const b=await waitBlob(3000); if(b&&b.size>0) audio={mime:'audio/wav',data:await blobToWavBase64(b)}; }catch(e){ audio=null; }
+  if(!audio&&!transcript){ box.innerHTML='<div class="ai-err">Không có bản thu để chấm — kiểm tra micro rồi thử lại.</div>'; return; }
+  try{
+    const res=await fetch('/grade-speaking',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question:d.q,part:part,expectedSec:PART_SEC[part]||45,durationSec:durationSec,transcript:transcript,audio:audio})});
+    const r=await res.json();
+    if(!res.ok||r.error) throw new Error((r.error||'Lỗi')+(r.detail?': '+r.detail:''));
+    const pct=Math.max(0,Math.min(100,Math.round((+r.overall||0)*10)));
+    const pr=progPron('de'+(currentDe+1),pct); if(typeof renderProgPanel==='function') renderProgPanel();
+    const crit=(r.criteria||[]).map(c=>{ const sc=+c.score;
+      return '<div class="ai-crit"><span class="ai-cs '+(sc<0?'':sc>=4?'good':sc>=3?'mid':'low')+'">'+(sc<0?'—':sc+'/5')+'</span> <b>'+escH(c.name)+'</b>'
+        +(c.comment&&c.comment.trim()?'<div class="ai-cc">'+escH(c.comment)+'</div>':'')+'</div>'; }).join('');
+    const pron=(r.pronunciation||[]).length?'<div class="ai-sec">🔈 <b>Phát âm cần sửa:</b> '+r.pronunciation.map(x=>'<span class="ai-w" title="'+escH(x.tip)+'">'+escH(x.word)+'</span> <span class="ai-tip">'+escH(x.tip)+'</span>').join(' · ')+'</div>':'';
+    box.innerHTML='<div class="ai-head"><span class="rec-score '+scoreClass(pct)+'">🤖 AI chấm: '+escH(String(r.overall))+'/10 · '+escH(r.cefr||'')+'</span>'
+      +' <span class="ai-meta">'+Math.round(durationSec)+'s / yêu cầu ~'+(PART_SEC[part]||45)+'s'+(r.hadAudio?'':' · không gửi được file ghi âm, chấm theo bản chữ')+'</span></div>'
+      +'<div class="ai-sum">'+escH(r.summary||'')+'</div>'+crit+pron
+      +'<div class="ai-sec"><b>AI nghe được:</b> <i>'+escH(r.transcript||'')+'</i></div>'
+      +'<div class="ai-sec ai-better"><b>✨ Bản nói tốt hơn:</b> <button class="ai-say" id="aiSay">🔊</button><div>'+escH(r.better||'')+'</div></div>'
+      +'<div class="ai-meta">Điểm đã ghi vào tiến độ đề (TB '+pr.lastScore+'% · '+pr.pronCount+' lần chấm) · 🔢 '+((r.tokens&&r.tokens.total)||0)+' token</div>';
+    const sb=document.getElementById('aiSay'); if(sb) sb.onclick=()=>{ try{ const u=new SpeechSynthesisUtterance(r.better||''); u.lang='en-GB'; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} };
+  }catch(e){
+    box.innerHTML='<div class="ai-err">Không chấm được bằng AI: '+escH(e.message||e)+'. Phần đối chiếu bên dưới vẫn dùng được.</div>';
+  }
+}
 
 // ---- THU & CHẤM RIÊNG TỪNG CÂU ----
 let oneRecognition = null, oneRecognizing = false, oneRecBtn = null, oneIdx = -1;

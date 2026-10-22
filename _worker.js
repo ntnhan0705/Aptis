@@ -122,7 +122,7 @@ function schemaFor(rubric) {
 // GeminiProxy (Durable Object ghim vùng "wnam") — KHÔNG gọi trực tiếp từ
 // handler ngoài, vì Worker thường chạy ở edge PoP gần người dùng và Google
 // chặn theo vị trí nguồn request ("User location is not supported").
-async function callGeminiDirect(env, systemInstruction, userText, responseSchema, maxOutputTokens) {
+async function callGeminiDirect(env, systemInstruction, userText, responseSchema, maxOutputTokens, audio) {
   const apiRes = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
     {
@@ -130,7 +130,7 @@ async function callGeminiDirect(env, systemInstruction, userText, responseSchema
       headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ parts: [{ text: userText }] }],
+        contents: [{ parts: audio ? [{ inline_data: { mime_type: audio.mime, data: audio.data } }, { text: userText }] : [{ text: userText }] }],
         generationConfig: {
           responseMimeType: "application/json",
           responseSchema,
@@ -167,9 +167,9 @@ export class GeminiProxy {
     this.env = env;
   }
   async fetch(request) {
-    const { systemInstruction, userText, responseSchema, maxOutputTokens } = await request.json();
+    const { systemInstruction, userText, responseSchema, maxOutputTokens, audio } = await request.json();
     try {
-      const result = await callGeminiDirect(this.env, systemInstruction, userText, responseSchema, maxOutputTokens);
+      const result = await callGeminiDirect(this.env, systemInstruction, userText, responseSchema, maxOutputTokens, audio);
       return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
       return new Response(JSON.stringify({ error: String(e?.message || e) }), {
@@ -180,12 +180,12 @@ export class GeminiProxy {
   }
 }
 
-async function callGemini(env, systemInstruction, userText, responseSchema, maxOutputTokens) {
+async function callGemini(env, systemInstruction, userText, responseSchema, maxOutputTokens, audio) {
   const id = env.GEMINI_PROXY.idFromName("gemini-proxy");
   const stub = env.GEMINI_PROXY.get(id, { locationHint: "wnam" });
   const res = await stub.fetch("https://gemini-proxy.internal/generate", {
     method: "POST",
-    body: JSON.stringify({ systemInstruction, userText, responseSchema, maxOutputTokens }),
+    body: JSON.stringify(audio ? { systemInstruction, userText, responseSchema, maxOutputTokens, audio } : { systemInstruction, userText, responseSchema, maxOutputTokens }),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json?.error || `proxy HTTP ${res.status}`);
@@ -373,6 +373,79 @@ async function handleCoach(request, env) {
   }
 }
 
+// ---------- /grade-speaking — chấm bài nói Aptis bằng Gemini (nghe file ghi âm thật) ----------
+const SPEAK_CRITERIA = [
+  "Đáp ứng yêu cầu & độ dài (trả lời đúng câu hỏi, đủ ý, đủ thời gian)",
+  "Ngữ pháp (đa dạng & chính xác)",
+  "Từ vựng (đa dạng & dùng đúng)",
+  "Phát âm & ngữ điệu",
+  "Độ trôi chảy & mạch lạc (ít ngập ngừng, có từ nối)",
+];
+const SPEAK_PROMPT = `Bạn là giám khảo Aptis General Speaking (thang CEFR, mục tiêu B2). Bạn nhận: câu hỏi, Part, thời lượng yêu cầu, thời lượng thực tế, bản chữ do trình duyệt nhận dạng (có thể sai) và FILE GHI ÂM bài nói (nếu có).
+Hãy NGHE file ghi âm để chấm — đặc biệt phát âm, trọng âm, ngữ điệu và độ trôi chảy; dùng bản chữ của trình duyệt chỉ để tham khảo.
+Chấm riêng 5 tiêu chí, mỗi tiêu chí 0–5 điểm:
+${SPEAK_CRITERIA.map((c, i) => (i + 1) + '. ' + c).join('\n')}
+Với mỗi tiêu chí: nếu đã tốt thì "comment" là chuỗi rỗng ""; nếu cần cải thiện thì viết 1–2 câu tiếng Việt nêu lỗi cụ thể và cách sửa (không khen trước khi góp ý).
+Nếu không có file ghi âm: tiêu chí Phát âm cho score = -1 và comment = "Không có file ghi âm".
+Nói ngắn hơn nhiều so với thời lượng yêu cầu thì trừ điểm tiêu chí 1 và 5.
+Ngoài ra trả về:
+- "transcript": những gì bạn nghe được trong file (tiếng Anh);
+- "overall": điểm tổng 0–10; "cefr": A1/A2/B1/B1+/B2/C;
+- "summary": 1 câu tiếng Việt — điều quan trọng nhất cần cải thiện;
+- "pronunciation": tối đa 5 từ phát âm chưa đúng, mỗi phần tử {"word","tip"} với tip tiếng Việt ngắn (cách đọc đúng, trọng âm);
+- "better": bản trả lời tốt hơn bằng tiếng Anh, giữ ý của người nói, mức B2, độ dài phù hợp thời lượng yêu cầu, câu đơn giản dễ nói.`;
+const SPEAK_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    transcript: { type: "STRING" },
+    criteria: {
+      type: "ARRAY", minItems: "5", maxItems: "5",
+      items: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, comment: { type: "STRING" } }, required: ["name", "score", "comment"] },
+    },
+    overall: { type: "NUMBER" },
+    cefr: { type: "STRING" },
+    summary: { type: "STRING" },
+    pronunciation: {
+      type: "ARRAY", maxItems: "5",
+      items: { type: "OBJECT", properties: { word: { type: "STRING" }, tip: { type: "STRING" } }, required: ["word", "tip"] },
+    },
+    better: { type: "STRING" },
+  },
+  required: ["transcript", "criteria", "overall", "cefr", "summary", "pronunciation", "better"],
+};
+const AUDIO_MIME = /^audio\/(wav|x-wav|mp3|mpeg|aac|ogg|flac|webm)$/;
+
+async function handleGradeSpeaking(request, env) {
+  if (request.method === "OPTIONS") return new Response("", { status: 204, headers: CORS });
+  if (request.method !== "POST") return new Response('{"error":"method"}', { status: 405, headers: JH });
+  let raw = "", body;
+  try { raw = await request.text(); body = JSON.parse(raw); }
+  catch { return new Response(JSON.stringify({ error: "invalid json" }), { status: 400, headers: JH }); }
+  // ~3 phút WAV 16 kHz mono ≈ 7.7 MB base64 — chặn payload quá lớn
+  if (raw.length > 12_000_000) return new Response(JSON.stringify({ error: "audio too large" }), { status: 413, headers: JH });
+  const { question, part, expectedSec, durationSec, transcript, audio } = body || {};
+  if (!question || (!transcript && !audio)) {
+    return new Response(JSON.stringify({ error: "missing question or recording" }), { status: 400, headers: JH });
+  }
+  const aud = audio && audio.data && AUDIO_MIME.test(audio.mime || "") ? { mime: audio.mime, data: audio.data } : undefined;
+  const userText = [
+    `Part: ${part || "?"}`,
+    `Câu hỏi: ${question}`,
+    expectedSec ? `Thời lượng yêu cầu: khoảng ${expectedSec} giây` : null,
+    durationSec ? `Thời lượng thực tế: ${Math.round(durationSec)} giây` : null,
+    `Bản chữ trình duyệt nhận dạng: ${transcript || "(không có)"}`,
+    aud ? "Có file ghi âm đính kèm." : "Không có file ghi âm.",
+  ].filter(Boolean).join("\n");
+  try {
+    const { parsed, tokens } = await callGemini(env, SPEAK_PROMPT, userText, SPEAK_SCHEMA, 2048, aud);
+    parsed.tokens = tokens;
+    parsed.hadAudio = !!aud;
+    return new Response(JSON.stringify(parsed), { status: 200, headers: JH });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "grading failed", detail: String(e?.message || e) }), { status: 500, headers: JH });
+  }
+}
+
 // ---------- Router ----------
 export default {
   async fetch(request, env, ctx) {
@@ -381,6 +454,7 @@ export default {
     if (url.pathname === "/grade-writing") return handleGradeWriting(request, env);
     if (url.pathname === "/grade-summary") return handleGradeSummary(request, env);
     if (url.pathname === "/coach") return handleCoach(request, env);
+    if (url.pathname === "/grade-speaking") return handleGradeSpeaking(request, env);
     return env.ASSETS.fetch(request);
   },
 };
