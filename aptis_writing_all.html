@@ -1056,7 +1056,10 @@ const WBUDGET={Q1:3*60,Q2:7*60,Q3:10*60,Q4:30*60};
 const WPART={Q1:'Part 1',Q2:'Part 2',Q3:'Part 3',Q4:'Part 4'};
 let wUsed={Q1:0,Q2:0,Q3:0,Q4:0}, wInt=null;
 function wFmt(s){ const neg=s<0; s=Math.abs(s); return (neg?'+':'')+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
-function wTimerReset(){ wUsed={Q1:0,Q2:0,Q3:0,Q4:0}; renderWTimers(); }
+// Thời gian làm thực tế (mọi chế độ): từ lúc mở đề tới lúc nộp; bỏ qua nếu quá 3 giờ (treo tab)
+let SESS_T0=Date.now();
+function sessionSec(){ const s=Math.round((Date.now()-SESS_T0)/1000); return s>0&&s<=3*3600?s:null; }
+function wTimerReset(){ wUsed={Q1:0,Q2:0,Q3:0,Q4:0}; SESS_T0=Date.now(); renderWTimers(); }
 function wTimerStart(){
   if(wInt) return;
   wInt=setInterval(()=>{ const it=ITEMS[pos]; if(it&&wUsed[it.tag]!=null){ wUsed[it.tag]++; renderWTimers(); } },1000);
@@ -1584,7 +1587,7 @@ function progRecord(key,score,perQ,timing){
   const r=S[key]||{attempts:0,bestScore:0,lastScore:0,history:[],perQ:{}};
   const now=new Date().toISOString();
   r.attempts++;r.lastScore=score;r.bestScore=Math.max(r.bestScore||0,score);r.lastDate=now;
-  r.history.push(timing?{date:now,score:score,timed:true,sec:timing.sec,parts:timing.parts}:{date:now,score:score});if(r.history.length>50)r.history=r.history.slice(-50);
+  r.history.push(timing?Object.assign({date:now,score:score,sec:timing.sec},timing.parts?{timed:true,parts:timing.parts}:{}):{date:now,score:score});if(r.history.length>50)r.history=r.history.slice(-50);
   if(perQ)for(const k in perQ){const q=r.perQ[k]||{seen:0,wrong:0};q.seen++;if(perQ[k])q.wrong++;r.perQ[k]=q;}
   S[key]=r;progSave();return r;
 }
@@ -1629,6 +1632,7 @@ async function recordExam(){
     });
     timeMsg='\n\n⏱ Thời gian: '+wFmt(timing.sec)+' / 50:00'+timeMsg;
   }
+  if(!timing){ const sec=sessionSec(); if(sec) timing={sec:sec,parts:null}; }
   const r=progRecord('de'+(exam+1),pct,perQ,timing);
   state.forEach(s=>{s.value=''; delete s.aiResult;}); pos=0;
   buildExams(); buildMatrix(); render();

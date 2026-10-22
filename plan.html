@@ -446,7 +446,7 @@ function taskHTML(x,preview){
     +'<span class="tag '+t.kind+'">'+(t.pack?'gói từ':KIND_LBL[t.kind])+'</span></div>'
     +(note?'<div class="n">'+esc(note)+'</div>':'')
     +(!preview&&x.by?'<div class="n by">'+(x.done?'✓ ':'… ')+esc(x.by)+'</div>':'')+'</div>'
-    +'<div class="min">'+(t.minutes||0)+'′</div></div>';
+    +'<div class="min"'+(taskMin(t)!==(t.minutes||0)?' title="Theo thời gian làm thực tế (lịch mặc định '+(t.minutes||0)+'′)"':'')+'>'+taskMin(t)+'′</div></div>';
 }
 /* ===== Dự báo đến ngày thi =====
    Chỉ tính việc làm đề (L/R/W/S, thi thử) — gói từ vựng tự điều chỉnh theo lặp lại ngắt quãng.
@@ -458,8 +458,8 @@ function forecast(tasks){
   // Làm mượt khi mới có ít ngày dữ liệu: coi như đã có PRIOR việc xong đúng hạn — ảnh hưởng mờ dần khi dữ liệu thật tăng
   const PRIOR=4, pace=(pastDone+PRIOR)/(past.length+PRIOR);
   const pastDays=new Set(past.map(x=>x.date)).size;
-  const late=past.filter(x=>!x.done), lateMin=late.reduce((a,x)=>a+(x.t.minutes||0),0);
-  const future=work.filter(x=>x.date>=TODAY&&!x.done), futureMin=future.reduce((a,x)=>a+(x.t.minutes||0),0);
+  const late=past.filter(x=>!x.done), lateMin=late.reduce((a,x)=>a+taskMin(x.t),0);
+  const future=work.filter(x=>x.date>=TODAY&&!x.done), futureMin=future.reduce((a,x)=>a+taskMin(x.t),0);
   const doneAll=work.filter(x=>x.done).length;
   const projected=Math.min(work.length,doneAll+Math.round(pace*future.length));
   const pct=work.length?Math.round(projected/work.length*100):100;
@@ -491,7 +491,28 @@ function renderForecast(tasks){
     +' · hoặc bấm <b>🤖 AI coach</b> để dồn lại lịch 7 ngày tới.'
     +(over?' <span class="down">Tổng việc còn lại ('+h(f.needMin)+') đã vượt quỹ thời gian ('+h(f.capacityMin)+') — cần tăng giờ học hoặc bỏ bớt đề làm lại.</span>':'')+'</div>';
 }
+/* ===== Thời gian thực tế mỗi đề =====
+   Mỗi lần nộp bài ở mọi chế độ đều ghi "sec" (từ lúc mở đề tới lúc nộp). Phút/đề của một kỹ năng = trung vị
+   6 lần gần nhất × 1.2 (chữa bài), làm tròn lên 5 phút, tối thiểu 10. Chưa có dữ liệu → dùng mức mặc định của lịch. */
+let RM={};
+function realMin(skill){
+  const S=PROG[skill]||{},a=[];
+  Object.keys(S).forEach(k=>((S[k]&&S[k].history)||[]).forEach(h=>{if(h.sec>0&&h.sec<=3*3600)a.push(h);}));
+  a.sort((x,y)=>x.date<y.date?-1:1);
+  const r=a.slice(-6).map(h=>h.sec).sort((x,y)=>x-y);
+  if(!r.length)return null;
+  const med=r[Math.floor(r.length/2)];
+  return {min:Math.max(10,Math.ceil(med*1.2/60/5)*5),raw:Math.round(med/60),n:r.length};
+}
+function refreshRM(){RM={};DE_SKILLS.forEach(s=>{RM[s]=realMin(s);});}
+// Số phút của một việc trong lịch: dùng thời gian thực tế nếu có
+function taskMin(t){
+  if(DE_SKILLS.includes(t.skill)&&RM[t.skill])return RM[t.skill].min*(t.de>0?1:(t.need||1));
+  if(t.skill==='all'&&RM.listening&&RM.reading&&RM.speaking)return RM.listening.min+RM.reading.min+RM.speaking.min;
+  return t.minutes||0;
+}
 function render(){
+  refreshRM();
   STATUS=computeStatus();
   const tasks=allTasks();
   // "Đến hạn" = việc của các ngày TRƯỚC hôm nay; việc hôm nay chưa tính là trễ.
@@ -550,7 +571,9 @@ function renderTiming(){
         return '<span class="tp'+(hard?' hard':x.timeUsedPct>=90?' tight':'')+'" title="Dùng '+x.timeUsedPct+'% thời gian cho phép">'
           +esc(p)+' '+mmss(x.avgSec)+'/'+mmss(x.budgetSec)+' · '+(x.accuracy==null?'—':x.accuracy+'%')+(hard?' · khó':'')+'</span>';}).join(' ')+'</td></tr>';
   });
-  $('timing').innerHTML='<table><tr><th>Kỹ năng</th><th>Thi bấm giờ</th><th>Thời gian TB theo Part · độ chính xác</th></tr>'+h+'</table>'
+  const rt=DE_SKILLS.map(k=>'<span class="tp">'+SK[k].ic+' '+SK[k].name+': '+(RM[k]?'<b>'+RM[k].raw+'′</b> làm bài → tính <b>'+RM[k].min+'′</b>/đề ('+RM[k].n+' lần)':'chưa có dữ liệu → '+(k==='speaking'?45:50)+'′')+'</span>').join(' ');
+  $('timing').innerHTML='<div style="margin-bottom:10px"><b>Thời gian làm thực tế mỗi đề</b> (mọi chế độ, 6 lần gần nhất · cộng 20% chữa bài) — lịch, tổng phút mỗi ngày và dự báo dùng con số này:<br>'+rt+'</div>'
+    +'<table><tr><th>Kỹ năng</th><th>Thi bấm giờ</th><th>Thời gian TB theo Part · độ chính xác</th></tr>'+h+'</table>'
     +'<div class="muted" style="font-size:12.5px;margin-top:8px">Chỉ tính các lần chọn <b>⏱ Thi bấm giờ</b> rồi nộp trọn đề. <span class="tp tight">vàng</span> = dùng ≥90% thời gian · <span class="tp hard">đỏ</span> = gần hết giờ mà đúng dưới 80% → Part khó nhất. Writing: % = điểm AI trung bình × 10.</div>';
 }
 function renderCal(tasks){
@@ -563,7 +586,7 @@ function renderCal(tasks){
     const open=ds.some(d=>d>=addDays(TODAY,-1)&&d<=addDays(TODAY,6));
     h+='<details class="week"'+(open?' open':'')+'><summary>Tuần '+(+w+1)+' · '+fmt(ds[0])+' → '+fmt(ds[ds.length-1])+' <span class="mono muted" style="font-size:11.5px;font-weight:400">'+dn+'/'+all.length+' xong</span></summary>';
     ds.forEach(d=>{
-      const mins=byDate[d].reduce((a,x)=>a+(x.t.minutes||0),0),cap=capacity(d);
+      const mins=byDate[d].reduce((a,x)=>a+taskMin(x.t),0),cap=capacity(d);
       h+='<div class="day'+(d===TODAY?' today':d<TODAY?' past':'')+'"><h3><span>'+DOW[parseYmd(d).getDay()]+' '+fmt(d)+(d===TODAY?' · hôm nay':'')+'</span>'
         +'<span class="mono'+(mins>cap?' down':'')+'">'+mins+'/'+cap+' phút</span></h3>'+byDate[d].map(x=>taskHTML(x)).join('')+'</div>';
     });
@@ -575,6 +598,7 @@ function fmt(d){return d.slice(8)+'/'+d.slice(5,7);}
 
 /* ===== AI coach ===== */
 function buildSnapshot(){
+  refreshRM();
   const tasks=allTasks(),due=tasks.filter(x=>x.date<TODAY&&!x.skip);
   const skills={};
   DE_SKILLS.forEach(s=>{skills[s]=skillStats(s);});
@@ -584,12 +608,14 @@ function buildSnapshot(){
   const vlog=PROG.vlog||{},last7=[];for(let i=-7;i<0;i++){const d=addDays(TODAY,i);if(vlog[d])last7.push({date:d,reviews:vlog[d].seen,newWords:vlog[d].newWords});}
   const upcoming=[];
   for(let i=0;i<7;i++){const d=addDays(TODAY,i);upcoming.push({date:d,capacity:capacity(d),
-    tasks:tasks.filter(x=>x.date===d).map(x=>({skill:x.t.skill,de:x.t.de,kind:x.t.kind,minutes:x.t.minutes,note:x.t.note,done:x.done}))});}
+    tasks:tasks.filter(x=>x.date===d).map(x=>({skill:x.t.skill,de:x.t.de,kind:x.t.kind,minutes:taskMin(x.t),note:x.t.note,done:x.done}))});}
   const last=PROG.coach.log.reports.slice(-1)[0];
   return {
     today:TODAY, todayDow:DOW[parseYmd(TODAY).getDay()], examDate:EXAM_DATE, daysLeft:daysBetween(TODAY,EXAM_DATE),
     capacity:'Thứ Hai–Sáu: '+WEEKDAY_MIN+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
-    timePerTask:'Một đề Listening/Reading/Writing ~50 phút (làm + chữa), Speaking ~45 phút, gói từ vựng hằng ngày (40–45 từ: từ đến hạn ôn theo lặp lại ngắt quãng + ≥8 từ mới của các đề trong ngày) ~25 phút.',
+    timePerTask:(()=>{const f=(k,d)=>RM[k]?RM[k].min+' phút (thực tế: trung vị '+RM[k].raw+' phút làm bài, '+RM[k].n+' lần)':d+' phút (mặc định, chưa có dữ liệu)';
+      return 'Một đề Listening '+f('listening',50)+'; Reading '+f('reading',50)+'; Writing '+f('writing',50)+'; Speaking '+f('speaking',45)+'; gói từ vựng hằng ngày ~25 phút.';})(),
+    realMinutesPerSet:Object.fromEntries(DE_SKILLS.map(k=>[k,RM[k]?RM[k].min:null])),
     skills, vocab:{total:VTOTAL,dailyPack:'40–45 từ B2+ (≥8 từ mới): từ đến hạn ôn (Lv1–5 ôn sau 1/2/4/7/14 ngày) + từ mới của các đề trong ngày',packsDoneLast7:(()=>{let n=0;for(let i=-7;i<0;i++){const k=vpack(addDays(TODAY,i));if(k&&k.doneAt)n++;}return n;})(),learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
     planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
