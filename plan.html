@@ -117,7 +117,7 @@
   .tip{position:fixed;z-index:9;pointer-events:none;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12.5px;line-height:1.45;box-shadow:0 8px 24px -12px rgba(0,0,0,.35);display:none;max-width:240px}
   .tip b{font-size:14px}
   details.sec{margin-top:22px} details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;padding:6px 0}
-  .tview{margin-top:10px;font-size:13px} .tview summary{cursor:pointer;color:var(--muted)}
+  .tview{margin-top:10px;font-size:13px} .lp{display:inline-block;padding:0 4px;margin:1px 0;border-radius:4px;background:#f3f6fa;white-space:nowrap} .tview summary{cursor:pointer;color:var(--muted)}
   /* lịch tuần */
   .cal-h,.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
   .cal-h div{text-align:center;font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);padding:2px 0}
@@ -169,36 +169,29 @@
   <div class="skcards" id="skcards"></div>
   <div class="vcard" id="vcard"></div>
 
-  <h2>📌 Hôm nay</h2>
-  <div class="box" id="today"></div>
+  <h2>🗓 Toàn bộ lịch</h2>
+  <div id="cal"></div>
 
   <h2>📈 Khả năng theo CEFR</h2>
   <div class="box" id="cefr"></div>
 
-  <h2>📉 Điểm luyện tập theo lượt</h2>
-  <div class="trend" id="trend"></div>
 
-  <h2>🤖 AI coach</h2>
+
+
+  <h2>🤖 AI coach &amp; xếp lịch</h2>
   <div class="box">
     <div class="row">
       <button class="btn primary" id="coachBtn">🤖 Phân tích &amp; đề xuất lịch 7 ngày tới</button>
+      <button class="btn" id="resetPlan">↺ Xếp lại lịch từ hôm nay</button>
       <span class="mono muted" style="font-size:11.5px" id="coachLast"></span>
     </div>
-    <div class="muted" style="font-size:13px;margin-top:8px">Nên chạy mỗi Chủ nhật tối (hoặc khi lệch lịch nhiều). AI chỉ xem số liệu điểm &amp; tiến độ, không xem bài làm.</div>
+    <div class="muted" style="font-size:13px;margin-top:8px"><b>AI coach</b>: phân tích điểm, thời gian làm thực tế &amp; tiến độ rồi đề xuất lịch 7 ngày (nên chạy mỗi Chủ nhật tối hoặc khi lệch lịch nhiều; AI không xem bài làm). <b>Xếp lại lịch</b>: tự xếp lại từ hôm nay theo tiến độ thật, giữ nguyên việc đã làm hôm nay.</div>
     <div class="coach" id="coachOut"></div>
   </div>
-
-  <details class="sec"><summary>⏱ Thời gian làm bài thực tế</summary><div class="box table-wrap" id="timing"></div></details>
-
-  <h2>🗓 Toàn bộ lịch</h2>
-  <div id="cal"></div>
 
   <details class="sec"><summary>🗂 Lịch sử AI coach</summary><div class="box hist" id="coachHist"></div></details>
   <div class="tip" id="tip" role="tooltip"></div>
 
-  <div class="row" style="justify-content:center;margin-top:22px">
-    <button class="btn" id="resetPlan">↺ Xếp lại lịch từ hôm nay</button>
-  </div>
   <footer>Không có tick tay: việc chỉ được tính xong khi bạn làm bài và bấm <b>“Ghi kết quả”</b> trong module (từ vựng: tính theo lượt flashcard đã làm)</footer>
 </div>
 
@@ -668,32 +661,12 @@ function renderCefr(){
   $('cefr').innerHTML='<div class="muted" style="font-size:12.5px;margin-bottom:6px">Chấm cam = điểm hiện tại (TB 3 lượt gần nhất) quy ra thang Aptis 0–50; nền = các bậc CEFR theo ngưỡng tham khảo của Aptis cho từng kỹ năng. Mục tiêu: dải <b>B2</b>.</div>'
     +'<svg class="ch" viewBox="0 0 '+W+' '+(by+20)+'" role="img" aria-label="Khả năng hiện tại theo CEFR của 4 kỹ năng">'+svg+'</svg>'
     +'<details class="tview"><summary>Xem bảng số liệu</summary><table><tr><th>Kỹ năng</th><th>Hiện tại</th><th>CEFR</th><th>Lần đầu</th><th>Mốc B2</th><th>Số lượt</th></tr>'+rows+'</table>'
+    +'<div style="margin-top:12px;font-weight:700">Điểm theo lượt (12 lượt gần nhất, cũ → mới · thang 0–50)</div>'
+    +'<table><tr><th>Kỹ năng</th><th>Các lượt</th></tr>'+DE_SKILLS.map(sk=>{const a=attemptsOf(sk).slice(-12);
+      return '<tr><td>'+SK[sk].name+'</td><td class="num">'+(a.length?a.map(h=>{const v=s50(h.score),d=new Date(h.date);
+        return '<span class="lp" title="'+svgEsc(d.getDate()+'/'+(d.getMonth()+1)+' · Đề '+h.de.replace('de','')+' · '+h.score+'%')+'">'+v+'·'+cefrOf(sk,v)+'</span>';}).join(' '):'—')+'</td></tr>';}).join('')+'</table>'
     +'<div class="muted" style="font-size:12px;margin-top:6px">Quy đổi ước tính: Listening/Reading = % đúng ÷ 2; Writing/Speaking = điểm AI (/10) × 5. Aptis thật dùng thang chấm riêng.</div></details>';
   bindTips($('cefr'));
-}
-function renderTrend(){
-  const W=300,H=150,L=34,R=292,T=12,B=124,Y=v=>B-(B-T)*v/50;
-  $('trend').innerHTML=DE_SKILLS.map(sk=>{
-    const a=attemptsOf(sk).slice(-12),cuts=CEFR_CUT[sk];
-    let g='<rect x="'+L+'" y="'+Y(50)+'" width="'+(R-L)+'" height="'+(Y(cuts[3][1])-Y(50))+'" fill="#2a78d6" opacity="0.08"/>';
-    [['B1',cuts[2][1]],['B2',cuts[3][1]],['C',cuts[4][1]]].forEach(([lv,t])=>{
-      g+='<line x1="'+L+'" x2="'+R+'" y1="'+Y(t)+'" y2="'+Y(t)+'" stroke="#e1e0d9" stroke-width="1"/>'
-        +'<text x="'+(L-4)+'" y="'+(Y(t)+3.5)+'" font-size="10" text-anchor="end" fill="#898781">'+lv+'</text>';});
-    g+='<line x1="'+L+'" x2="'+R+'" y1="'+B+'" y2="'+B+'" stroke="#c3c2b7" stroke-width="1"/><text x="'+(L-4)+'" y="'+(B+3.5)+'" font-size="10" text-anchor="end" fill="#898781">0</text>';
-    let head='<h3>'+SK[sk].ic+' '+SK[sk].name+'<span>'+(a.length?a.length+' lượt gần nhất':'')+'</span></h3>';
-    if(!a.length)return '<div class="tcard">'+head+'<svg class="ch" viewBox="0 0 '+W+' '+H+'">'+g+'<text x="'+((L+R)/2)+'" y="'+((T+B)/2)+'" font-size="12" text-anchor="middle" fill="#898781">Chưa có lượt nào có điểm</text></svg></div>';
-    const X=i=>a.length===1?(L+R)/2:L+8+(R-L-16)*i/(a.length-1);
-    const pts=a.map((h,i)=>[X(i),Y(s50(h.score))]);
-    g+='<polyline points="'+pts.map(p=>p.join(',')).join(' ')+'" fill="none" stroke="#2a78d6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
-    a.forEach((h,i)=>{const v=s50(h.score),d=new Date(h.date);
-      g+='<circle cx="'+pts[i][0]+'" cy="'+pts[i][1]+'" r="4" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"/>'
-        +'<circle class="hit" tabindex="0" cx="'+pts[i][0]+'" cy="'+pts[i][1]+'" r="12" data-tip="'+svgEsc(v+'/50 · ≈'+cefrOf(sk,v)+'|'+d.getDate()+'/'+(d.getMonth()+1)+' · Đề '+h.de.replace('de','')+' · '+h.score+'%')+'"/>';});
-    const lv=s50(a[a.length-1].score),lp=pts[pts.length-1];
-    g+='<text x="'+Math.min(R-2,lp[0])+'" y="'+(lp[1]-9)+'" font-size="11" text-anchor="end" fill="#0b0b0b" font-weight="600">'+lv+' · '+cefrOf(sk,lv)+'</text>';
-    g+='<text x="'+((L+R)/2)+'" y="'+(H-6)+'" font-size="10" text-anchor="middle" fill="#898781">cũ → mới</text>';
-    return '<div class="tcard">'+head+'<svg class="ch" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Điểm '+SK[sk].name+' theo lượt">'+g+'</svg></div>';
-  }).join('');
-  bindTips($('trend'));
 }
 function render(){
   refreshRM();
@@ -715,40 +688,14 @@ function render(){
   $('planBarLbl').textContent='Cả lộ trình: '+doneAll+'/'+tasks.length+' việc xong · các ngày trước còn '+(due.length-dueDone)+' việc chưa xong'
     +(ahead>0?' · đã làm trước '+ahead+' việc của các ngày sau':'');
 
-  const late=tasks.filter(x=>x.date<TODAY&&!x.done&&!x.skip);
   renderForecast(tasks);
-  let h='';
-  if(TODAY>=EXAM_DATE)h='<div class="empty">'+(TODAY===EXAM_DATE?'Hôm nay thi — chúc bạn thi tốt! 🍀':'Lộ trình đã kết thúc.')+'</div>';
-  else{
-    h+=td.length?td.map(x=>taskHTML(x)).join(''):'<div class="empty">Hôm nay không có việc trong lịch.</div>';
-    if(late.length)h+='<div class="warn">⏰ Còn <b>'+late.length+'</b> việc của các ngày trước chưa có bài nộp: '
-      +late.slice(0,6).map(x=>esc(taskTitle(x.t))+' ('+fmt(x.date)+')').join(' · ')+(late.length>6?' …':'')
-      +'<br>Làm bù rồi bấm “Ghi kết quả” (vẫn được tính), hoặc chạy <b>AI coach</b> / <b>Xếp lại lịch</b>.</div>';
-  }
-  $('today').innerHTML=h;
 
-  renderTiming(); renderCal(tasks); renderCoachHist();
-  renderSkillCards(tasks); renderVocabCard(); renderCefr(); renderTrend();
+  renderCal(tasks); renderCoachHist();
+  renderSkillCards(tasks); renderVocabCard(); renderCefr();
   const last=PROG.coach.log.reports.slice(-1)[0];
   $('coachLast').textContent=last?'Lần gần nhất: '+new Date(last.at).toLocaleString('vi-VN'):'Chưa chạy lần nào';
 }
 function mmss(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-function renderTiming(){
-  const rows=['listening','reading','writing'].map(s=>({s,t:skillStats(s).timing}));
-  let h='';
-  rows.forEach(({s,t})=>{
-    h+='<tr><td>'+SK[s].ic+' '+SK[s].name+'</td>';
-    if(!t){h+='<td colspan="2" class="muted" style="font-size:13px">Chưa có lần nào làm ở chế độ ⏱ Thi bấm giờ</td></tr>';return;}
-    h+='<td class="num">'+t.timedAttempts+' lần<br><span class="muted">TB '+mmss(t.avgSec)+'</span></td><td>'
-      +Object.keys(t.parts).map(p=>{const x=t.parts[p],hard=x.timeUsedPct>=90&&x.accuracy!=null&&x.accuracy<80;
-        return '<span class="tp'+(hard?' hard':x.timeUsedPct>=90?' tight':'')+'" title="Dùng '+x.timeUsedPct+'% thời gian cho phép">'
-          +esc(p)+' '+mmss(x.avgSec)+'/'+mmss(x.budgetSec)+' · '+(x.accuracy==null?'—':x.accuracy+'%')+(hard?' · khó':'')+'</span>';}).join(' ')+'</td></tr>';
-  });
-  const rt=DE_SKILLS.map(k=>'<span class="tp">'+SK[k].ic+' '+SK[k].name+': '+(RM[k]?'<b>'+RM[k].raw+'′</b> làm bài → tính <b>'+RM[k].min+'′</b>/đề ('+RM[k].n+' lần)':'chưa có dữ liệu → '+(k==='speaking'?45:50)+'′')+'</span>').join(' ');
-  $('timing').innerHTML='<div style="margin-bottom:10px"><b>Thời gian làm thực tế mỗi đề</b> (mọi chế độ, 6 lần gần nhất · cộng 20% chữa bài) — lịch, tổng phút mỗi ngày và dự báo dùng con số này:<br>'+rt+'</div>'
-    +'<table><tr><th>Kỹ năng</th><th>Thi bấm giờ</th><th>Thời gian TB theo Part · độ chính xác</th></tr>'+h+'</table>'
-    +'<div class="muted" style="font-size:12.5px;margin-top:8px">Chỉ tính các lần chọn <b>⏱ Thi bấm giờ</b> rồi nộp trọn đề. <span class="tp tight">vàng</span> = dùng ≥90% thời gian · <span class="tp hard">đỏ</span> = gần hết giờ mà đúng dưới 80% → Part khó nhất. Writing: % = điểm AI trung bình × 10.</div>';
-}
 // Ký hiệu ngắn cho ô lịch: V = gói từ vựng, L4 = Listening đề 4, L+2 = làm lại 2 đề Listening bất kỳ, M = thi thử
 // Link mở thẳng việc đó: đề cụ thể → ?de=N; "làm lại N đề bất kỳ" → đề điểm thấp nhất
 function taskHref(t){
