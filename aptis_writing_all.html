@@ -223,6 +223,7 @@
   .fc-nav{display:flex;justify-content:space-between;margin-top:16px;gap:10px;}
   .cell.voc{background:var(--green-soft);border-color:var(--green);color:var(--green);}
   /* ===== Tiến độ ===== */
+  .saved-note{margin-top:12px;padding:9px 12px;border-radius:9px;background:var(--green-soft);border:1px solid #cfe0d4;font-size:.86rem;line-height:1.6}
   .prog-panel{margin-top:10px;font-size:.8rem;color:var(--muted);line-height:1.65;}
   .prog-panel b{color:var(--ink);} .prog-panel .hi{color:var(--green);font-weight:700;}
   .prog-hist{font-family:"SF Mono",monospace;font-size:.68rem;color:var(--muted);}
@@ -266,7 +267,7 @@
       <button id="mExam" onclick="setMode('exam')">⏱ Thi bấm giờ</button>
     </div>
     <button class="pill link" onclick="resetAll()">Xóa hết</button>
-    <button class="btn-rec" id="btnRec">💾 Ghi kết quả &amp; làm lại</button>
+    <button class="btn-rec" id="btnRec" title="Xoá bài để làm lại từ đầu (kết quả đã lưu khi bấm Tổng kết)">🔄 Làm lại đề</button>
     <span class="stat" id="stat"></span>
   </div>
 
@@ -1036,7 +1037,7 @@ function switchExam(i){
   exam=i;
   ITEMS=EXAMS[exam].items;
   state=ITEMS.map(()=>({value:''}));
-  pos=0; wTimerReset();
+  pos=0; wTimerReset(); examSaved=false; examDirty=true;
   buildExams(); buildMatrix(); render();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1161,7 +1162,7 @@ function render(){
 
   inp.addEventListener('focus',()=>editor.classList.add('focus'));
   inp.addEventListener('blur',()=>editor.classList.remove('focus'));
-  inp.addEventListener('input',paint);
+  inp.addEventListener('input',()=>{ examDirty=true; paint(); });
   // Chế độ luyện tập: tự mở sẵn khối đáp án mẫu để gõ theo
   if(isPractice){ const rv=$('rv'); if(rv) rv.classList.add('show'); }
   paint();
@@ -1289,7 +1290,8 @@ async function gradeSummaryAI(){
     box.innerHTML=`<span class="score">Điểm trung bình: ${esc(String(data.averageScore))}/10 (dựa trên ${data.count} câu đã chấm${gradeFailed?`, ${gradeFailed} câu chấm lỗi bị bỏ qua`:''})</span>`
       +`<div style="margin-top:6px">${esc(data.overall||'')}</div>`
       +`<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line)"><b>Chi tiết từng câu:</b>${perQuestionHTML}</div>`
-      +`<div class="tok">🔢 Token tổng kết: ${summaryTokens} · Token ${data.count} câu đã chấm: ${perQTokens} · <b>Tổng cả đề: ${perQTokens+summaryTokens}</b></div>`;
+      +`<div class="tok">🔢 Token tổng kết: ${summaryTokens} · Token ${data.count} câu đã chấm: ${perQTokens} · <b>Tổng cả đề: ${perQTokens+summaryTokens}</b></div>`
+      +savedNote(saveExamResult());
   }catch(e){
     box.classList.add('err');
     box.innerHTML=`<span class="score">Lỗi</span>Không tổng kết được: ${esc(e.message||String(e))}`;
@@ -1317,7 +1319,7 @@ function updateStat(){
 }
 
 function resetAll(){
-  state.forEach(s=>{s.value='';}); wTimerReset();
+  state.forEach(s=>{s.value='';}); wTimerReset(); examSaved=false; examDirty=true;
   pos=0; buildMatrix(); render();
 }
 
@@ -1602,24 +1604,19 @@ function progRecord(key,score,perQ,timing){
 }
 // Ghi kết quả đề hiện tại: điểm = trung bình điểm AI đã chấm (không còn tính theo % khớp đáp án mẫu).
 // Câu nào đã làm nhưng chưa được AI chấm thì tự chấm nốt trước khi ghi.
-async function recordExam(){
-  const btn=$('btnRec'); const origBtnText=btn.textContent;
-  const todo=[];
-  state.forEach((s,i)=>{ if(s.value && s.value.trim() && !s.aiResult) todo.push(i); });
-  if(todo.length){
-    btn.disabled=true;
-    for(let k=0;k<todo.length;k++){
-      const i=todo[k];
-      btn.textContent=`⏳ Đang chấm câu ${k+1}/${todo.length}...`;
-      try{
-        const data=await fetchGradeResult(ITEMS[i], state[i].value);
-        state[i].aiResult={tag:ITEMS[i].tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
-        if(i===pos){ const b=$('aiBox'); if(b){ b.classList.remove('err'); b.classList.add('show'); b.innerHTML=aiResultHTML(data); } }
-      }catch(e){}
-    }
-    btn.textContent=origBtnText; btn.disabled=false;
-  }
-
+// Một lần làm đề chỉ lưu 1 mục kết quả: Tổng kết lần đầu → thêm lần làm mới; sửa bài rồi Tổng kết lại → cập nhật mục đó.
+let examSaved=false, examDirty=true;
+function progAmendLast(key,score,timing){
+  const S=APTIS_PROG[APTIS_SKILL]||{}, r=S[key];
+  if(!r||!r.history||!r.history.length) return progRecord(key,score,null,timing);
+  const h=r.history[r.history.length-1]; h.score=score;
+  if(timing){ h.sec=timing.sec; if(timing.parts){ h.timed=true; h.parts=timing.parts; } }
+  r.lastScore=score; r.bestScore=Math.max.apply(null,r.history.map(x=>x.score||0)); r.lastDate=new Date().toISOString();
+  progSave(); return r;
+}
+// Lưu kết quả đề hiện tại: điểm = TB điểm AI các câu; chế độ thi bấm giờ lưu thêm thời gian từng Part.
+function saveExamResult(){
+  if(!examDirty) return null;                      // không sửa gì kể từ lần lưu trước → không ghi trùng
   let sumScore=0; const perQ={}, cnt={};
   ITEMS.forEach((it,i)=>{
     const sc=state[i].aiResult?(Number(state[i].aiResult.score)||0):0;
@@ -1627,26 +1624,39 @@ async function recordExam(){
     const n=(cnt[it.tag]=(cnt[it.tag]||0)+1);
     perQ[it.tag+'_'+n]=sc<8; // dưới 8/10 tính là câu cần cải thiện, cho thống kê "Hay sai"
   });
-  const avg=ITEMS.length?sumScore/ITEMS.length:0;
-  const pct=Math.round(avg*10);
-  // Chế độ thi bấm giờ: lưu thời gian từng Part kèm điểm AI trung bình của Part đó (thang 10)
-  let timing=null, timeMsg='';
+  const avg=ITEMS.length?sumScore/ITEMS.length:0, pct=Math.round(avg*10);
+  let timing=null, timeLines=[];
   if(mode==='exam'){
     timing={sec:Object.values(wUsed).reduce((a,b)=>a+b,0),parts:{}};
     Object.keys(WBUDGET).forEach(t=>{
       const idx=ITEMS.map((it,i)=>wKey(it)===t?i:-1).filter(i=>i>=0); if(!idx.length) return;
       const sc=idx.map(i=>state[i].aiResult?(Number(state[i].aiResult.score)||0):0);
       timing.parts[t]=[wUsed[t],WBUDGET[t],Math.round(sc.reduce((a,b)=>a+b,0)/sc.length*10)/10,10];
-      timeMsg+='\n'+WPART[t]+': '+wFmt(wUsed[t])+' / '+wFmt(WBUDGET[t])+(wUsed[t]>WBUDGET[t]?' (quá giờ)':'');
+      timeLines.push(WPART[t]+' '+wFmt(wUsed[t])+'/'+wFmt(WBUDGET[t])+(wUsed[t]>WBUDGET[t]?' (quá giờ)':''));
     });
-    timeMsg='\n\n⏱ Thời gian: '+wFmt(timing.sec)+' / 50:00'+timeMsg;
   }
   if(!timing){ const sec=sessionSec(); if(sec) timing={sec:sec,parts:null}; }
-  const r=progRecord('de'+(exam+1),pct,perQ,timing);
+  const key='de'+(exam+1), amended=examSaved;
+  const r=amended?progAmendLast(key,pct,timing):progRecord(key,pct,perQ,timing);
+  examSaved=true; examDirty=false;
+  buildExams(); renderProgPanel();
+  return {r,avg,pct,amended,timing,timeLines};
+}
+function savedNote(res){
+  if(!res) return '<div class="saved-note">💾 Kết quả lần làm này đã được lưu trước đó (chưa sửa gì thêm).</div>';
+  return '<div class="saved-note">💾 '+(res.amended?'Đã cập nhật':'Đã lưu')+' kết quả: <b>'+res.avg.toFixed(1)+'/10 ('+res.pct+'%)</b> · lần thứ '+res.r.attempts
+    +(res.timing&&res.timing.sec?' · ⏱ '+wFmt(res.timing.sec)+(mode==='exam'?' / 50:00':''):'')
+    +(res.timeLines.length?'<br><span style="font-size:.78rem">'+res.timeLines.join(' · ')+'</span>':'')
+    +'<br><span style="font-size:.78rem">Bấm <b>🔄 Làm lại đề</b> khi muốn làm lần mới.</span></div>';
+}
+// Làm lại: xoá bài + đồng hồ; hỏi lại nếu bài đang có mà chưa được lưu
+function resetExamAttempt(){
+  const hasWork=state.some(s=>s.value&&s.value.trim());
+  if(hasWork&&examDirty&&!confirm('Bài này chưa được lưu (chưa bấm "📊 Tổng kết cả đề"). Vẫn xoá để làm lại?')) return;
   state.forEach(s=>{s.value=''; delete s.aiResult;}); pos=0;
-  buildExams(); buildMatrix(); render();
-  wTimerReset();
-  alert('Đã ghi: điểm AI trung bình '+avg.toFixed(1)+'/10 ('+pct+'%) · lần thứ '+r.attempts+timeMsg+'\nĐề đã được xoá để bạn làm lại.');
+  examSaved=false; examDirty=true;
+  const sb=$('aiSummaryBox'); if(sb){ sb.classList.remove('show','err'); sb.innerHTML=''; }
+  buildExams(); buildMatrix(); render(); wTimerReset();
 }
 function renderProgPanel(){
   const el=document.getElementById('progPanel'); if(!el)return;
@@ -1666,7 +1676,7 @@ function renderProgPanel(){
 }
 
 // ===== tabs + dropdown =====
-$('btnRec').onclick=recordExam;
+$('btnRec').onclick=resetExamAttempt;
 $('deSel').onchange=()=>switchExam(+$('deSel').value);
 document.querySelectorAll('.maintab').forEach(t=>{
   t.onclick=()=>{
