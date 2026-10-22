@@ -118,6 +118,27 @@
   .tip b{font-size:14px}
   details.sec{margin-top:22px} details.sec>summary{cursor:pointer;font-weight:700;font-size:16px;padding:6px 0}
   .tview{margin-top:10px;font-size:13px} .tview summary{cursor:pointer;color:var(--muted)}
+  /* lịch tuần */
+  .cal-h,.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+  .cal-h div{text-align:center;font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);padding:2px 0}
+  .cal-c{min-height:66px;border-radius:10px;padding:5px 5px 6px;border:1px solid var(--line);background:#fff;font-size:11px;line-height:1.35;outline:none}
+  .cal-c.hit{cursor:pointer} .cal-c.hit:focus,.cal-c.hit:hover{box-shadow:0 0 0 2px rgba(26,34,56,.25)}
+  .cal-c.out{background:transparent;border-color:transparent}
+  .cal-c.fut{background:#fbfbfa;color:var(--muted)}
+  .cal-c.ok{background:#e3f4ec;border-color:#bfe3cf}
+  .cal-c.now{background:#fff4dc;border-color:#e0a100}
+  .cal-c.late{background:#fde8e5;border-color:#f4c4b9}
+  .cal-c.exam{background:#1a2238;color:#fff;border-color:#1a2238}
+  .cal-c.today{border-width:2px}
+  .cal-d{font-weight:700;font-size:12.5px;margin-bottom:2px} .cal-d small{font-weight:400;color:var(--muted)}
+  .cal-c.exam .cal-d small{color:#c3c2b7}
+  .cal-k{display:flex;flex-wrap:wrap;gap:2px 4px;font-family:'SF Mono',ui-monospace,monospace;font-size:10.5px}
+  .cc{white-space:nowrap} .cc.d{color:#006300;font-weight:700} .cc.sk{color:var(--muted);text-decoration:line-through}
+  .cal-c.late .cc:not(.d):not(.sk){color:#b23a26;font-weight:700}
+  .cal-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12px;color:var(--ink)}
+  .cal-leg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid var(--line)}
+  .cal-leg i.ok{background:#e3f4ec;border-color:#bfe3cf} .cal-leg i.now{background:#fff4dc;border-color:#e0a100}
+  .cal-leg i.late{background:#fde8e5;border-color:#f4c4b9} .cal-leg i.fut{background:#fbfbfa}
   .err{background:var(--accent-soft);border:1px solid #f4c4b9;color:#9b2c1c;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:10px}
   .tok{font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);margin-top:8px}
   .hist{font-size:13.5px}
@@ -611,7 +632,8 @@ function bindTips(root){
     const show=ev=>{tip.textContent='';const lines=(h.dataset.tip||'').split('|');
       lines.forEach((l,i)=>{const e=document.createElement(i?'div':'b');e.textContent=l;tip.appendChild(e);});
       tip.style.display='block';const r=h.getBoundingClientRect();
-      tip.style.left=Math.min(window.innerWidth-250,Math.max(8,r.left+r.width/2-110))+'px';tip.style.top=(r.top-tip.offsetHeight-8)+'px';};
+      tip.style.left=Math.min(window.innerWidth-250,Math.max(8,r.left+r.width/2-110))+'px';
+      const up=r.top-tip.offsetHeight-8;tip.style.top=(up<8?r.bottom+8:up)+'px';};
     h.addEventListener('pointerenter',show);h.addEventListener('focus',show);
     h.addEventListener('pointerleave',()=>tip.style.display='none');h.addEventListener('blur',()=>tip.style.display='none');
   });
@@ -735,23 +757,43 @@ function renderTiming(){
     +'<table><tr><th>Kỹ năng</th><th>Thi bấm giờ</th><th>Thời gian TB theo Part · độ chính xác</th></tr>'+h+'</table>'
     +'<div class="muted" style="font-size:12.5px;margin-top:8px">Chỉ tính các lần chọn <b>⏱ Thi bấm giờ</b> rồi nộp trọn đề. <span class="tp tight">vàng</span> = dùng ≥90% thời gian · <span class="tp hard">đỏ</span> = gần hết giờ mà đúng dưới 80% → Part khó nhất. Writing: % = điểm AI trung bình × 10.</div>';
 }
+// Ký hiệu ngắn cho ô lịch: V = gói từ vựng, L4 = Listening đề 4, L+2 = làm lại 2 đề Listening bất kỳ, M = thi thử
+function taskCode(t){
+  if(t.skill==='vocab')return 'V';
+  if(t.skill==='all')return 'M';
+  const c={listening:'L',reading:'R',writing:'W',speaking:'S'}[t.skill]||'?';
+  return t.de>0?c+t.de:c+'+'+(t.need||1);
+}
 function renderCal(tasks){
   const byDate={};tasks.forEach(x=>(byDate[x.date]=byDate[x.date]||[]).push(x));
-  const dates=Object.keys(byDate).sort();
-  const weeks={};dates.forEach(d=>{const w=Math.floor(daysBetween(PLAN_START,d)/7);(weeks[w]=weeks[w]||[]).push(d);});
-  let h='';
-  Object.keys(weeks).sort((a,b)=>a-b).forEach(w=>{
-    const ds=weeks[w],all=ds.flatMap(d=>byDate[d]),dn=all.filter(x=>x.done).length;
-    const open=ds.some(d=>d>=addDays(TODAY,-1)&&d<=addDays(TODAY,6));
-    h+='<details class="week"'+(open?' open':'')+'><summary>Tuần '+(+w+1)+' · '+fmt(ds[0])+' → '+fmt(ds[ds.length-1])+' <span class="mono muted" style="font-size:11.5px;font-weight:400">'+dn+'/'+all.length+' xong</span></summary>';
-    ds.forEach(d=>{
-      const mins=byDate[d].reduce((a,x)=>a+taskMin(x.t),0),cap=capacity(d);
-      h+='<div class="day'+(d===TODAY?' today':d<TODAY?' past':'')+'"><h3><span>'+DOW[parseYmd(d).getDay()]+' '+fmt(d)+(d===TODAY?' · hôm nay':'')+'</span>'
-        +'<span class="mono'+(mins>cap?' down':'')+'">'+mins+'/'+cap+' phút</span></h3>'+byDate[d].map(x=>taskHTML(x)).join('')+'</div>';
-    });
-    h+='</details>';
-  });
+  const monOf=d=>{const w=parseYmd(d).getDay();return addDays(d,w===0?-6:1-w);};
+  let d=monOf(PLAN_START);const last=addDays(monOf(EXAM_DATE),6);
+  let h='<div class="cal"><div class="cal-h">'+['T2','T3','T4','T5','T6','T7','CN'].map(x=>'<div>'+x+'</div>').join('')+'</div><div class="cal-g">';
+  for(;d<=last;d=addDays(d,1)){
+    const list=byDate[d]||[],real=list.filter(x=>!x.skip),done=real.filter(x=>x.done).length;
+    const inPlan=d>=PLAN_START&&d<=EXAM_DATE;
+    let cls='out';
+    if(d===EXAM_DATE)cls='exam';
+    else if(inPlan&&real.length){
+      if(done===real.length)cls='ok';
+      else if(d<TODAY)cls='late';
+      else if(d===TODAY)cls='now';
+      else cls='fut';
+    }else if(inPlan)cls='fut';
+    const mins=list.reduce((a,x)=>a+(x.skip?0:taskMin(x.t)),0);
+    const codes=list.map(x=>'<span class="cc'+(x.done?' d':'')+(x.skip?' sk':'')+'">'+taskCode(x.t)+(x.done?'✓':x.skip?'⏭':'')+'</span>').join('');
+    const tip=[DOW[parseYmd(d).getDay()]+' '+fmt(d)+(d===TODAY?' · hôm nay':'')+(d===EXAM_DATE?' · NGÀY THI':'')
+      +(real.length?' · '+done+'/'+real.length+' việc xong · '+mins+'′':'')]
+      .concat(list.map(x=>(x.done?'✓ ':x.skip?'⏭ ':(d<TODAY?'✗ ':'○ '))+taskTitle(x.t).replace(/^\S+\s/,'')+(x.skip?' (dồn sang gói mới)':' · '+taskMin(x.t)+'′')));
+    if(d===EXAM_DATE)tip.push('🎯 Thi Aptis — chúc bạn thi tốt!');
+    h+='<div class="cal-c '+cls+(d===TODAY?' today':'')+(inPlan?' hit':'')+'"'+(inPlan?' tabindex="0" data-tip="'+svgEsc(tip.join('|'))+'"':'')+'>'
+      +'<div class="cal-d">'+(+d.slice(8))+(d.slice(8)==='01'||d===monOf(PLAN_START)?'<small>/'+(+d.slice(5,7))+'</small>':'')+(d===EXAM_DATE?' 🎯':'')+'</div>'
+      +(inPlan?'<div class="cal-k">'+codes+'</div>':'')+'</div>';
+  }
+  h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
+    +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới</span></div>';
   $('cal').innerHTML=h;
+  bindTips($('cal'));
 }
 function fmt(d){return d.slice(8)+'/'+d.slice(5,7);}
 
