@@ -483,9 +483,10 @@
   </div>
 
   <div class="practice-bar">
-    <button class="rec-btn" id="recBtn">🎙 Thu âm &amp; chấm AI</button>
+    <button class="rec-btn" id="recBtn">🎙 Thu âm</button>
     <button class="playback-btn" id="playbackBtn">🔁 Nghe lại bản thu</button>
-    <span class="rec-hint" id="recHint">Bấm rồi trả lời bằng tiếng Anh (tự nói hoặc đọc bài mẫu) — bấm Dừng để AI chấm.</span>
+    <button class="playback-btn" id="aiGradeBtn" title="Gửi bản thu vừa rồi cho AI chấm (mất khoảng 10–30 giây)">🤖 Gửi AI chấm</button>
+    <span class="rec-hint" id="recHint">Bấm rồi trả lời bằng tiếng Anh — bấm Dừng để xem máy bắt chữ. Ưng bản thu thì bấm 🤖 Gửi AI chấm.</span>
   </div>
 
   <div class="rec-result" id="recResult">
@@ -1292,13 +1293,22 @@ timerBtn.onclick = function(){
 };
 // reset timer khi chuyển câu
 const _origRenderCard = renderCard;
-renderCard = function(){ _origRenderCard(); resetTimer(); hideRecResult(); const _ai=document.getElementById('aiSpeak'); if(_ai) _ai.innerHTML=''; if(typeof playbackBtn!=='undefined' && playbackBtn) playbackBtn.classList.remove('show'); if(typeof recognizing!=='undefined' && recognizing && typeof stopRecording==='function') stopRecording(); if(typeof oneRecognizing!=='undefined' && oneRecognizing && typeof stopRecordOne==='function') stopRecordOne(); };
+renderCard = function(){ _origRenderCard(); resetTimer(); hideRecResult(); const _ai=document.getElementById('aiSpeak'); if(_ai) _ai.innerHTML=''; if(typeof playbackBtn!=='undefined' && playbackBtn) playbackBtn.classList.remove('show'); if(typeof hideAiGrade==='function') hideAiGrade(); if(typeof recognizing!=='undefined' && recognizing && typeof stopRecording==='function') stopRecording(); if(typeof oneRecognizing!=='undefined' && oneRecognizing && typeof stopRecordOne==='function') stopRecordOne(); };
 
 // ---------- SPEECH RECOGNITION + AUDIO RECORDING ----------
 const recBtn = document.getElementById('recBtn');
 const recHint = document.getElementById('recHint');
 const recResult = document.getElementById('recResult');
 const playbackBtn = document.getElementById('playbackBtn');
+const aiGradeBtn = document.getElementById('aiGradeBtn');
+let lastTake = null;   // bản thu gần nhất của câu đang mở: {text, dur, q}
+function hideAiGrade(){ lastTake = null; aiGradeBtn.classList.remove('show'); }
+aiGradeBtn.onclick = async function(){
+  if(!lastTake || lastTake.q!==current || recognizing) return;
+  aiGradeBtn.disabled = true; aiGradeBtn.textContent = '🤖 Đang chấm…';
+  await gradeSpeakingAI(lastTake.text, lastTake.dur);
+  aiGradeBtn.textContent = '✓ Đã chấm bản này';   // thu bản mới thì mới gửi lại được
+};
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null, recognizing = false;
 let mediaRecorder = null, audioChunks = [], audioURL = null, audioEl = null;
@@ -1355,7 +1365,7 @@ if(!SR || !navigator.mediaDevices){
 
     audioChunks = [];
     if(audioURL){ URL.revokeObjectURL(audioURL); audioURL=null; audioEl=null; }
-    playbackBtn.classList.remove('show');
+    playbackBtn.classList.remove('show'); hideAiGrade();
 
     // thu audio để nghe lại (xin micro mỗi lần; trên localhost Chrome sẽ nhớ quyền)
     try{
@@ -1398,11 +1408,13 @@ if(!SR || !navigator.mediaDevices){
     recognition.onend = ()=>{
       recognizing = false;
       recBtn.classList.remove('recording');
-      recBtn.textContent = '🎙 Thu âm & chấm AI';
-      recHint.textContent = 'Bấm rồi trả lời bằng tiếng Anh (tự nói hoặc đọc bài mẫu) — bấm Dừng để AI chấm.';
+      recBtn.textContent = '🎙 Thu âm';
+      recHint.textContent = 'Xem máy bắt chữ bên dưới · ưng bản thu thì bấm 🤖 Gửi AI chấm, chưa ưng thì thu lại.';
       const dur = recStartT ? (Date.now()-recStartT)/1000 : 0;
       showComparison(finalText.trim());
-      gradeSpeakingAI(finalText.trim(), dur);
+      // chỉ bắt chữ; chấm AI khi người học bấm "Gửi AI chấm" (chấm mất 10–30 giây)
+      lastTake = {text:finalText.trim(), dur:dur, q:current};
+      aiGradeBtn.textContent = '🤖 Gửi AI chấm'; aiGradeBtn.disabled = false; aiGradeBtn.classList.add('show');
     };
     recognition.start();
   };
