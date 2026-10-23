@@ -65,6 +65,11 @@
   .qz-opt.correct{border-color:var(--green);background:var(--green-soft);color:var(--green);font-weight:800;}
   .qz-opt.wrong{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
   .qz-opt:disabled{cursor:default;}
+  .qz-hints{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;}
+  .qz-hl{font-size:.78rem;color:var(--muted);font-weight:700;margin-right:2px;}
+  .qz-hint{font-size:.95rem;border:1.5px dashed var(--line);border-radius:99px;padding:4px 12px;background:var(--card);user-select:none;}
+  .qz-hint.right{border-style:solid;border-color:var(--green);background:var(--green-soft);color:var(--green);font-weight:800;}
+  .qz-hint.bad{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent);text-decoration:line-through;}
   .qz-inrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
   .qz-in{flex:1;min-width:170px;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font:inherit;font-size:1.05rem;}
   .qz-in.ok{border-color:var(--green);background:var(--green-soft);} .qz-in.no{border-color:var(--accent);background:var(--accent-soft);}
@@ -461,7 +466,7 @@ function packDoneScreen(){
 }
 function renderQ(){
   const v=qz.cur, m=qz.mode;
-  const mname=m===1?'Chế độ 1 · Nghĩa → chọn từ':m===2?'Chế độ 2 · Điền vào câu':'Chế độ 3 · Nghe & gõ';
+  const mname=m===1?'Chế độ 1 · Nghĩa → chọn từ':m===2?'Chế độ 2 · Điền câu (gõ từ)':'Chế độ 3 · Nghe & gõ';
   const tag=qz.pack?'<span class="qz-grp">Gói hôm nay · xong '+qz.pool.filter(x=>doneToday(x.en,qz.pack)).length+'/'+qz.pool.length+'</span> ':'';
   let head='<div class="qz-top"><span class="qz-mode">'+tag+mname+'</span>'
     +'<span class="qz-prog">'+levelBadge(v.en)+' · đúng '+qz.right+'/'+qz.done
@@ -503,9 +508,30 @@ function mode1(b,v){
 function mode2(b,v){
   const f=findInEg(v.eg,v.en);
   const sent=f?esc(v.eg.slice(0,f.idx))+'<span class="qz-blank">_____</span>'+esc(v.eg.slice(f.idx+f.len)):esc(v.eg);
-  b.innerHTML='<div class="qz-q">Điền vào chỗ trống — chọn từ đúng</div>'
-    +'<div class="qz-sent">'+sent+'</div><div class="qz-vi">'+esc(v.vi)+'</div>';
-  optionBox(b, v.en, v);
+  // Gõ từ vào ô (luyện chính tả); 5 từ gợi ý vẫn hiện để nhìn chọn, nhưng phải tự gõ lại cho đúng
+  b.innerHTML='<div class="qz-q">Điền vào chỗ trống — gõ từ đúng (chọn trong các gợi ý)</div>'
+    +'<div class="qz-sent">'+sent+'</div><div class="qz-vi">'+esc(v.vi)+'</div>'
+    +'<div class="qz-inrow"><input class="qz-in" id="qzIn" placeholder="Gõ từ còn thiếu…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">'
+    +'<button class="btn" id="qzChk">Kiểm tra</button></div>'
+    +'<div class="qz-hints" id="qzHints"></div><div id="qzFb"></div>';
+  const target=f?f.matched:v.en;
+  const words=shuffle([v.en].concat(distractors(v.en,4)));
+  $('qzHints').innerHTML='<span class="qz-hl">Gợi ý:</span>'+words.map(en=>'<span class="qz-hint">'+esc(en)+'</span>').join('');
+  const inp=$('qzIn');
+  const submit=()=>{
+    if(qz.answered)return;
+    const t=inp.value.trim(); if(!t){ inp.focus(); return; }
+    const ok=[v.en, coreOf(v.en), target].some(c=>normW(t)===normW(c));
+    qz.answered=true; inp.readOnly=true; inp.classList.add(ok?'ok':'no');
+    [...$('qzHints').querySelectorAll('.qz-hint')].forEach(h=>{
+      if(h.textContent.toLowerCase()===v.en.toLowerCase()) h.classList.add('right');
+      else if(normW(h.textContent)===normW(t)) h.classList.add('bad'); });
+    if(f) b.querySelector('.qz-blank').outerHTML='<span class="qz-blank" style="color:var('+(ok?'--green':'--accent')+')">'+esc(target)+'</span>';
+    finish(ok,v);
+  };
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  $('qzChk').onclick=submit;
+  setTimeout(()=>{ try{ inp.focus(); }catch(e){} },50);
 }
 function mode3(b,v){
   const f=findInEg(v.eg,v.en);
