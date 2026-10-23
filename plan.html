@@ -378,7 +378,7 @@ function generateDays(from,skip){
     cyc[s]=Array.from({length:N},(_,i)=>((start-1+i)%N)+1);ptr[s]=0;
   });
   const next=s=>{
-    const tip=s==='speaking'?'':'chọn ⏱ Thi bấm giờ để lưu thời gian';
+    const tip='chọn ⏱ Thi bấm giờ để lưu thời gian';
     if(q[s].length)return task(s,q[s].shift(),'new',MIN[s],tip);
     return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý câu sai lần trước'+(tip?' · '+tip:''));
   };

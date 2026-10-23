@@ -344,6 +344,40 @@
   .ot-share td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
   .ot-share td:last-child{white-space:nowrap;font-weight:700}
   .ai-speak{margin-bottom:14px}
+  /* thi bấm giờ */
+  .exam-start{border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:99px;padding:7px 15px;cursor:pointer;font:inherit;font-size:.78rem;font-weight:700}
+  .exam-box{display:none}
+  body.examon .exam-box{display:block}
+  body.examon .card,body.examon .qnav,body.examon .partfilter,body.examon .controls,body.examon .de-picker,body.examon #progPanel,body.examon #modeNote{display:none!important}
+  .ex-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:18px 18px 20px}
+  .ex-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .ex-chip{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;padding:4px 9px;border-radius:8px;background:#f3f1ec;color:var(--muted);white-space:nowrap}
+  .ex-chip b{font-weight:700;margin-right:5px}
+  .ex-chip.active{background:var(--ink);color:#fff} .ex-chip.done{background:#e3f4ec;color:#1d5a32} .ex-chip.over{background:#fde8e5;color:#b23a26}
+  .ex-step{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+  .ex-q{font-size:1.12rem;font-weight:700;line-height:1.5;margin-bottom:12px}
+  .ex-q ol{margin:4px 0 0 20px} .ex-q li{margin:3px 0}
+  .ex-clock{display:flex;align-items:center;gap:12px;margin:14px 0 6px}
+  .ex-phase{font-weight:700;font-size:.92rem;min-width:150px}
+  .ex-phase.rec{color:var(--accent)} .ex-phase.rec::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:6px;animation:exblink 1s infinite}
+  @keyframes exblink{50%{opacity:.2}}
+  .ex-time{font-family:'SF Mono',ui-monospace,monospace;font-size:2rem;font-weight:700;min-width:90px}
+  .ex-time.warn{color:var(--accent)}
+  .ex-track{height:8px;border-radius:99px;background:#eee9df;overflow:hidden;margin-bottom:14px}
+  .ex-fill{height:100%;background:var(--green);transition:width .9s linear}
+  .ex-btns{display:flex;gap:8px;flex-wrap:wrap}
+  .ex-btn{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:8px 15px;cursor:pointer;font:inherit;font-size:.85rem;font-weight:600}
+  .ex-btn.pri{background:var(--ink);border-color:var(--ink);color:#fff}
+  .ex-res-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;margin-bottom:10px}
+  .ex-big{font-size:1.5rem;font-weight:800}
+  .ex-table{width:100%;border-collapse:collapse;font-size:.85rem;margin:8px 0 14px}
+  .ex-table th,.ex-table td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)} .ex-table th{color:var(--muted);font-weight:600}
+  .ex-table .over{color:#b23a26;font-weight:700}
+  .ex-ans{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+  .ex-ans-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.86rem}
+  .ex-ans-q{font-weight:600;flex:1;min-width:180px}
+  .saved-note{margin-top:10px;padding:9px 12px;border-radius:9px;background:#e3f4ec;border:1px solid #cfe0d4;font-size:.86rem;line-height:1.6}
+  .ex-ans details{margin-top:6px;font-size:.84rem} .ex-ans summary{cursor:pointer;color:var(--muted)}
   .ai-speak:empty{display:none}
   .ai-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .ai-meta{font-size:12px;color:var(--muted)}
@@ -401,6 +435,7 @@
 <div class="de-picker">
   <label for="deSel">Chọn đề:</label>
   <select id="deSel"></select>
+  <button id="btnExam" class="exam-start" title="Thi cả đề như thật: P1 3×30″ · P2 3×45″ · P3 3×45″ · P4 chuẩn bị 1′ + nói 2′ — tự ghi âm, tự chuyển câu, AI chấm cuối bài">⏱ Thi bấm giờ</button>
   <button id="btnRec" style="border:1.5px solid var(--ok,#2f9e6f);background:var(--ok,#2f9e6f);color:#fff;border-radius:99px;padding:7px 15px;cursor:pointer;font:inherit;font-size:.78rem;font-weight:700;">💾 Ghi đã ôn</button>
 </div>
 <div class="prog-panel" id="progPanel" style="margin-top:10px;font-size:.8rem;color:#6b7280;line-height:1.65;"></div>
@@ -430,6 +465,7 @@
 </div>
 <div id="modeNote" style="display:none;font-size:13px;color:var(--accent);font-weight:600;background:var(--accent-soft);border-radius:10px;padding:9px 13px;margin:0 0 12px"></div>
 <div class="qnav" id="qnav"></div>
+<div class="exam-box" id="examBox"></div>
 
 <div class="card">
   <div class="q-title" id="qTitle"></div>
@@ -441,7 +477,7 @@
   <div class="sentences" id="sentences"></div>
 
   <div class="practice-bar">
-    <button class="timer-btn" id="timerBtn">⏱ Bấm giờ 45 giây</button>
+    <button class="timer-btn" id="timerBtn">⏱ Bấm giờ</button>
     <div class="timer-display" id="timerDisplay">0:45</div>
     <div class="timer-bar-track"><div class="timer-bar-fill" id="timerFill"></div></div>
   </div>
@@ -858,7 +894,8 @@ function renderCard(){
   if(d.isVocab){ if(_card) _card.classList.add('vocabmode'); renderVocabCard(); return; }
   if(_card) _card.classList.remove('vocabmode');
   document.getElementById('qTitle').textContent = (DATALAB[current]||d.badge)+': '+d.q;
-  document.getElementById('qMeta').textContent = d.sentences.length+' câu · nói ~45 giây · 🔊 nghe mẫu, 🎙 thu & chấm riêng từng câu';
+  { const pt=PART_TIME[partOf(d)]||PART_TIME.P2;
+    document.getElementById('qMeta').textContent = d.sentences.length+' câu · '+(pt.prep?'chuẩn bị 1 phút, nói 2 phút':'nói '+pt.talk+' giây')+' · 🔊 nghe mẫu, 🎙 thu & chấm riêng từng câu'; }
   const picBox = document.getElementById('picBox');
   const deck = DECK[currentDe];
   // ảnh ưu tiên gắn trên từng câu (d.img / d.img2), nếu không có thì lấy ảnh của đề
@@ -1202,44 +1239,48 @@ document.getElementById('viToggle').onclick = function(){
 // stop speech when leaving page
 window.addEventListener('beforeunload', ()=>synth.cancel());
 
-// ---------- TIMER 30s ----------
-let timerInterval = null;
-let timeLeft = 45;
-const TIMER_START = 45;
+// ---------- ĐỒNG HỒ LUYỆN TẬP THEO PART: P1 30″ · P2/P3 45″ · P4 chuẩn bị 1′ rồi nói 2′ ----------
+const PART_TIME={P1:{talk:30},P2:{talk:45},P3:{talk:45},P4:{prep:60,talk:120}};
+function partOf(d){ return d&&/^P\d/.test(d.badge||'')?d.badge.slice(0,2):'P1'; }   // bộ 29 câu Part 1 có badge dạng số
+let timerInterval = null, timeLeft = 0, timerTotal = 0, timerPhase = 'talk';
 const timerBtn = document.getElementById('timerBtn');
 const timerDisplay = document.getElementById('timerDisplay');
 const timerFill = document.getElementById('timerFill');
 
-function fmt(t){ return '0:' + String(t).padStart(2,'0'); }
+function fmt(t){ t=Math.max(0,Math.round(t)); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
+function curPT(){ return PART_TIME[partOf(DATA[current])]||PART_TIME.P2; }
+function timerLabel(){ const pt=curPT(), p=partOf(DATA[current]);
+  return '⏱ '+(pt.prep?'Chuẩn bị '+fmt(pt.prep)+' + nói '+fmt(pt.talk):'Bấm giờ '+pt.talk+' giây')+' ('+p.replace('P','Part ')+')'; }
+function setPhase(ph){ const pt=curPT(); timerPhase=ph; timerTotal=timeLeft=pt[ph];
+  timerDisplay.textContent=(ph==='prep'?'Chuẩn bị ':'')+fmt(timeLeft); timerDisplay.className='timer-display';
+  timerFill.style.width='100%'; timerFill.style.background=ph==='prep'?'var(--gold)':'var(--green)'; }
+function beep(f){
+  try{
+    const ac = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ac.createOscillator(); const g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.frequency.value = f||880; g.gain.value = 0.1;
+    o.start(); setTimeout(()=>{o.stop();ac.close();}, 250);
+  }catch(e){}
+}
 function resetTimer(){
   clearInterval(timerInterval); timerInterval=null;
-  timeLeft = TIMER_START;
-  timerDisplay.textContent = fmt(timeLeft);
-  timerDisplay.className = 'timer-display';
-  timerFill.style.width = '100%';
-  timerFill.style.background = 'var(--green)';
-  timerBtn.textContent = '⏱ Bấm giờ 45 giây';
+  setPhase(curPT().prep?'prep':'talk');
+  timerBtn.textContent = timerLabel();
 }
 function tickTimer(){
   timeLeft--;
-  timerDisplay.textContent = fmt(Math.max(timeLeft,0));
-  timerFill.style.width = (timeLeft/TIMER_START*100) + '%';
-  if(timeLeft <= 10 && timeLeft > 5){ timerDisplay.classList.add('warning'); timerFill.style.background='var(--gold)'; }
-  if(timeLeft <= 5 && timeLeft > 0){ timerFill.style.background='var(--accent)'; }
+  timerDisplay.textContent = (timerPhase==='prep'?'Chuẩn bị ':'')+fmt(timeLeft);
+  timerFill.style.width = (timeLeft/timerTotal*100) + '%';
+  if(timerPhase==='talk'&&timeLeft <= 10 && timeLeft > 5){ timerDisplay.classList.add('warning'); timerFill.style.background='var(--gold)'; }
+  if(timerPhase==='talk'&&timeLeft <= 5 && timeLeft > 0){ timerFill.style.background='var(--accent)'; }
   if(timeLeft <= 0){
+    if(timerPhase==='prep'){ beep(660); setPhase('talk'); return; }   // hết 1′ chuẩn bị → bắt đầu 2′ nói
     clearInterval(timerInterval); timerInterval=null;
     timerDisplay.textContent = "Hết giờ!";
     timerDisplay.className = 'timer-display done';
     timerBtn.textContent = '↻ Làm lại';
-    try{ const u=new SpeechSynthesisUtterance(''); }catch(e){}
-    // tiếng beep nhẹ
-    try{
-      const ac = new (window.AudioContext||window.webkitAudioContext)();
-      const o = ac.createOscillator(); const g = ac.createGain();
-      o.connect(g); g.connect(ac.destination);
-      o.frequency.value = 880; g.gain.value = 0.1;
-      o.start(); setTimeout(()=>{o.stop();ac.close();}, 250);
-    }catch(e){}
+    beep();
   }
 }
 timerBtn.onclick = function(){
@@ -1396,7 +1437,7 @@ async function blobToWavBase64(blob){
 function escH(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 async function gradeSpeakingAI(transcript, durationSec){
   const box=document.getElementById('aiSpeak'); if(!box) return;
-  const d=DATA[current], part=/^P\d/.test(d.badge||'')?d.badge.slice(0,2):'P1';   // bộ 29 câu Part 1 có badge dạng số
+  const d=DATA[current], part=partOf(d);
   recResult.classList.add('show');
   box.innerHTML='<div class="ai-load">🤖 AI đang nghe bản thu và chấm…</div>';
   let audio=null;
@@ -1632,9 +1673,12 @@ function _rec(key){
 // Thời gian làm thực tế (mọi chế độ): từ lúc mở đề tới lúc nộp; bỏ qua nếu quá 3 giờ (treo tab)
 let SESS_T0=Date.now();
 function sessionSec(){ const s=Math.round((Date.now()-SESS_T0)/1000); return s>0&&s<=3*3600?s:null; }
-function progRecord(key){
-  const r=_rec(key); const now=new Date().toISOString(), sec=sessionSec();
-  r.attempts++; r.lastDate=now; r.history.push(sec?{date:now,score:r.lastScore,sec:sec}:{date:now,score:r.lastScore}); SESS_T0=Date.now();
+function progRecord(key,timing){
+  const r=_rec(key); const now=new Date().toISOString(), sec=timing?timing.sec:sessionSec();
+  const sc=timing&&timing.score!=null?timing.score:r.lastScore;
+  const h=sec?{date:now,score:sc,sec:sec}:{date:now,score:sc};
+  if(timing&&timing.parts){ h.timed=true; h.parts=timing.parts; }
+  r.attempts++; r.lastDate=now; r.history.push(h); SESS_T0=Date.now();
   if(r.history.length>50)r.history=r.history.slice(-50);
   progSave(); return r;
 }
@@ -1711,6 +1755,202 @@ document.getElementById('btnRec').onclick=()=>{
   alert('Đã ghi: ôn đề này lần thứ '+r.attempts+(r.pronCount?('\nPhát âm TB: '+r.lastScore+'%'):''));
 };
 progLoad().then(()=>buildDeSel());
+
+/* ===== THI BẤM GIỜ CẢ ĐỀ — như đề thật (~12 phút):
+   Part 1: 3 câu × 30″ · Part 2: 3 câu × 45″ (tả tranh + 2 câu hỏi) · Part 3: 3 câu × 45″ (so sánh 2 tranh)
+   Part 4: đọc 3 câu hỏi, chuẩn bị 1′ rồi nói liền 2′ (ghi 1 bản).
+   Mỗi câu: máy đọc câu hỏi → bíp → tự ghi âm + đếm ngược → hết giờ tự dừng, sang câu sau. Không hiện bài mẫu.
+   Xong cả đề: AI chấm từng bản ghi, lưu điểm + thời gian từng Part vào tiến độ. ===== */
+const EX_PART_NAME={P1:'Part 1',P2:'Part 2',P3:'Part 3',P4:'Part 4'};
+let EX=null;   // {de, steps, i, phase, left, total, t0, stream, rec, sr, int, done}
+function exSteps(deck){
+  const qs=deck.questions, steps=[];
+  ['P1','P2','P3'].forEach(p=>qs.filter(q=>partOf(q)===p).forEach(q=>steps.push({part:p,qs:[q],talk:PART_TIME[p].talk})));
+  const p4=qs.filter(q=>partOf(q)==='P4');
+  if(p4.length) steps.push({part:'P4',qs:p4,prep:PART_TIME.P4.prep,talk:PART_TIME.P4.talk});
+  return steps;
+}
+function exBudget(p){ return EX.steps.filter(x=>x.part===p).reduce((a,x)=>a+x.talk,0); }
+function exUsed(p){ return EX.steps.filter(x=>x.part===p).reduce((a,x)=>a+(x.used||0),0); }
+function exPics(d,deck){
+  const upKey=d.up||(deck.id+'_'+d.badge), p1=d.img||deck.img||USERIMG[upKey+'_a'], p2=d.img2||deck.img2||USERIMG[upKey+'_b'];
+  if(!d.hasImg) return '';
+  if(d.img2||d.pair) return '<div class="qpair">'+[p1,p2].map((src,k)=>src?'<figure class="qpic-fig"><img src="'+src+'" class="qpic2" alt="Picture '+(k+1)+'"><figcaption>Picture '+(k+1)+'</figcaption></figure>':'').join('')+'</div>';
+  return p1?'<div class="qsingle"><img src="'+p1+'" class="qpic" alt="đề bài"></div>':'';
+}
+async function startExam(){
+  if(!SR||!navigator.mediaDevices||!window.MediaRecorder){ alert('Trình duyệt này không hỗ trợ micro/nhận giọng nói — hãy dùng Chrome hoặc Edge.'); return; }
+  if(EX&&!EX.done) return;
+  stopAll(); clearInterval(timerInterval); timerInterval=null;
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ alert('Không truy cập được micro. Hãy cho phép quyền micro rồi thử lại.'); return; }
+  const deck=DECK[currentDe];
+  EX={de:currentDe,steps:exSteps(deck),i:0,t0:Date.now(),stream:stream,done:false};
+  document.body.classList.add('examon');
+  window.scrollTo(0,0);
+  exRunStep();
+}
+function exRender(){
+  const box=document.getElementById('examBox'), st=EX.steps[EX.i], deck=DECK[EX.de];
+  const chips=['P1','P2','P3','P4'].map(p=>{ const b=exBudget(p), u=exUsed(p), cur=st&&st.part===p&&!EX.done;
+    const fin=EX.steps.filter(x=>x.part===p).every(x=>x.used!=null);
+    return '<span class="ex-chip'+(cur?' active':fin?' done':'')+'"><b>'+EX_PART_NAME[p].toUpperCase()+'</b>'+fmt(u)+' / '+fmt(b)+'</span>'; }).join('');
+  const q=st.qs.length>1?'<ol>'+st.qs.map(x=>'<li>'+escH(x.q)+'</li>').join('')+'</ol>':escH(st.qs[0].q);
+  const nInPart=EX.steps.filter(x=>x.part===st.part).indexOf(st)+1, ofPart=EX.steps.filter(x=>x.part===st.part).length;
+  box.innerHTML='<div class="ex-card"><div class="ex-chips">'+chips+'</div>'
+    +'<div class="ex-step">'+escH(deck.title.split(' — ')[0])+' · '+EX_PART_NAME[st.part]+(ofPart>1?' · câu '+nInPart+'/'+ofPart:'')+' · bước '+(EX.i+1)+'/'+EX.steps.length+'</div>'
+    +'<div class="ex-q">'+q+'</div>'+exPics(st.qs[0],deck)
+    +'<div class="ex-clock"><span class="ex-phase" id="exPhase"></span><span class="ex-time" id="exTime"></span></div>'
+    +'<div class="ex-track"><div class="ex-fill" id="exFill"></div></div>'
+    +'<div class="ex-btns"><button class="ex-btn pri" id="exNext"></button><button class="ex-btn" id="exQuit">✕ Thoát thi</button></div></div>';
+  document.getElementById('exNext').onclick=exNextClick;
+  document.getElementById('exQuit').onclick=quitExam;
+}
+function exPaint(){
+  const ph=document.getElementById('exPhase'), tm=document.getElementById('exTime'), fl=document.getElementById('exFill'), nb=document.getElementById('exNext');
+  if(!ph) return;
+  const lab={listen:'🔊 Nghe câu hỏi…',prep:'📝 Chuẩn bị (ghi chú ý chính)',talk:'Đang ghi âm — nói đi!'}[EX.phase];
+  ph.textContent=lab; ph.className='ex-phase'+(EX.phase==='talk'?' rec':'');
+  tm.textContent=EX.phase==='listen'?'':fmt(EX.left);
+  tm.className='ex-time'+(EX.phase==='talk'&&EX.left<=10?' warn':'');
+  fl.style.width=EX.phase==='listen'?'100%':(EX.left/EX.total*100)+'%';
+  fl.style.background=EX.phase==='prep'?'var(--gold)':EX.phase==='talk'&&EX.left<=10?'var(--accent)':'var(--green)';
+  nb.textContent=EX.phase==='listen'?'⏭ Bỏ qua, bắt đầu':EX.phase==='prep'?'🎙 Nói luôn':EX.i===EX.steps.length-1?'✓ Nộp bài':'Xong, câu tiếp ›';
+}
+function exRunStep(){
+  const st=EX.steps[EX.i];
+  exRender();
+  EX.phase='listen'; exPaint();
+  // máy đọc câu hỏi như phòng thi; Part 4 đọc lần lượt 3 câu
+  const text=st.qs.map(x=>x.q).join(' ... ');
+  let started=false; const go=()=>{ if(started||!EX||EX.done||EX.steps[EX.i]!==st) return; started=true; st.prep?exStartPhase('prep'):exStartPhase('talk'); };
+  try{ synth.cancel(); const u=makeUtterance(text); u.onend=()=>setTimeout(go,300); u.onerror=go; synth.speak(u); }catch(e){ go(); }
+  EX.listenTO=setTimeout(go, 2500+text.split(/\s+/).length*550);   // phòng khi máy không có giọng đọc
+}
+function exStartPhase(ph){
+  const st=EX.steps[EX.i];
+  clearInterval(EX.int); clearTimeout(EX.listenTO); synth.cancel();
+  EX.phase=ph; EX.total=EX.left=st[ph]; beep(ph==='talk'?880:660);
+  if(ph==='talk') exRecStart(st);
+  exPaint();
+  EX.int=setInterval(()=>{ EX.left--; exPaint(); if(EX.left<=0){ ph==='prep'?exStartPhase('talk'):exEndStep(); } },1000);
+}
+function exRecStart(st){
+  st.t0=Date.now(); st.chunks=[]; st.text='';
+  try{
+    const mr=new MediaRecorder(EX.stream); EX.rec=mr;
+    mr.ondataavailable=e=>{ if(e.data.size>0) st.chunks.push(e.data); };
+    mr.onstop=()=>{ st.blob=new Blob(st.chunks,{type:mr.mimeType||'audio/webm'}); st.url=URL.createObjectURL(st.blob); };
+    mr.start();
+  }catch(e){}
+  try{
+    const r=new SR(); EX.sr=r; r.lang='en-GB'; r.interimResults=false; r.continuous=true;
+    r.onresult=e=>{ for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) st.text+=' '+e.results[i][0].transcript; };
+    r.onerror=()=>{}; r.onend=()=>{ if(EX&&EX.rec&&EX.rec.state==='recording'&&EX.sr===r) try{ r.start(); }catch(e){} };   // Chrome tự ngắt khi im lặng lâu → nghe tiếp
+    r.start();
+  }catch(e){}
+}
+function exRecStop(){
+  const sr=EX.sr; EX.sr=null; if(sr) try{ sr.stop(); }catch(e){}
+  if(EX.rec&&EX.rec.state!=='inactive') try{ EX.rec.stop(); }catch(e){}
+}
+function exEndStep(){
+  const st=EX.steps[EX.i];
+  clearInterval(EX.int);
+  st.used=Math.min(st.talk,Math.round((Date.now()-st.t0)/1000));
+  exRecStop(); beep(520);
+  if(EX.i<EX.steps.length-1){ EX.i++; setTimeout(()=>{ if(EX&&!EX.done) exRunStep(); },900); }
+  else setTimeout(finishExam,900);
+}
+function exNextClick(){
+  if(EX.phase==='listen') exStartPhase(EX.steps[EX.i].prep?'prep':'talk');
+  else if(EX.phase==='prep') exStartPhase('talk');
+  else exEndStep();
+}
+function exCleanup(){
+  clearInterval(EX.int); clearTimeout(EX.listenTO); synth.cancel(); exRecStop();
+  try{ EX.stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+}
+function quitExam(){
+  if(!EX) return;
+  if(!EX.done&&!confirm('Thoát chế độ thi? Bài đang làm sẽ không được lưu.')) return;
+  exCleanup(); EX=null;
+  document.body.classList.remove('examon');
+  document.getElementById('examBox').innerHTML='';
+  renderAll();
+}
+const EX_CUT=[['A1',4],['A2',16],['B1',26],['B2',41],['C',48]];   // ngưỡng tham khảo Aptis Speaking (0–50)
+function exCefr(v){ let c='A0'; EX_CUT.forEach(([l,t])=>{ if(v>=t) c=l; }); return c; }
+async function finishExam(){
+  EX.done=true; exCleanup();
+  EX.sec=Math.round((Date.now()-EX.t0)/1000);
+  const box=document.getElementById('examBox'), deck=DECK[EX.de];
+  box.innerHTML='<div class="ex-card"><div class="ex-res-h"><span class="ex-big">✓ Đã nộp bài</span><span class="ai-meta">'+escH(deck.title.split(' — ')[0])+' · tổng '+fmt(EX.sec)+'</span></div>'
+    +'<div id="exTable"></div><div id="exScore"><div class="ai-load">🤖 AI đang nghe và chấm '+EX.steps.length+' bản ghi…</div></div><div id="exAns"></div>'
+    +'<div class="ex-btns" style="margin-top:12px"><button class="ex-btn pri" id="exAgain">🔄 Thi lại đề này</button><button class="ex-btn" id="exBack">‹ Về luyện tập</button></div></div>';
+  document.getElementById('exAgain').onclick=()=>{ EX=null; startExam(); };
+  document.getElementById('exBack').onclick=quitExam;
+  exPaintAnswers();
+  await new Promise(r=>setTimeout(r,600));   // chờ MediaRecorder trả blob bản cuối
+  // chấm 2 bản ghi một lúc cho nhẹ máy chủ
+  let k=0; const worker=async()=>{ while(k<EX.steps.length){ const st=EX.steps[k++]; await exGrade(st); exPaintAnswers(); } };
+  const ex=EX; await Promise.all([worker(),worker()]); if(EX!==ex) return;
+  exSave();
+}
+async function exGrade(st){
+  const part=st.part, q=st.qs.map(x=>x.q).join(' / ');
+  try{
+    let audio=null;
+    if(st.blob&&st.blob.size>0) try{ audio={mime:'audio/wav',data:await blobToWavBase64(st.blob)}; }catch(e){}
+    const text=(st.text||'').trim();
+    if(!audio&&!text){ st.err='Không có bản ghi'; return; }
+    const res=await fetch('/grade-speaking',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question:q,part:part,expectedSec:st.talk,durationSec:st.used||0,transcript:text,audio:audio})});
+    const r=await res.json();
+    if(!res.ok||r.error) throw new Error((r.error||'Lỗi')+(r.detail?': '+r.detail:''));
+    st.ai=r;
+  }catch(e){ st.err=e.message||String(e); }
+}
+function exPaintAnswers(){
+  const el=document.getElementById('exAns'); if(!el||!EX) return;
+  el.innerHTML='<h4 style="margin:6px 0">Từng câu</h4>'+EX.steps.map((st,i)=>{
+    const r=st.ai, q=st.qs.map(x=>escH(x.q)).join('<br>');
+    const sc=r?Math.max(0,Math.min(10,+r.overall||0)):null;
+    const tag=r?'<span class="rec-score '+scoreClass(sc*10)+'">'+sc+'/10 · '+escH(r.cefr||'')+'</span>'
+      :st.err?'<span class="ai-err" style="padding:2px 8px">'+escH(st.err)+'</span>':'<span class="ai-meta">đang chấm…</span>';
+    const det=r?'<details><summary>Nhận xét chi tiết</summary><div class="ai-sum">'+escH(r.summary||'')+'</div>'
+      +(r.criteria||[]).map(c=>'<div class="ai-crit"><span class="ai-cs">'+(+c.score<0?'—':c.score+'/5')+'</span> <b>'+escH(c.name)+'</b>'+(c.comment?'<div class="ai-cc">'+escH(c.comment)+'</div>':'')+'</div>').join('')
+      +'<div class="ai-sec"><b>AI nghe được:</b> <i>'+escH(r.transcript||'')+'</i></div>'
+      +'<div class="ai-sec ai-better"><b>✨ Bản nói tốt hơn:</b><div>'+escH(r.better||'')+'</div></div></details>':'';
+    return '<div class="ex-ans"><div class="ex-ans-h"><span class="ex-chip"><b>'+EX_PART_NAME[st.part].replace('Part ','P')+'</b>'+fmt(st.used||0)+'/'+fmt(st.talk)+'</span>'
+      +'<span class="ex-ans-q">'+q+'</span>'+(st.url?'<button class="ex-btn" data-play="'+i+'">🔁 Nghe lại</button>':'')+tag+'</div>'+det+'</div>';
+  }).join('');
+  el.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{ const st=EX.steps[+b.dataset.play]; if(st.url) new Audio(st.url).play(); });
+}
+function exSave(){
+  const parts={}, rows=[];
+  ['P1','P2','P3','P4'].forEach(p=>{
+    const ss=EX.steps.filter(x=>x.part===p); if(!ss.length) return;
+    const g=ss.filter(x=>x.ai), avg=g.length?Math.round(g.reduce((a,x)=>a+(+x.ai.overall||0),0)/g.length*10)/10:null;
+    parts[p]=[exUsed(p),exBudget(p),avg==null?0:avg,10];
+    rows.push('<tr><td>'+EX_PART_NAME[p]+'</td><td>'+fmt(exUsed(p))+' / '+fmt(exBudget(p))+'</td><td>'+(avg==null?'—':avg+'/10')+'</td></tr>');
+  });
+  document.getElementById('exTable').innerHTML='<table class="ex-table"><tr><th>Phần</th><th>Thời gian nói</th><th>Điểm AI</th></tr>'+rows.join('')+'</table>';
+  const graded=Object.keys(parts).filter(p=>EX.steps.some(x=>x.part===p&&x.ai));
+  const sc=document.getElementById('exScore');
+  if(!graded.length){ sc.innerHTML='<div class="ai-err">AI chưa chấm được bản ghi nào nên chưa lưu kết quả. Kiểm tra mạng / micro rồi bấm 🔄 Thi lại.</div>'; return; }
+  // điểm đề = TB 4 Part (mỗi Part = TB các câu của Part đó)
+  const avg10=graded.reduce((a,p)=>a+parts[p][2],0)/graded.length, pct=Math.round(avg10*10), s50=Math.round(pct/2);
+  const key='de'+(EX.de+1);
+  progPron(key,pct);
+  const r=progRecord(key,{sec:EX.sec,parts:parts,score:pct});
+  buildDeSel();
+  sc.innerHTML='<div class="ex-res-h"><span class="ex-big">'+avg10.toFixed(1)+'/10</span><span>≈ <b>'+s50+'/50</b> · '+exCefr(s50)+' (ngưỡng tham khảo Aptis)</span></div>'
+    +'<div class="saved-note">💾 Đã lưu kết quả thi: '+pct+'% · ⏱ '+fmt(EX.sec)+' · lần thứ '+r.attempts+' của đề này'
+    +(graded.length<4?'<br><span style="font-size:.78rem">Có Part chưa chấm được — điểm tính trên '+graded.length+' Part.</span>':'')+'</div>';
+}
+document.getElementById('btnExam').onclick=startExam;
 </script>
 </body>
 </html>
