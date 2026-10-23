@@ -377,6 +377,10 @@
   .ex-ans-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.86rem}
   .ex-ans-q{font-weight:600;flex:1;min-width:180px}
   .saved-note{margin-top:10px;padding:9px 12px;border-radius:9px;background:#e3f4ec;border:1px solid #cfe0d4;font-size:.86rem;line-height:1.6}
+  .ex-sample{margin-top:14px;font-size:.92rem;line-height:1.65}
+  .ex-sample summary{cursor:pointer;color:var(--muted);font-weight:600}
+  .ex-sample p{margin:6px 0 4px;padding:9px 12px;background:#f7f5ef;border-radius:10px}
+  .ex-sample-q{margin-top:8px;font-weight:700;font-size:.85rem}
   .ex-ans details{margin-top:6px;font-size:.84rem} .ex-ans summary{cursor:pointer;color:var(--muted)}
   .ai-speak:empty{display:none}
   .ai-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -1784,6 +1788,12 @@ function exSteps(deck){
 }
 function exBudget(p){ return EX.steps.filter(x=>x.part===p).reduce((a,x)=>a+x.talk,0); }
 function exUsed(p){ return EX.steps.filter(x=>x.part===p).reduce((a,x)=>a+(x.used||0),0); }
+// Bài mẫu của bước thi (Part 4 gồm 3 câu) — ẩn mặc định, bấm mới hiện
+function exSample(st){
+  return '<details class="ex-sample"><summary>👀 Xem bài mẫu</summary>'+st.qs.map(q=>
+    (st.qs.length>1?'<div class="ex-sample-q">'+escH(q.q)+'</div>':'')
+    +'<p>'+escH((q.sentences||[]).map(sentencePlain).join(' ').replace(/\s+/g,' ').trim())+'</p>').join('')+'</details>';
+}
 function exPics(d,deck){
   const upKey=d.up||(deck.id+'_'+d.badge), p1=d.img||deck.img||USERIMG[upKey+'_a'], p2=d.img2||deck.img2||USERIMG[upKey+'_b'];
   if(!d.hasImg) return '';
@@ -1815,7 +1825,7 @@ function exRender(){
     +'<div class="ex-q">'+q+'</div>'+exPics(st.qs[0],deck)
     +'<div class="ex-clock"><span class="ex-phase" id="exPhase"></span><span class="ex-time" id="exTime"></span></div>'
     +'<div class="ex-track"><div class="ex-fill" id="exFill"></div></div>'
-    +'<div class="ex-btns"><button class="ex-btn pri" id="exNext"></button><button class="ex-btn" id="exQuit">✕ Thoát thi</button></div></div>';
+    +'<div class="ex-btns"><button class="ex-btn pri" id="exNext"></button><button class="ex-btn" id="exQuit">✕ Thoát thi</button></div>'+exSample(st)+'</div>';
   document.getElementById('exNext').onclick=exNextClick;
   document.getElementById('exQuit').onclick=quitExam;
 }
@@ -1935,8 +1945,9 @@ function exPaintAnswers(){
       +(r.criteria||[]).map(c=>'<div class="ai-crit"><span class="ai-cs">'+(+c.score<0?'—':c.score+'/5')+'</span> <b>'+escH(c.name)+'</b>'+(c.comment?'<div class="ai-cc">'+escH(c.comment)+'</div>':'')+'</div>').join('')
       +'<div class="ai-sec"><b>AI nghe được:</b> <i>'+escH(r.transcript||'')+'</i></div>'
       +'<div class="ai-sec ai-better"><b>✨ Bản nói tốt hơn:</b><div>'+escH(r.better||'')+'</div></div></details>':'';
+    const det2=det+exSample(st);
     return '<div class="ex-ans"><div class="ex-ans-h"><span class="ex-chip"><b>'+EX_PART_NAME[st.part].replace('Part ','P')+'</b>'+fmt(st.used||0)+'/'+fmt(st.talk)+'</span>'
-      +'<span class="ex-ans-q">'+q+'</span>'+(st.url?'<button class="ex-btn" data-play="'+i+'">🔁 Nghe lại</button>':'')+tag+'</div>'+det+'</div>';
+      +'<span class="ex-ans-q">'+q+'</span>'+(st.url?'<button class="ex-btn" data-play="'+i+'">🔁 Nghe lại</button>':'')+tag+'</div>'+det2+'</div>';
   }).join('');
   el.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{ const st=EX.steps[+b.dataset.play]; if(st.url) new Audio(st.url).play(); });
 }
