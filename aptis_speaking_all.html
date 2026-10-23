@@ -495,7 +495,7 @@
 
   <div class="rec-result" id="recResult">
     <div class="ai-speak" id="aiSpeak"></div>
-    <h4>Đối chiếu với bài mẫu (luyện đọc theo)</h4>
+    <h4>Máy bắt chữ — đối chiếu bài mẫu (chỉ để luyện đọc theo, không tính điểm)</h4>
     <div id="recSentences"></div>
     <div class="rec-heard" id="recHeard"></div>
     <div id="recScoreWrap"></div>
@@ -1159,11 +1159,9 @@ function fcScore(v,eg,heard,res,egEl){
   const pct=target.length?Math.round(ok/target.length*100):0;
   const cls=scoreClass(pct);
   egEl.innerHTML=fcEgHtml(eg,v.en, pct>=70?'ok':'miss');
-  const r=progPron('de'+(currentDe+1),pct);      // ghi vào tiến độ chung
-  if(typeof buildDeSel==='function') buildDeSel();
   res.innerHTML='<div class="fc-score '+cls+'">🎯 Từ vựng "'+fcEsc(v.en)+'": '+pct+'% ('+ok+'/'+target.length+' từ khớp)</div>'
     +'<div class="fc-heard"><b>Máy nghe:</b> '+fcEsc(heard||'(không có)')+'</div>'
-    +'<div class="fc-heard">📊 Phát âm TB của đề: <b>'+r.lastScore+'%</b> ('+r.pronCount+' lần chấm)</div>';
+    +'<div class="fc-heard" style="font-size:.78rem">Chỉ để luyện đọc từ — điểm đề do AI chấm bài nói.</div>';
 }
 function renderVocabLibrary(){
   const lib=document.getElementById('vocabLib'); if(!lib) return;
@@ -1470,7 +1468,7 @@ async function gradeSpeakingAI(transcript, durationSec){
       return '<div class="ai-crit"><span class="ai-cs '+(sc<0?'':sc>=4?'good':sc>=3?'mid':'low')+'">'+(sc<0?'—':sc+'/5')+'</span> <b>'+escH(c.name)+'</b>'
         +(c.comment&&c.comment.trim()?'<div class="ai-cc">'+escH(c.comment)+'</div>':'')+'</div>'; }).join('');
     const pron=(r.pronunciation||[]).length?'<div class="ai-sec">🔈 <b>Phát âm cần sửa:</b> '+r.pronunciation.map(x=>'<span class="ai-w" title="'+escH(x.tip)+'">'+escH(x.word)+'</span> <span class="ai-tip">'+escH(x.tip)+'</span>').join(' · ')+'</div>':'';
-    box.innerHTML='<div class="ai-head"><span class="rec-score '+scoreClass(pct)+'">🤖 AI chấm: '+escH(String(r.overall))+'/10 · '+escH(r.cefr||'')+'</span>'
+    box.innerHTML='<div class="ai-head"><span class="rec-score '+scoreClass(pct)+'">🤖 AI chấm: '+(r.bandMax?'band '+r.band+'/'+r.bandMax+' · ':'')+escH(String(r.overall))+'/10 · '+escH(r.cefr||'')+'</span>'
       +' <span class="ai-meta">'+Math.round(durationSec)+'s / yêu cầu ~'+(PART_SEC[part]||45)+'s'+(r.hadAudio?'':' · không gửi được file ghi âm, chấm theo bản chữ')+'</span></div>'
       +'<div class="ai-sum">'+escH(r.summary||'')+'</div>'+crit+pron
       +'<div class="ai-sec"><b>AI nghe được:</b> <i>'+escH(r.transcript||'')+'</i></div>'
@@ -1624,7 +1622,7 @@ function showComparison(heard){
   const cls = scoreClass(overall);
   const msg = overall>=85 ? 'Tuyệt vời! Phát âm rất rõ.' : overall>=65 ? 'Khá ổn — chú ý các từ gạch đỏ.' : 'Cần luyện thêm các từ gạch đỏ.';
   document.getElementById('recScoreWrap').innerHTML =
-    '<span class="rec-score '+cls+'">Tổng: khớp '+overall+'% ('+totalOk+'/'+totalWords+' từ) — '+msg+'</span>' +
+    '<div class="ai-meta">Khớp bài mẫu '+overall+'% ('+totalOk+'/'+totalWords+' từ) — '+msg+' Điểm thật: bấm <b>🤖 Gửi AI chấm</b>.</div>' +
     '<div class="rec-warn">Lưu ý: đây là kiểm tra gián tiếp qua nhận diện giọng nói, không phải chấm điểm phát âm chính thức. Từ bị đỏ có thể do máy nghe nhầm hoặc do bạn nói nhanh/nuốt âm. Bạn có thể bấm "Nghe lại bản thu" để tự đánh giá thêm.</div>';
   recResult.classList.add('show');
 }
@@ -1939,7 +1937,7 @@ function exPaintAnswers(){
   el.innerHTML='<h4 style="margin:6px 0">Từng câu</h4>'+EX.steps.map((st,i)=>{
     const r=st.ai, q=st.qs.map(x=>escH(x.q)).join('<br>');
     const sc=r?Math.max(0,Math.min(10,+r.overall||0)):null;
-    const tag=r?'<span class="rec-score '+scoreClass(sc*10)+'">'+sc+'/10 · '+escH(r.cefr||'')+'</span>'
+    const tag=r?'<span class="rec-score '+scoreClass(sc*10)+'">'+(r.bandMax?'band '+r.band+'/'+r.bandMax+' · ':'')+sc+'/10 · '+escH(r.cefr||'')+'</span>'
       :st.err?'<span class="ai-err" style="padding:2px 8px">'+escH(st.err)+'</span>':'<span class="ai-meta">đang chấm…</span>';
     const det=r?'<details><summary>Nhận xét chi tiết</summary><div class="ai-sum">'+escH(r.summary||'')+'</div>'
       +(r.criteria||[]).map(c=>'<div class="ai-crit"><span class="ai-cs">'+(+c.score<0?'—':c.score+'/5')+'</span> <b>'+escH(c.name)+'</b>'+(c.comment?'<div class="ai-cc">'+escH(c.comment)+'</div>':'')+'</div>').join('')

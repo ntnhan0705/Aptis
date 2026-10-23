@@ -375,35 +375,71 @@ async function handleCoach(request, env) {
 
 // ---------- /grade-speaking — chấm bài nói Aptis bằng Gemini (nghe file ghi âm thật) ----------
 const SPEAK_CRITERIA = [
-  "Đáp ứng yêu cầu & độ dài (trả lời đúng câu hỏi, đủ ý, đủ thời gian)",
-  "Ngữ pháp (đa dạng & chính xác)",
-  "Từ vựng (đa dạng & dùng đúng)",
-  "Phát âm & ngữ điệu",
-  "Độ trôi chảy & mạch lạc (ít ngập ngừng, có từ nối)",
+  "Hoàn thành nhiệm vụ (trả lời đúng & đủ mọi ý câu hỏi, đúng dạng bài của Part, đủ thời lượng)",
+  "Ngữ pháp (độ đa dạng cấu trúc & độ chính xác)",
+  "Từ vựng (độ phong phú, dùng đúng ngữ cảnh, đủ để diễn đạt chủ đề)",
+  "Phát âm (rõ ràng, trọng âm, ngữ điệu — người nghe hiểu dễ không)",
+  "Trôi chảy & liên kết (ít ngập ngừng, ý nối mạch, dùng từ nối)",
 ];
-const SPEAK_PROMPT = `Bạn là giám khảo Aptis General Speaking (thang CEFR, mục tiêu B2). Bạn nhận: câu hỏi, Part, thời lượng yêu cầu, thời lượng thực tế, bản chữ do trình duyệt nhận dạng (có thể sai) và FILE GHI ÂM bài nói (nếu có).
-Hãy NGHE file ghi âm để chấm — đặc biệt phát âm, trọng âm, ngữ điệu và độ trôi chảy; dùng bản chữ của trình duyệt chỉ để tham khảo.
-Chấm riêng 5 tiêu chí, mỗi tiêu chí 0–5 điểm:
+// Thang chấm của Aptis: Part 1–3 chấm 0–5, Part 4 chấm 0–6; mỗi band ứng với một mức CEFR
+const SPEAK_BANDS = {
+  P1: { max: 5, task: "Part 1 — trả lời câu hỏi về bản thân/đời sống, ~30 giây. Mức trần của Part này là B1.",
+    cefr: ["A0", "A1", "A1", "A2", "A2", "B1"],
+    desc: `5 (B1 trở lên): trả lời đúng trọng tâm, có lý do/ví dụ; câu đơn & ghép phần lớn đúng; từ vựng đủ cho chủ đề quen thuộc; phát âm dễ hiểu; ít ngập ngừng.
+4 (A2.2): trả lời đúng câu hỏi bằng vài câu đơn nối với nhau; có lỗi nhưng không gây khó hiểu; phát âm hiểu được dù đôi chỗ phải cố.
+3 (A2.1): trả lời được nhưng ngắn, chủ yếu cụm từ/câu đơn học thuộc; lỗi nhiều; ngập ngừng rõ.
+2 (A1.2): chỉ vài cụm từ rời rạc, khó hiểu ở nhiều chỗ.
+1 (A1.1): một vài từ đơn lẻ, gần như không truyền đạt được ý.
+0: không nói, lạc đề hoàn toàn hoặc không phải tiếng Anh.` },
+  P2: { max: 5, task: "Part 2 — tả một bức tranh rồi trả lời 2 câu hỏi liên quan (nêu trải nghiệm, ý kiến), mỗi câu ~45 giây.",
+    cefr: ["A1", "A2", "A2", "B1", "B1+", "B2"],
+    desc: `5 (B2 trở lên): trả lời đủ ý, phát triển thành đoạn có lý lẽ; cấu trúc phức (mệnh đề quan hệ, điều kiện, bị động…) phần lớn chính xác; từ vựng phong phú, chính xác; phát âm rõ, ngữ điệu tự nhiên; trôi chảy, liên kết tốt.
+4 (B1.2): trả lời đủ ý, nói thành đoạn; có vài cấu trúc phức, lỗi không gây khó hiểu; từ vựng đủ cho chủ đề, đôi khi phải nói vòng; phát âm dễ hiểu; có ngập ngừng nhưng dùng từ nối mạch lạc.
+3 (B1.1): trả lời đúng nhưng chưa phát triển ý; chủ yếu câu đơn/ghép; lỗi khá thường xuyên; từ vựng hạn chế, lặp từ; ngập ngừng nhiều.
+2 (A2.2): trả lời một phần, câu đơn ngắn; lỗi nhiều, đôi chỗ khó hiểu.
+1 (A2.1): chỉ vài cụm từ liên quan đến câu hỏi.
+0: không nói hoặc không liên quan.` },
+  P4: { max: 6, task: "Part 4 — 1 phút chuẩn bị, nói liền 2 phút trả lời 3 câu hỏi về một chủ đề trừu tượng (trải nghiệm → cảm nhận → ý kiến). Phải trả lời đủ các câu được hỏi và có bố cục.",
+    cefr: ["A1", "A2", "B1", "B1+", "B2", "B2+", "C"],
+    desc: `6 (C1 trở lên): trả lời trọn vẹn mọi câu, lập luận chặt chẽ, cấu trúc & từ vựng rộng và chính xác, rất trôi chảy.
+5 (B2.2): đủ các câu, phát triển ý rõ có ví dụ; cấu trúc phức đa dạng, lỗi hiếm; từ vựng phong phú; trôi chảy, liên kết tốt.
+4 (B2.1): đủ các câu, nói thành bài có bố cục; nhiều cấu trúc phức, lỗi không gây khó hiểu; từ vựng đủ rộng; đôi chỗ ngập ngừng.
+3 (B1.2): trả lời được nhưng chưa sâu, hoặc bỏ sót 1 ý; có cấu trúc phức nhưng còn lỗi; từ vựng đủ dùng, có lặp; ngập ngừng khá nhiều.
+2 (B1.1): trả lời được một phần, chủ yếu câu đơn; lỗi thường xuyên; không giữ được thời lượng.
+1 (A2): vài câu ngắn rời rạc liên quan đến chủ đề.
+0: không nói hoặc không liên quan.` },
+};
+SPEAK_BANDS.P3 = { ...SPEAK_BANDS.P2, task: "Part 3 — so sánh 2 bức tranh (giống/khác) rồi trả lời 2 câu hỏi liên quan (suy đoán, ý kiến), mỗi câu ~45 giây." };
+function speakPrompt(P) {
+  const B = SPEAK_BANDS[P] || SPEAK_BANDS.P2;
+  return `Bạn là giám khảo Aptis General Speaking. Chấm như kỳ thi thật theo thang band của Part, KHÔNG so với bất kỳ bài mẫu nào — người học được nói theo ý riêng, miễn đúng câu hỏi.
+${B.task}
+Bạn nhận: câu hỏi, thời lượng yêu cầu, thời lượng thực tế, bản chữ do trình duyệt nhận dạng (hay sai, chỉ để tham khảo) và FILE GHI ÂM. Hãy NGHE file ghi âm để chấm.
+
+THANG BAND của Part này (0–${B.max}) — chọn band mô tả đúng nhất bài nói:
+${B.desc}
+
+Rồi chấm riêng 5 tiêu chí, mỗi tiêu chí 0–5, nhất quán với band đã chọn:
 ${SPEAK_CRITERIA.map((c, i) => (i + 1) + '. ' + c).join('\n')}
-Với mỗi tiêu chí: nếu đã tốt thì "comment" là chuỗi rỗng ""; nếu cần cải thiện thì viết 1–2 câu tiếng Việt nêu lỗi cụ thể và cách sửa (không khen trước khi góp ý).
-Nếu không có file ghi âm: tiêu chí Phát âm cho score = -1 và comment = "Không có file ghi âm".
-Nói ngắn hơn nhiều so với thời lượng yêu cầu thì trừ điểm tiêu chí 1 và 5.
-Ngoài ra trả về:
-- "transcript": những gì bạn nghe được trong file (tiếng Anh);
-- "overall": điểm tổng 0–10; "cefr": A1/A2/B1/B1+/B2/C;
-- "summary": 1 câu tiếng Việt — điều quan trọng nhất cần cải thiện;
-- "pronunciation": tối đa 5 từ phát âm chưa đúng, mỗi phần tử {"word","tip"} với tip tiếng Việt ngắn (cách đọc đúng, trọng âm);
-- "better": bản trả lời tốt hơn bằng tiếng Anh, giữ ý của người nói, mức B2, độ dài phù hợp thời lượng yêu cầu, câu đơn giản dễ nói.`;
+Với mỗi tiêu chí: nếu đã tốt thì "comment" là ""; nếu cần cải thiện thì 1–2 câu tiếng Việt nêu lỗi cụ thể (trích từ/câu người học nói) và cách sửa, không khen trước khi góp ý.
+Quy tắc: nói ngắn hơn nhiều so với thời lượng yêu cầu → hạ band, trừ tiêu chí 1 và 5. Lạc đề / không trả lời câu hỏi → tối đa band 2. Bỏ sót ý được hỏi → trừ tiêu chí 1.
+Nếu không có file ghi âm: tiêu chí Phát âm cho score = -1, comment = "Không có file ghi âm", các tiêu chí khác chấm theo bản chữ.
+Trả về:
+- "band": số nguyên 0–${B.max};
+- "transcript": những gì bạn nghe được (tiếng Anh);
+- "summary": 1 câu tiếng Việt — điều quan trọng nhất để lên band tiếp theo;
+- "pronunciation": tối đa 5 từ phát âm chưa đúng, mỗi phần tử {"word","tip"} (tip tiếng Việt ngắn: cách đọc, trọng âm);
+- "better": bản trả lời tốt hơn bằng tiếng Anh, giữ ý của người nói, cao hơn một band, độ dài hợp thời lượng, câu dễ nói.`;
+}
 const SPEAK_SCHEMA = {
   type: "OBJECT",
   properties: {
+    band: { type: "INTEGER" },
     transcript: { type: "STRING" },
     criteria: {
       type: "ARRAY", minItems: "5", maxItems: "5",
       items: { type: "OBJECT", properties: { name: { type: "STRING" }, score: { type: "NUMBER" }, comment: { type: "STRING" } }, required: ["name", "score", "comment"] },
     },
-    overall: { type: "NUMBER" },
-    cefr: { type: "STRING" },
     summary: { type: "STRING" },
     pronunciation: {
       type: "ARRAY", maxItems: "5",
@@ -411,7 +447,7 @@ const SPEAK_SCHEMA = {
     },
     better: { type: "STRING" },
   },
-  required: ["transcript", "criteria", "overall", "cefr", "summary", "pronunciation", "better"],
+  required: ["band", "transcript", "criteria", "summary", "pronunciation", "better"],
 };
 const AUDIO_MIME = /^audio\/(wav|x-wav|mp3|mpeg|aac|ogg|flac|webm)$/;
 
@@ -437,7 +473,13 @@ async function handleGradeSpeaking(request, env) {
     aud ? "Có file ghi âm đính kèm." : "Không có file ghi âm.",
   ].filter(Boolean).join("\n");
   try {
-    const { parsed, tokens } = await callGemini(env, SPEAK_PROMPT, userText, SPEAK_SCHEMA, 2048, aud);
+    const P = /^P[1-4]$/.test(part) ? part : "P2", B = SPEAK_BANDS[P];
+    const { parsed, tokens } = await callGemini(env, speakPrompt(P), userText, SPEAK_SCHEMA, 2048, aud);
+    // điểm suy ra từ band: overall 0–10, CEFR theo bảng band của Part
+    const band = Math.max(0, Math.min(B.max, Math.round(+parsed.band || 0)));
+    parsed.band = band; parsed.bandMax = B.max; parsed.part = P;
+    parsed.overall = Math.round(band / B.max * 20) / 2;
+    parsed.cefr = B.cefr[band];
     parsed.tokens = tokens;
     parsed.hadAudio = !!aud;
     return new Response(JSON.stringify(parsed), { status: 200, headers: JH });
