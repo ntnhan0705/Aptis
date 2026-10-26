@@ -1463,7 +1463,7 @@ async function gradeSpeakingAI(transcript, durationSec){
     const r=await res.json();
     if(!res.ok||r.error) throw new Error((r.error||'Lỗi')+(r.detail?': '+r.detail:''));
     const pct=Math.max(0,Math.min(100,Math.round((+r.overall||0)*10)));
-    const pr=progPron('de'+(currentDe+1),pct); if(typeof renderProgPanel==='function') renderProgPanel();
+    const pr=progPron('de'+(currentDe+1),pct); progSlog(); if(typeof renderProgPanel==='function') renderProgPanel();
     const crit=(r.criteria||[]).map(c=>{ const sc=+c.score;
       return '<div class="ai-crit"><span class="ai-cs '+(sc<0?'':sc>=4?'good':sc>=3?'mid':'low')+'">'+(sc<0?'—':sc+'/5')+'</span> <b>'+escH(c.name)+'</b>'
         +(c.comment&&c.comment.trim()?'<div class="ai-cc">'+escH(c.comment)+'</div>':'')+'</div>'; }).join('');
@@ -1696,6 +1696,14 @@ function progRecord(key,timing){
   if(r.history.length>50)r.history=r.history.slice(-50);
   progSave(); return r;
 }
+// Nhật ký số lần AI chấm bài nói theo ngày (Lộ trình dùng để kiểm tra 15′ khởi động Speaking).
+// Mỗi ngày 1 bản ghi có "seen" nên hàm merge đồng bộ giữ bản có nhiều lượt hơn.
+function progSlog(){
+  const d=new Date(), day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  if(!APTIS_PROG.slog) APTIS_PROG.slog={};
+  const r=APTIS_PROG.slog[day]||(APTIS_PROG.slog[day]={seen:0});
+  r.seen++; progSave();
+}
 // Ghi 1 lần chấm phát âm -> điểm TB của đề
 function progPron(key,pct){
   const r=_rec(key);
@@ -1722,12 +1730,14 @@ function renderProgPanel(){
 
 // ===== Part 2: chọn đề + tabs =====
 const deSel = document.getElementById('deSel');
+// Đề trùng nhiều với đề khác — không có trong Lộ trình, làm thêm nếu dư thời gian
+const SKIP_S=[7,11,15,19,20];
 function buildDeSel(){
   const keep = deSel.value;
   deSel.innerHTML='';
   DECK.forEach((d,i)=>{ const o=document.createElement('option'); o.value=i;
     const pr=progGet('de'+(i+1));
-    o.textContent=d.title+(pr?'  ✓ ×'+pr.attempts+(pr.pronCount?' · phát âm '+pr.lastScore+'%':''):'  ○ chưa ôn');
+    o.textContent=d.title+(SKIP_S.includes(i+1)?'  · tuỳ chọn':'')+(pr?'  ✓ ×'+pr.attempts+(pr.pronCount?' · điểm '+pr.lastScore+'%':''):'  ○ chưa ôn');
     deSel.appendChild(o); });
   deSel.value = keep || currentDe;
   renderProgPanel();
@@ -1742,7 +1752,9 @@ deSel.onchange = ()=>{
   renderProgPanel();
 };
 // Mở từ Lộ trình: ?de=N chọn sẵn đề N
-{ const n=+new URLSearchParams(location.search).get('de'); if(n>=1&&n<=DECK.length){ deSel.value=n-1; deSel.onchange(); } }
+{ const sp=new URLSearchParams(location.search), n=+sp.get('de'), pt=+sp.get('part');
+  if(n>=1&&n<=DECK.length){ deSel.value=n-1; deSel.onchange(); }
+  if(pt>=1&&pt<=4) setTimeout(()=>setPartFilter(pt),0); }
 
 document.querySelectorAll('.maintab').forEach(t=>{
   t.onclick = ()=>{
@@ -1929,7 +1941,7 @@ async function exGrade(st){
       body:JSON.stringify({question:q,part:part,expectedSec:st.talk,durationSec:st.used||0,transcript:text,audio:audio})});
     const r=await res.json();
     if(!res.ok||r.error) throw new Error((r.error||'Lỗi')+(r.detail?': '+r.detail:''));
-    st.ai=r;
+    st.ai=r; progSlog();
   }catch(e){ st.err=e.message||String(e); }
 }
 function exPaintAnswers(){

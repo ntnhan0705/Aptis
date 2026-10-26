@@ -306,6 +306,10 @@ function buildPack(day){
   const keys=planDeKeys(day), inDe=v=>(v.src||[]).filter(k=>keys.includes(k)).length;
   const due=VOCAB.filter(v=>isDue(vRec(v.en),day))
     .sort((a,b)=>(((vRec(a.en).due||'')<(vRec(b.en).due||''))?-1:((vRec(a.en).due||'')>(vRec(b.en).due||''))?1:0)||(inDe(b)-inDe(a)));
+  // Cuối tuần chỉ ôn từ đến hạn (tối đa 20 từ, ~10 phút), không thêm từ mới — thời gian dành cho Speaking
+  const [yy,mm,dd]=day.split('-').map(Number), dow=new Date(yy,mm-1,dd).getDay();
+  if(dow===0||dow===6){ const take=due.slice(0,20);
+    return {attempts:PACK_RULE,seen:0,total:take.length,words:take.map(v=>KEY(v.en)),newWords:[],dueWords:take.map(v=>KEY(v.en)),de:keys,doneAt:take.length?'':day}; }
   const fresh=VOCAB.filter(isNewWord).sort((a,b)=>inDe(b)-inDe(a));   // từ của đề hôm nay trước, rồi theo thứ tự danh sách
   const newQuota=Math.min(fresh.length,Math.max(NEW_MIN,Math.min(NEW_MAX,PACK_MAX-due.length)));
   const dueTake=due.slice(0,PACK_MAX-newQuota);

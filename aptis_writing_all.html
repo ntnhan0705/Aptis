@@ -1021,12 +1021,14 @@ const $ = id => document.getElementById(id);
 const wordCount = s => (s.trim().match(/\S+/g)||[]).length;
 const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+// Đề trùng nhiều với đề khác — không có trong Lộ trình, làm thêm nếu dư thời gian
+const SKIP_W=[4,9,11,17,18];
 function buildExams(){
   const sel=$('deSel'); sel.innerHTML='';
   EXAMS.forEach((ex,i)=>{
     const o=document.createElement('option');
     const pr=progGet('de'+(i+1));
-    o.value=i; o.textContent=ex.name+' · '+ex.blurb+(pr?'  ✓ ×'+pr.attempts+' · '+pr.lastScore+'%':'  ○ chưa ôn');
+    o.value=i; o.textContent=ex.name+' · '+ex.blurb+(SKIP_W.includes(i+1)?'  · tuỳ chọn':'')+(pr?'  ✓ ×'+pr.attempts+' · '+pr.lastScore+'%':'  ○ chưa ôn');
     sel.appendChild(o);
   });
   sel.value=exam;
