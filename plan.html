@@ -249,14 +249,14 @@ function parseYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-
 function addDays(s,n){const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d);}
 function daysBetween(a,b){return Math.round((parseYmd(b)-parseYmd(a))/86400000);}
 function isWeekend(s){const w=parseYmd(s).getDay();return w===0||w===6;}
-const WEEKDAY_MIN=180; // ngày thường 3 tiếng buổi tối
-function capacity(s){return s>=EXAM_DATE?0:(isWeekend(s)?360:WEEKDAY_MIN);}
+const WEEKDAY_MIN=180, WEEKEND_MIN=240; // ngày thường tối đa 3 tiếng buổi tối; cuối tuần 4 tiếng dành riêng cho Speaking
+function capacity(s){return s>=EXAM_DATE?0:(isWeekend(s)?WEEKEND_MIN:WEEKDAY_MIN);}
 // ?today=YYYY-MM-DD để thử lịch ở một ngày khác
 const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date());
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=12;
+const PLAN_VER=13;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -340,31 +340,22 @@ function weakOrder(skill){
 }
 
 /* ===== Xếp lịch =====
-   Vòng 1 (đến 12/11): mỗi buổi ~50 phút là 1 đề. Ngày thường: 1 Listening + 1 Reading + 1 Writing/Speaking.
-   Cuối tuần ưu tiên Writing/Speaking: thứ Bảy 1 Listening, Chủ nhật 1 Reading, cộng 6 đề W/S chia đều.
-   Kỹ năng còn nhiều đề chưa làm hơn được ưu tiên, ngang nhau thì luân phiên. Hết đề mới thì làm lại đề điểm thấp nhất.
-   Giai đoạn 2 (13–22/11): làm lại đề yếu, 2 lần thi thử, giảm tải. */
-const PHASE1_END='2026-11-12';
-const MIN={listening:50,reading:50,writing:50,speaking:45};
-const PRIO={writing:0,speaking:1,listening:2,reading:3};
+   Thứ Hai–Sáu: gói từ vựng + 1 Listening (~20′) + 1 Reading (~20′) + 2 Writing (~40′/đề).
+   Thứ Bảy, Chủ nhật: chỉ Speaking — 3 đề (~60′/đề), ngày trước thi 1 đề ôn nhẹ.
+   Đề chưa làm được xếp trước, hết thì làm lại theo vòng. Tuần cuối: thi bấm giờ như thật (thi thử từng kỹ năng). */
+const MIN={listening:20,reading:20,writing:40,speaking:60};
+const WD_WRITING=2, WE_SPEAKING=3;
 const task=(skill,de,kind,minutes,note,extra)=>Object.assign({skill,de,kind,minutes,note:note||''},extra||{});
-const redoN=(s,need,m,note)=>task(s,0,'redo',m,note,{need});
 const vocabRev=()=>task('vocab',0,'new',25,'40–45 từ: từ đến hạn ôn + ≥8 từ mới của đề hôm nay (lặp lại ngắt quãng)',{pack:true});
-const lr=(lNote,rNote)=>[redoN('listening',1,50,lNote||'Làm lại đề điểm thấp'),redoN('reading',1,50,rNote||'Làm lại đề điểm thấp')];
-function phase2(){
-  return {
-    '2026-11-13':[redoN('speaking',1,45,'Đề Speaking điểm thấp nhất'),...lr(),vocabRev(30,15)],
-    '2026-11-14':[redoN('writing',3,150,'Viết lại 3 đề điểm thấp nhất + chấm AI'),redoN('speaking',3,135,'Làm lại 3 đề Speaking yếu'),redoN('listening',1,50,'Làm lại đề điểm thấp'),vocabRev(50,20)],
-    '2026-11-15':[task('all',0,'mock',120,'THI THỬ 1: 1 đề Listening + 1 Reading + 1 Speaking, bấm giờ thật'),redoN('writing',1,60,'Thi thử Writing 50 phút + chấm AI'),redoN('speaking',2,90,'Luyện lại 2 đề Speaking yếu'),vocabRev(50,20)],
-    '2026-11-16':[redoN('writing',1,50,'Tập trung Q4: email trang trọng / thân mật'),...lr('Chú ý Part 3–4'),vocabRev(30,15)],
-    '2026-11-17':[redoN('speaking',1,45,'Part 3–4: so sánh tranh, nói 2 phút'),...lr('','Chú ý Part 4 (ghép người, tiêu đề)'),vocabRev(30,15)],
-    '2026-11-18':[redoN('writing',1,50,'Q2–Q3'),...lr(),vocabRev(30,15)],
-    '2026-11-19':[redoN('speaking',1,45,''),...lr(),vocabRev(30,15)],
-    '2026-11-20':[redoN('speaking',1,45,'Part 1 — trả lời nhanh, tự nhiên'),...lr(),vocabRev(30,15)],
-    '2026-11-21':[task('all',0,'mock',120,'THI THỬ 2: 1 đề Listening + 1 Reading + 1 Speaking'),redoN('writing',1,60,'Writing thi thử + chữa'),redoN('speaking',2,90,''),vocabRev(40,20)],
-    '2026-11-22':[redoN('speaking',1,45,'Ôn nhẹ'),redoN('reading',1,50,'Ôn nhẹ'),vocabRev(30,15)],
-  };
-}
+// Ghi chú riêng cho tuần cuối: [ngày, kỹ năng] → ghi chú cho việc đầu tiên của kỹ năng đó trong ngày
+const NOTES={
+  '2026-11-15|speaking':'THI THỬ Speaking: ⏱ Thi bấm giờ cả đề như thật',
+  '2026-11-19|listening':'THI THỬ Listening: ⏱ Thi bấm giờ như thật',
+  '2026-11-19|reading':'THI THỬ Reading: ⏱ Thi bấm giờ như thật',
+  '2026-11-20|writing':'THI THỬ Writing: ⏱ 50 phút bấm giờ + chấm AI',
+  '2026-11-21|speaking':'THI THỬ Speaking lần 2: ⏱ Thi bấm giờ cả đề',
+  '2026-11-22|speaking':'Ôn nhẹ trước ngày thi — 1 đề, nghe lại bài mẫu',
+};
 // skip: số việc mỗi kỹ năng đã làm xong trong HÔM NAY — không xếp thêm kỹ năng đó cho hôm nay
 // và không lấy đề/nhóm khỏi hàng đợi cho nó.
 function generateDays(from,skip){
@@ -380,26 +371,21 @@ function generateDays(from,skip){
   const next=s=>{
     const tip='chọn ⏱ Thi bấm giờ để lưu thời gian';
     if(q[s].length)return task(s,q[s].shift(),'new',MIN[s],tip);
-    return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý câu sai lần trước'+(tip?' · '+tip:''));
+    return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý câu sai lần trước · '+tip);
   };
-  let lastWS=null;
-  for(let d=from;d<=PHASE1_END;d=addDays(d,1)){
-    const we=isWeekend(d),list=[],isToday=d===TODAY,sk=x=>isToday?(skip[x]||0):0;
-    if(!sk('vocab'))list.push(vocabRev());
-    const lrAll=!we?['listening','reading']:parseYmd(d).getDay()===6?['listening']:['reading'];
-    const lrs=lrAll.filter(x=>!sk(x));
-    const wsSlots=Math.max(0,(we?7:WEEKDAY_MIN/60)-lrAll.length-sk('writing')-sk('speaking'));
-    const ws=[];
-    while(ws.length<wsSlots){
-      const cnt=x=>ws.filter(y=>y===x).length; // chia đều W/S trong cùng một ngày
-      const s=['writing','speaking'].sort((a,b)=>(cnt(a)-cnt(b))||(q[b].length-q[a].length)||((a===lastWS)-(b===lastWS))||(PRIO[a]-PRIO[b]))[0];
-      ws.push(s);lastWS=s;
-    }
-    ws.concat(lrs).forEach(s=>list.push(next(s)));
+  const last=addDays(EXAM_DATE,-1);
+  for(let d=from;d<=last;d=addDays(d,1)){
+    const list=[],isToday=d===TODAY,sk=x=>isToday?(skip[x]||0):0;
+    const want=isWeekend(d)?{speaking:d===last?1:WE_SPEAKING}:{vocab:1,listening:1,reading:1,writing:WD_WRITING};
+    Object.keys(want).forEach(s=>{
+      for(let k=sk(s);k<want[s];k++){
+        const t=s==='vocab'?vocabRev():next(s);
+        if(k===sk(s)&&NOTES[d+'|'+s])t.note=NOTES[d+'|'+s];
+        list.push(t);
+      }
+    });
     days[d]=list;
   }
-  const p2=phase2();
-  Object.keys(p2).forEach(d=>{if(d>=from)days[d]=d===TODAY?p2[d].filter(t=>!skip[t.skill]):p2[d];});
   return days;
 }
 // Những gì đã làm xong trong hôm nay (đề đã nộp, nhóm từ đã thuộc) — giữ lại khi xếp lại lịch.
@@ -416,7 +402,10 @@ function doneTodayTasks(){
 function rebuildFrom(from){
   const old=plan().days||{},days={};
   // Giữ các ngày đã qua trong lộ trình; bỏ các ngày trước PLAN_START (lộ trình cũ trước khi xếp lại)
-  Object.keys(old).forEach(d=>{if(d<from&&d>=PLAN_START)days[d]=old[d];});
+  // Việc của ngày đã qua mà chưa làm được đánh dấu "moved": lịch mới đã xếp lại các đề đó nên không tính trễ nữa.
+  const st=computeStatus();
+  Object.keys(old).forEach(d=>{if(d<from&&d>=PLAN_START)days[d]=old[d].map((t,i)=>{
+    const x=st[d+'|'+i];return (d<TODAY&&!t.moved&&x&&!x.done&&!x.skip)?Object.assign({},t,{moved:true}):t;});});
   // Xếp lại tính cả hôm nay thì giữ nguyên việc đã làm hôm nay, chỉ xếp thêm kỹ năng chưa làm.
   const keep=from<=TODAY?doneTodayTasks():[],skip={};
   keep.forEach(t=>{skip[t.skill]=(skip[t.skill]||0)+1;});
@@ -449,6 +438,7 @@ function computeStatus(){
   const D=plan().days,dates=Object.keys(D).sort(),st={};
   [1,2].forEach(pass=>dates.forEach(date=>D[date].forEach((t,i)=>{
     const key=date+'|'+i,from=addDays(date,-6);
+    if(t.moved){if(pass===1)st[key]={done:false,skip:true,by:'đã xếp lại sang lịch mới'};return;}
     if(DE_SKILLS.includes(t.skill)&&t.de>0){
       if(pass!==1)return;
       if(t.kind==='new'){
@@ -515,7 +505,7 @@ function taskHTML(x,preview){
    Tốc độ = tỉ lệ việc của các ngày đã qua đã xong. Nếu giữ tốc độ này cho phần còn lại, ước tính % lộ trình xong vào ngày thi;
    phần trễ quy ra phút để biết cần bù thêm bao nhiêu mỗi ngày. */
 function forecast(tasks){
-  const work=tasks.filter(x=>x.t.skill!=='vocab'&&x.date<EXAM_DATE);
+  const work=tasks.filter(x=>x.t.skill!=='vocab'&&!x.skip&&x.date<EXAM_DATE);   // việc đã xếp lại sang ngày khác không tính
   const past=work.filter(x=>x.date<TODAY), pastDone=past.filter(x=>x.done).length;
   // Làm mượt khi mới có ít ngày dữ liệu: coi như đã có PRIOR việc xong đúng hạn — ảnh hưởng mờ dần khi dữ liệu thật tăng
   const PRIOR=4, pace=(pastDone+PRIOR)/(past.length+PRIOR);
@@ -734,14 +724,14 @@ function renderCal(tasks){
       :'<a class="cc'+(x.done?' d':'')+'" href="'+taskHref(x.t)+'" title="'+svgEsc(taskTitle(x.t))+' — bấm để mở">'+ico(x)+'<b>'+taskCode(x.t)+'</b><em>'+(x.done?'✓':'')+'</em></a>').join('');
     const tip=[DOW[parseYmd(d).getDay()]+' '+fmt(d)+(d===TODAY?' · hôm nay':'')+(d===EXAM_DATE?' · NGÀY THI':'')
       +(real.length?' · '+done+'/'+real.length+' việc xong · '+mins+'′':'')]
-      .concat(list.map(x=>(x.done?'✓ ':x.skip?'⏭ ':(d<TODAY?'✗ ':'○ '))+taskTitle(x.t).replace(/^\S+\s/,'')+(x.skip?' (dồn sang gói mới)':' · '+taskMin(x.t)+'′')));
+      .concat(list.map(x=>(x.done?'✓ ':x.skip?'⏭ ':(d<TODAY?'✗ ':'○ '))+taskTitle(x.t).replace(/^\S+\s/,'')+(x.skip?(x.t.skill==='vocab'?' (dồn sang gói mới)':' (đã xếp lại sang ngày khác)'):' · '+taskMin(x.t)+'′')));
     if(d===EXAM_DATE)tip.push('🎯 Thi Aptis — chúc bạn thi tốt!');
     h+='<div class="cal-c '+cls+(d===TODAY?' today':'')+(inPlan?' hit':'')+'"'+(inPlan?' tabindex="0" data-tip="'+svgEsc(tip.join('|'))+'"':'')+'>'
       +'<div class="cal-d">'+(+d.slice(8))+(d.slice(8)==='01'||d===monOf(PLAN_START)?'<small>/'+(+d.slice(5,7))+'</small>':'')+(d===EXAM_DATE?' 🎯':'')+'</div>'
       +(inPlan?'<div class="cal-k">'+codes+'</div>':'')+'</div>';
   }
   h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
-    +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span></div>';
+    +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới / đã xếp lại · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span></div>';
   $('cal').innerHTML=h;
   bindTips($('cal'));
 }
@@ -763,9 +753,9 @@ function buildSnapshot(){
   const last=PROG.coach.log.reports.slice(-1)[0];
   return {
     today:TODAY, todayDow:DOW[parseYmd(TODAY).getDay()], examDate:EXAM_DATE, daysLeft:daysBetween(TODAY,EXAM_DATE),
-    capacity:'Thứ Hai–Sáu: '+WEEKDAY_MIN+' phút (buổi tối). Thứ Bảy, Chủ nhật: 360 phút (sáng/chiều/tối, mỗi buổi 120). Ngày thi: 0.',
+    capacity:'Thứ Hai–Sáu: tối đa '+WEEKDAY_MIN+' phút (buổi tối). Thứ Bảy, Chủ nhật: '+WEEKEND_MIN+' phút, chỉ dành cho Speaking. Ngày thi: 0.',
     timePerTask:(()=>{const f=(k,d)=>RM[k]?RM[k].min+' phút (thực tế: trung vị '+RM[k].raw+' phút làm bài, '+RM[k].n+' lần)':d+' phút (mặc định, chưa có dữ liệu)';
-      return 'Một đề Listening '+f('listening',50)+'; Reading '+f('reading',50)+'; Writing '+f('writing',50)+'; Speaking '+f('speaking',45)+'; gói từ vựng hằng ngày ~25 phút.';})(),
+      return 'Một đề Listening '+f('listening',MIN.listening)+'; Reading '+f('reading',MIN.reading)+'; Writing '+f('writing',MIN.writing)+'; Speaking '+f('speaking',MIN.speaking)+'; gói từ vựng ngày thường ~25 phút.';})(),
     realMinutesPerSet:Object.fromEntries(DE_SKILLS.map(k=>[k,RM[k]?RM[k].min:null])),
     skills, vocab:{total:VTOTAL,dailyPack:'40–45 từ B2+ (≥8 từ mới): từ đến hạn ôn (Lv1–5 ôn sau 1/2/4/7/14 ngày) + từ mới của các đề trong ngày',packsDoneLast7:(()=>{let n=0;for(let i=-7;i<0;i++){const k=vpack(addDays(TODAY,i));if(k&&k.doneAt)n++;}return n;})(),learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
