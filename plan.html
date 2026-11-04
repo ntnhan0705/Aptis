@@ -143,6 +143,7 @@
   .cc{white-space:nowrap;color:inherit;text-decoration:none;border-radius:4px;padding:0 2px} a.cc:hover{background:#1a2238;color:#fff}
   a.ck.go{text-decoration:none;cursor:pointer;border-radius:4px} a.ck.go:hover{background:var(--accent-soft)} .cc.d{color:#006300;font-weight:700} .cc.sk{color:var(--muted);text-decoration:line-through}
   .cal-c.late .cc:not(.d):not(.sk){color:#b23a26;font-weight:700}
+  .cal-mv{font-size:10px;color:var(--muted);margin-top:2px}
   .cal-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12px;color:var(--ink)}
   .cal-leg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid var(--line)}
   .cal-leg i.ok{background:#e3f4ec;border-color:#bfe3cf} .cal-leg i.now{background:#fff4dc;border-color:#e0a100}
@@ -726,7 +727,9 @@ function renderCal(tasks){
   let d=monOf(PLAN_START);const last=addDays(monOf(EXAM_DATE),6);
   let h='<div class="cal"><div class="cal-h">'+['T2','T3','T4','T5','T6','T7','CN'].map(x=>'<div>'+x+'</div>').join('')+'</div><div class="cal-g">';
   for(;d<=last;d=addDays(d,1)){
-    const list=byDate[d]||[],real=list.filter(x=>!x.skip),done=real.filter(x=>x.done).length;
+    // việc của lịch cũ đã dời sang lịch mới: không hiện từng mã (dễ tưởng vẫn còn xếp), chỉ ghi số việc đã dời
+    const all=byDate[d]||[],list=all.filter(x=>!x.t.moved),movedN=all.length-list.length;
+    const real=list.filter(x=>!x.skip),done=real.filter(x=>x.done).length;
     const inPlan=d>=PLAN_START&&d<=EXAM_DATE;
     let cls='out';
     if(d===EXAM_DATE)cls='exam';
@@ -747,7 +750,7 @@ function renderCal(tasks){
     if(d===EXAM_DATE)tip.push('🎯 Thi Aptis — chúc bạn thi tốt!');
     h+='<div class="cal-c '+cls+(d===TODAY?' today':'')+(inPlan?' hit':'')+'"'+(inPlan?' tabindex="0" data-tip="'+svgEsc(tip.join('|'))+'"':'')+'>'
       +'<div class="cal-d">'+(+d.slice(8))+(d.slice(8)==='01'||d===monOf(PLAN_START)?'<small>/'+(+d.slice(5,7))+'</small>':'')+(d===EXAM_DATE?' 🎯':'')+'</div>'
-      +(inPlan?'<div class="cal-k">'+codes+'</div>':'')+'</div>';
+      +(inPlan?'<div class="cal-k">'+codes+'</div>'+(movedN?'<div class="cal-mv">↻ '+movedN+' việc đã dời</div>':''):'')+'</div>';
   }
   h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
     +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới / đã xếp lại · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span></div>';
