@@ -753,7 +753,8 @@ function renderCal(tasks){
       +(inPlan?'<div class="cal-k">'+codes+'</div>'+(movedN?'<div class="cal-mv">↻ '+movedN+' việc đã dời</div>':''):'')+'</div>';
   }
   h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
-    +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới / đã xếp lại · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span></div>';
+    +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới / đã xếp lại · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span>'
+    +'<span class="muted">Số trên lịch là số đề gốc. Writing &amp; Speaking chỉ xếp <b>15 đề trọng tâm</b> — bỏ W'+SKIP_DE.writing.join(', W')+' và S'+SKIP_DE.speaking.join(', S')+' (trùng với đề khác).</span></div>';
   $('cal').innerHTML=h;
   bindTips($('cal'));
 }
