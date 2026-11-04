@@ -1021,14 +1021,18 @@ const $ = id => document.getElementById(id);
 const wordCount = s => (s.trim().match(/\S+/g)||[]).length;
 const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-// Đề trùng nhiều với đề khác — không có trong Lộ trình, làm thêm nếu dư thời gian
-const SKIP_W=[4,9,11,17,18];
+// Số đề hiển thị: Writing/Speaking đánh số lại theo bộ 15 đề trọng tâm (Đề 1–15), 5 đề trùng thành "Đề phụ 1–5".
+// Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
+const DE_ORDER={writing:[1,2,3,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
+function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); return i<0?String(de):i<15?String(i+1):'phụ '+(i-14); }
+// Đổi tên hiển thị "Đề N — …" theo số mới (dùng chung cho mọi chỗ in tên đề)
+EXAMS.forEach((ex,i)=>{ ex.name=ex.name.replace(/^Đề \d+/,'Đề '+deNum('writing',i+1)); });
 function buildExams(){
   const sel=$('deSel'); sel.innerHTML='';
-  EXAMS.forEach((ex,i)=>{
+  DE_ORDER.writing.map(n=>n-1).forEach(i=>{ const ex=EXAMS[i];
     const o=document.createElement('option');
     const pr=progGet('de'+(i+1));
-    o.value=i; o.textContent=ex.name+' · '+ex.blurb+(SKIP_W.includes(i+1)?'  · tuỳ chọn':'')+(pr?'  ✓ ×'+pr.attempts+' · '+pr.lastScore+'%':'  ○ chưa ôn');
+    o.value=i; o.textContent=ex.name+' · '+ex.blurb+(pr?'  ✓ ×'+pr.attempts+' · '+pr.lastScore+'%':'  ○ chưa ôn');
     sel.appendChild(o);
   });
   sel.value=exam;

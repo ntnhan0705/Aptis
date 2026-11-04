@@ -294,6 +294,12 @@ const PACK_MIN=40, PACK_MAX=45, NEW_MIN=8, NEW_MAX=12, PACK_RULE=3;
 const VIDX={}; VOCAB.forEach((v,i)=>{ VIDX[KEY(v.en)]=i; });
 const SKL={listening:'L',reading:'R',writing:'W',speaking:'S'};
 const SKNAME={L:'Listening',R:'Reading',W:'Writing',S:'Speaking'};
+// Số đề hiển thị: Writing/Speaking đánh số lại theo bộ 15 đề trọng tâm (Đề 1–15), 5 đề trùng thành "Đề phụ 1–5".
+// Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
+const DE_ORDER={writing:[1,2,3,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
+function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); return i<0?String(de):i<15?String(i+1):'phụ '+(i-14); }
+// Mã nguồn W3/S7… (số gốc) → mã hiển thị theo số mới
+function srcLabel(k){ const c=k[0], sk={W:'writing',S:'speaking'}[c]; return sk?c+deNum(sk,k.slice(1)).replace('phụ ','p'):k; }
 function planDeKeys(day){
   const days=(PROG.plan&&PROG.plan.cur&&PROG.plan.cur.days)||{}, ks=[];
   (days[day]||[]).forEach(t=>{ if(SKL[t.skill]&&t.de>0&&!ks.includes(SKL[t.skill]+t.de)) ks.push(SKL[t.skill]+t.de); });
@@ -413,7 +419,8 @@ function packHTML(){
   let opts='';
   ['L','R','W','S'].forEach(c=>{
     const n={L:16,R:15,W:20,S:20}[c];
-    for(let i=1;i<=n;i++){ const k=c+i, w=deWords(k).length; if(w) opts+='<option value="'+k+'">'+SKNAME[c]+' Đề '+i+' — '+w+' từ</option>'; }
+    const sk={W:'writing',S:'speaking'}[c], order=sk?DE_ORDER[sk]:Array.from({length:n},(_,j)=>j+1);
+    order.forEach(i=>{ const k=c+i, w=deWords(k).length; if(w) opts+='<option value="'+k+'">'+SKNAME[c]+' Đề '+(sk?deNum(sk,i):i)+' — '+w+' từ</option>'; });
   });
   return '<div class="dash-h" style="margin-top:18px">📅 Gói từ hôm nay — '+pk.total+' từ ('+nDue+' đến hạn ôn · '+nNew+' mới)</div>'
     +'<div class="dash-s">Lấy từ các đề của hôm nay trong Lộ trình: '+deTxt+'. Lặp lại ngắt quãng: từ mới đúng 2 lần (chọn nghĩa → điền câu) lên <b>Lv1</b>; từ đến hạn làm 1 lần — đúng lên Lv, sai về Lv0 học lại. Lv1→5 ôn sau 1 · 2 · 4 · 7 · 14 ngày. Đã xong <b>'+done+'/'+pk.total+'</b>'+' · ngày mai đến hạn '+dueLater+' từ'+(pk.doneAt?' ✅':'')+'.</div>'
@@ -646,7 +653,7 @@ function renderList(){
     row.innerHTML='<span class="wen">'+esc(v.en)+'</span>'+posBadge(v.pos)+'<span class="wipa">'+esc(v.ipa||'')+'</span>'
       +'<span class="wvi">'+esc(v.vi)+'</span>'+levelBadge(v.en)
       +'<span class="wstat">'+(r&&r.seen?('đúng '+r.correct+'/'+r.seen+' · '+(srs(r).box?'ôn '+r.due.slice(8)+'/'+r.due.slice(5,7):'đang học')):'—')+'</span>'
-      +'<span class="wsrc" title="Có trong các đề">'+esc((v.src||[]).slice(0,5).join(' ')+((v.src||[]).length>5?' …':''))+'</span>';
+      +'<span class="wsrc" title="Có trong các đề">'+esc((v.src||[]).slice(0,5).map(srcLabel).join(' ')+((v.src||[]).length>5?' …':''))+'</span>';
     const p=document.createElement('button'); p.className='wplay'; p.textContent='🔊'; p.onclick=()=>say(v.en);
     row.appendChild(p); wl.appendChild(row);
   });

@@ -246,6 +246,11 @@ const DE_SKILLS=['listening','reading','writing','speaking'];
 // Speaking: bỏ S7 (≈S1 nơi yên tĩnh + S2 mua sắm), S11 (≈S5/S9 phương tiện), S15 (≈S4 thiên nhiên + S12 nghệ thuật), S19 (≈S16 âm nhạc + S8 du lịch), S20 (≈S3 thư viện + S6 biển).
 const SKIP_DE={writing:[4,9,11,17,18],speaking:[7,11,15,19,20]};
 const inFocus=(skill,de)=>!(SKIP_DE[skill]||[]).includes(de);
+// Số đề hiển thị: Writing/Speaking đánh số lại theo bộ 15 đề trọng tâm (Đề 1–15), 5 đề trùng thành "Đề phụ 1–5".
+// Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
+const DE_ORDER={writing:[1,2,3,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
+function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); return i<0?String(de):i<15?String(i+1):'phụ '+(i-14); }
+
 const KIND_LBL={new:'đề mới',redo:'làm lại',drill:'luyện sâu',mock:'thi thử'};
 const DOW=['CN','T2','T3','T4','T5','T6','T7'];
 
@@ -468,7 +473,7 @@ function computeStatus(){
     if(DE_SKILLS.includes(t.skill)){
       const need=t.need||1,got=[];
       for(let k=0;k<need;k++){const e=take(t.skill,from,0);if(!e)break;got.push(e);}
-      st[key]={done:got.length>=need,by:got.length?got.map(e=>'Đề '+e.de).join(', ')+' ('+got.length+'/'+need+')':'0/'+need+' đề'};
+      st[key]={done:got.length>=need,by:got.length?got.map(e=>'Đề '+deNum(t.skill,e.de)).join(', ')+' ('+got.length+'/'+need+')':'0/'+need+' đề'};
     }else if(t.skill==='all'){
       // Thi thử: cần 1 lần nộp mỗi kỹ năng Listening, Reading, Speaking
       const ok=['listening','reading','speaking'].every(s=>ev[s].some(x=>!x.used&&x.day>=from));
@@ -500,14 +505,14 @@ function taskTitle(t){
   if(t.skill==='vocab'&&t.group)return s.ic+' Từ vựng — học thuộc Nhóm '+t.group;
   if(t.skill==='vocab'&&t.to)return s.ic+' Từ vựng — học từ '+t.from+'–'+t.to;
   if(t.skill==='vocab')return s.ic+' Từ vựng — '+(t.kind==='new'?(t.need||13)+' từ mới':'ôn '+(t.need||40)+' lượt');
-  if(t.de>0)return s.ic+' '+s.name+' — Đề '+t.de;
+  if(t.de>0)return s.ic+' '+s.name+' — Đề '+deNum(t.skill,t.de);
   if(t.skill==='all')return s.ic+' Thi thử';
   return s.ic+' '+s.name+' — làm lại '+(t.need||1)+' đề';
 }
 function taskHTML(x,preview){
   const t=x.t,s=SK[t.skill]||SK.all;
   let note=t.note||'';
-  if(!t.de&&t.kind==='redo'&&DE_SKILLS.includes(t.skill)){const w=weakOrder(t.skill).slice(0,3);if(w.length)note+=(note?' · ':'')+'gợi ý: Đề '+w.join(', ');}
+  if(!t.de&&t.kind==='redo'&&DE_SKILLS.includes(t.skill)){const w=weakOrder(t.skill).slice(0,3);if(w.length)note+=(note?' · ':'')+'gợi ý: Đề '+w.map(x=>deNum(t.skill,x)).join(', ');}
   return '<div class="task'+(x.done?' done':'')+'">'
     +(preview||x.skip?'<div class="ck">'+(preview?'·':'⏭')+'</div>'
       :'<a class="ck go" href="'+taskHref(t)+'" title="'+(x.done?'Đã xong — bấm để làm lại':'Bấm để làm ngay')+'">'+(x.done?'✅':'⬜')+'</a>')
@@ -674,7 +679,7 @@ function renderCefr(){
     +'<div style="margin-top:12px;font-weight:700">Điểm theo lượt (12 lượt gần nhất, cũ → mới · thang 0–50)</div>'
     +'<table><tr><th>Kỹ năng</th><th>Các lượt</th></tr>'+DE_SKILLS.map(sk=>{const a=attemptsOf(sk).slice(-12);
       return '<tr><td>'+SK[sk].name+'</td><td class="num">'+(a.length?a.map(h=>{const v=s50(h.score),d=new Date(h.date);
-        return '<span class="lp" title="'+svgEsc(d.getDate()+'/'+(d.getMonth()+1)+' · Đề '+h.de.replace('de','')+' · '+h.score+'%')+'">'+v+'·'+cefrOf(sk,v)+'</span>';}).join(' '):'—')+'</td></tr>';}).join('')+'</table>'
+        return '<span class="lp" title="'+svgEsc(d.getDate()+'/'+(d.getMonth()+1)+' · Đề '+deNum(sk,h.de.replace('de',''))+' · '+h.score+'%')+'">'+v+'·'+cefrOf(sk,v)+'</span>';}).join(' '):'—')+'</td></tr>';}).join('')+'</table>'
     +'<div class="muted" style="font-size:12px;margin-top:6px">Quy đổi ước tính: Listening/Reading = % đúng ÷ 2; Writing/Speaking = điểm AI (/10) × 5. Aptis thật dùng thang chấm riêng.</div></details>';
   bindTips($('cefr'));
 }
@@ -719,7 +724,7 @@ function taskCode(t){
   if(t.skill==='all')return 'M';
   if(t.warm)return 'S·15′';
   const c={listening:'L',reading:'R',writing:'W',speaking:'S'}[t.skill]||'?';
-  return t.de>0?c+t.de:c+'+'+(t.need||1);
+  return t.de>0?c+deNum(t.skill,t.de).replace('phụ ','p'):c+'+'+(t.need||1);
 }
 function renderCal(tasks){
   const byDate={};tasks.forEach(x=>(byDate[x.date]=byDate[x.date]||[]).push(x));
@@ -754,7 +759,7 @@ function renderCal(tasks){
   }
   h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
     +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới / đã xếp lại · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span>'
-    +'<span class="muted">Số trên lịch là số đề gốc. Writing &amp; Speaking chỉ xếp <b>15 đề trọng tâm</b> — bỏ W'+SKIP_DE.writing.join(', W')+' và S'+SKIP_DE.speaking.join(', S')+' (trùng với đề khác).</span></div>';
+    +'<span class="muted">Writing &amp; Speaking chỉ xếp <b>15 đề trọng tâm</b>, đã đánh số lại W1–W15, S1–S15 (giống số trong trang Writing/Speaking); 5 đề trùng nhiều là "Đề phụ", không xếp lịch.</span></div>';
   $('cal').innerHTML=h;
   bindTips($('cal'));
 }
@@ -780,6 +785,7 @@ function buildSnapshot(){
     timePerTask:(()=>{const f=(k,d)=>RM[k]?RM[k].min+' phút (thực tế: trung vị '+RM[k].raw+' phút làm bài, '+RM[k].n+' lần)':d+' phút (mặc định, chưa có dữ liệu)';
       return 'Một đề Listening '+f('listening',MIN.listening)+'; Reading '+f('reading',MIN.reading)+'; Writing '+f('writing',MIN.writing)+'; Speaking '+f('speaking',MIN.speaking)+'; gói từ vựng ngày thường ~25 phút.';})(),
     realMinutesPerSet:Object.fromEntries(DE_SKILLS.map(k=>[k,RM[k]?RM[k].min:null])),
+    deLabels:Object.fromEntries(['writing','speaking'].map(k=>[k,Object.fromEntries(DE_ORDER[k].map(de=>[de,'Đề '+deNum(k,de)]))])),
     skills, vocab:{total:VTOTAL,dailyPack:'40–45 từ B2+ (≥8 từ mới): từ đến hạn ôn (Lv1–5 ôn sau 1/2/4/7/14 ngày) + từ mới của các đề trong ngày',packsDoneLast7:(()=>{let n=0;for(let i=-7;i<0;i++){const k=vpack(addDays(TODAY,i));if(k&&k.doneAt)n++;}return n;})(),learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
     planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
