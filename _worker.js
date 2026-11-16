@@ -400,14 +400,15 @@ const SPEAK_BANDS = {
 1 (A2.1): chỉ vài cụm từ liên quan đến câu hỏi.
 0: không nói hoặc không liên quan.` },
   P4: { max: 6, task: "Part 4 — 1 phút chuẩn bị, nói liền 2 phút trả lời 3 câu hỏi về một chủ đề trừu tượng (trải nghiệm → cảm nhận → ý kiến). Phải trả lời đủ các câu được hỏi và có bố cục.",
-    cefr: ["A1", "A2", "B1", "B1+", "B2", "B2+", "C"],
-    desc: `6 (C1 trở lên): trả lời trọn vẹn mọi câu, lập luận chặt chẽ, cấu trúc & từ vựng rộng và chính xác, rất trôi chảy.
-5 (B2.2): đủ các câu, phát triển ý rõ có ví dụ; cấu trúc phức đa dạng, lỗi hiếm; từ vựng phong phú; trôi chảy, liên kết tốt.
-4 (B2.1): đủ các câu, nói thành bài có bố cục; nhiều cấu trúc phức, lỗi không gây khó hiểu; từ vựng đủ rộng; đôi chỗ ngập ngừng.
-3 (B1.2): trả lời được nhưng chưa sâu, hoặc bỏ sót 1 ý; có cấu trúc phức nhưng còn lỗi; từ vựng đủ dùng, có lặp; ngập ngừng khá nhiều.
-2 (B1.1): trả lời được một phần, chủ yếu câu đơn; lỗi thường xuyên; không giữ được thời lượng.
-1 (A2): vài câu ngắn rời rạc liên quan đến chủ đề.
-0: không nói hoặc không liên quan.` },
+    // Theo answer key Aptis (British Council, 01/2024): 0 dưới B1 · 1 B1.1 · 2 B1.2 · 3 B2.1 · 4 B2.2 · 5 C1 · 6 C2
+    cefr: ["A2", "B1", "B1+", "B2", "B2+", "C1", "C2"],
+    desc: `6 (C2): vượt mức C1.
+5 (C1): trả lời cả 3 câu, bố cục rõ; nhiều cấu trúc phức dùng chính xác (lỗi nhỏ không gây khó hiểu); từ vựng đa dạng cho chủ đề; phát âm rất rõ; có sửa lời nhưng không đứt mạch; nhiều phương tiện liên kết làm rõ quan hệ giữa các ý.
+4 (B2.2): cả 3 câu đúng chủ đề; một số cấu trúc phức dùng chính xác, lỗi không gây hiểu nhầm; đủ vốn từ cho chủ đề; phát âm dễ hiểu, không gây khó cho người nghe; có ngập ngừng tìm từ nhưng không làm người nghe mệt; có một số từ nối.
+3 (B2.1): như band 4 nhưng chỉ 2 câu đúng chủ đề / được trả lời.
+2 (B1.2): ít nhất 2 câu đúng chủ đề; nắm câu đơn, sai khi dùng cấu trúc phức; vốn từ hạn chế khiến khó trả lời trọn vẹn; phát âm đôi chỗ gây khó; ngập ngừng, lặp, sửa lời rõ; chỉ dùng từ nối đơn giản.
+1 (B1.1): chỉ 1 câu đúng chủ đề, các đặc điểm như band 2.
+0: dưới B1, không có ngôn ngữ có nghĩa, lạc đề hoàn toàn hoặc đọc thuộc lòng không khớp câu hỏi.` },
 };
 SPEAK_BANDS.P3 = { ...SPEAK_BANDS.P2, task: "Part 3 — so sánh 2 bức tranh (giống/khác) rồi trả lời 2 câu hỏi liên quan (suy đoán, ý kiến), mỗi câu ~45 giây." };
 function speakPrompt(P) {
@@ -422,7 +423,7 @@ ${B.desc}
 Rồi chấm riêng 5 tiêu chí, mỗi tiêu chí 0–5, nhất quán với band đã chọn:
 ${SPEAK_CRITERIA.map((c, i) => (i + 1) + '. ' + c).join('\n')}
 Với mỗi tiêu chí: nếu đã tốt thì "comment" là ""; nếu cần cải thiện thì 1–2 câu tiếng Việt nêu lỗi cụ thể (trích từ/câu người học nói) và cách sửa, không khen trước khi góp ý.
-Quy tắc: nói ngắn hơn nhiều so với thời lượng yêu cầu → hạ band, trừ tiêu chí 1 và 5. Lạc đề / không trả lời câu hỏi → tối đa band 2. Bỏ sót ý được hỏi → trừ tiêu chí 1.
+Quy tắc: nói ngắn hơn nhiều so với thời lượng yêu cầu → hạ band, trừ tiêu chí 1 và 5. Lạc đề / không trả lời câu hỏi → tối đa band 2. Bài đọc thuộc lòng không khớp câu hỏi (memorised script) → band 0, như answer key chính thức. Mô tả band tính theo số câu được trả lời trong cả Part; nếu chỉ nhận 1 câu hỏi (luyện từng câu) thì chấm theo chất lượng ngôn ngữ của câu đó, không hạ band vì thiếu các câu còn lại. Bỏ sót ý được hỏi → trừ tiêu chí 1.
 Nếu không có file ghi âm: tiêu chí Phát âm cho score = -1, comment = "Không có file ghi âm", các tiêu chí khác chấm theo bản chữ.
 Trả về:
 - "band": số nguyên 0–${B.max};
