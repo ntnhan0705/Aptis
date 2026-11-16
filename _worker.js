@@ -473,7 +473,7 @@ ${B.desc}
 Rồi chấm riêng 5 tiêu chí, mỗi tiêu chí 0–5, nhất quán với band đã chọn:
 ${SPEAK_CRITERIA.map((c, i) => (i + 1) + '. ' + c).join('\n')}
 Với mỗi tiêu chí: nếu đã tốt thì "comment" là ""; nếu cần cải thiện thì 1–2 câu tiếng Việt nêu lỗi cụ thể (trích từ/câu người học nói) và cách sửa, không khen trước khi góp ý.
-Quy tắc: nói ngắn hơn nhiều so với thời lượng yêu cầu → hạ band, trừ tiêu chí 1 và 5. Lạc đề / không trả lời câu hỏi → tối đa band 2. Bài đọc thuộc lòng không khớp câu hỏi (memorised script) → band 0, như answer key chính thức. Mô tả band tính theo số câu được trả lời trong cả Part; nếu chỉ nhận 1 câu hỏi (luyện từng câu) thì chấm theo chất lượng ngôn ngữ của câu đó, không hạ band vì thiếu các câu còn lại. Bỏ sót ý được hỏi → trừ tiêu chí 1.
+Quy tắc: nói ngắn hơn nhiều so với thời lượng yêu cầu → hạ band, trừ tiêu chí 1 và 5. Lạc đề / không trả lời câu hỏi → tối đa band 2. Bài đọc thuộc lòng không khớp câu hỏi (memorised script) → band 0, như answer key chính thức. Người học dùng một khung câu chung cho mọi đề: KHÔNG trừ điểm vì dùng khung quen thuộc, miễn nội dung khớp đúng câu hỏi. Mô tả band tính theo số câu được trả lời trong cả Part; nếu chỉ nhận 1 câu hỏi (luyện từng câu) thì chấm theo chất lượng ngôn ngữ của câu đó, không hạ band vì thiếu các câu còn lại. Bỏ sót ý được hỏi → trừ tiêu chí 1.
 Nếu không có file ghi âm: tiêu chí Phát âm cho score = -1, comment = "Không có file ghi âm", các tiêu chí khác chấm theo bản chữ.
 Trả về:
 - "band": số nguyên 0–${B.max};
