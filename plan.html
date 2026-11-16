@@ -235,7 +235,7 @@ const PLAN_START='2026-10-21'; // ngày đầu tiên của lộ trình (xếp l�
 const SK={
   listening:{name:'Listening',ic:'🎧',file:'aptis_listening_all.html',total:16},
   reading:  {name:'Reading',  ic:'📖',file:'aptis_reading_all.html',  total:15},
-  writing:  {name:'Writing',  ic:'✍️',file:'aptis_writing_all.html',  total:20},
+  writing:  {name:'Writing',  ic:'✍️',file:'aptis_writing_all.html',  total:21},
   speaking: {name:'Speaking', ic:'🗣️',file:'aptis_speaking_all.html', total:20},
   vocab:    {name:'Từ vựng',  ic:'📚',file:'aptis_vocab_all.html',    total:184},
   all:      {name:'Thi thử',  ic:'🎯',file:'index.html',              total:0},
@@ -246,10 +246,11 @@ const DE_SKILLS=['listening','reading','writing','speaking'];
 // Speaking: bỏ S7 (≈S1 nơi yên tĩnh + S2 mua sắm), S11 (≈S5/S9 phương tiện), S15 (≈S4 thiên nhiên + S12 nghệ thuật), S19 (≈S16 âm nhạc + S8 du lịch), S20 (≈S3 thư viện + S6 biển).
 const SKIP_DE={writing:[4,9,11,17,18],speaking:[7,11,15,19,20]};
 const inFocus=(skill,de)=>!(SKIP_DE[skill]||[]).includes(de);
-// Số đề hiển thị: Writing/Speaking đánh số lại theo bộ 15 đề trọng tâm (Đề 1–15), 5 đề trùng thành "Đề phụ 1–5".
+// Số đề hiển thị: đánh số lại theo bộ đề trọng tâm (Writing 16 đề — đề 21 Community Club xếp thứ 4; Speaking 15 đề), 5 đề trùng thành "Đề phụ 1–5".
 // Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
-const DE_ORDER={writing:[1,2,3,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
-function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); return i<0?String(de):i<15?String(i+1):'phụ '+(i-14); }
+const DE_ORDER={writing:[1,2,3,21,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
+const DE_FOCUS={writing:16,speaking:15};
+function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); const f=DE_FOCUS[skill]||15; return i<0?String(de):i<f?String(i+1):'phụ '+(i-f+1); }
 
 const KIND_LBL={new:'đề mới',redo:'làm lại',drill:'luyện sâu',mock:'thi thử'};
 const DOW=['CN','T2','T3','T4','T5','T6','T7'];
@@ -267,7 +268,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=14;
+const PLAN_VER=15;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -380,7 +381,9 @@ function generateDays(from,skip){
   // Vòng làm lại: đi tiếp theo thứ tự đề, bắt đầu từ đề ngay sau đề gần nhất đã nộp trong đợt ôn này (từ STUDY_START),
   // quay vòng 1 → N. Đề chưa làm lần nào (q) luôn được xếp trước.
   DE_SKILLS.forEach(s=>{
-    q[s]=skillStats(s).neverDone.slice();
+    // đề chưa làm theo thứ tự hiển thị (Đề 1, 2, 3, 4…), không theo số gốc
+    const ord=de=>DE_ORDER[s]?DE_ORDER[s].indexOf(de):de;
+    q[s]=skillStats(s).neverDone.slice().sort((a,b)=>ord(a)-ord(b));
     const N=SK[s].total,start=nextDeAfterRecent(s);
     cyc[s]=Array.from({length:N},(_,i)=>((start-1+i)%N)+1).filter(de=>inFocus(s,de));ptr[s]=0;
   });
@@ -759,7 +762,7 @@ function renderCal(tasks){
   }
   h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
     +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới / đã xếp lại · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span>'
-    +'<span class="muted">Writing &amp; Speaking chỉ xếp <b>15 đề trọng tâm</b>, đã đánh số lại W1–W15, S1–S15 (giống số trong trang Writing/Speaking); 5 đề trùng nhiều là "Đề phụ", không xếp lịch.</span></div>';
+    +'<span class="muted">Writing &amp; Speaking chỉ xếp <b>đề trọng tâm</b> (Writing 16, Speaking 15), đã đánh số lại W1–W16, S1–S15 (giống số trong trang Writing/Speaking); 5 đề trùng nhiều là "Đề phụ", không xếp lịch.</span></div>';
   $('cal').innerHTML=h;
   bindTips($('cal'));
 }
