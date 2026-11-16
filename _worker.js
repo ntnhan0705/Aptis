@@ -79,28 +79,71 @@ const PART_RUBRICS = {
     ],
   },
 };
+// Thang band chính thức (Aptis General Writing answer key, British Council 01/2024). Chấm từng câu một:
+// band → điểm 0–10 = band/max×10; CEFR theo bảng của Part. Q4 chia email thân mật (Q4a) và trang trọng (Q4b).
+const W_BANDS = {
+  Q1: { max: 3, cefr: ["A0", "A1", "A1", "A2"],
+    desc: `3 (trên A1): trả lời đúng câu hỏi, hiểu được hoàn toàn.
+2 (A1.2): hiểu được nhưng có lỗi nhỏ.
+1 (A1.1): lỗi làm khó hiểu.
+0: không hiểu được / không trả lời.` },
+  Q2: { max: 5, cefr: ["A0", "A1", "A1", "A2", "A2", "B1"],
+    desc: `5 (B1 trở lên): vượt mức A2 — đúng chủ đề, câu ghép có từ nối, ngữ pháp & chính tả chính xác.
+4 (A2.2): đúng chủ đề; cấu trúc đơn giản, lỗi cơ bản không gây khó hiểu; chính tả & dấu câu phần lớn đúng; từ vựng đủ; có thử dùng từ nối đơn giản.
+3 (A2.1): đúng chủ đề; lỗi cơ bản gây khó hiểu ở vài chỗ; lỗi chính tả rõ; chọn từ chưa hợp; chỉ là danh sách câu, không có từ nối.
+2 (A1.2): không hẳn đúng chủ đề; chỉ là từ/cụm từ; lỗi cản trở hiểu.
+1 (A1.1): vài từ rời rạc, gần như không hiểu được.
+0: không có ngôn ngữ có nghĩa hoặc lạc đề hoàn toàn.` },
+  Q3: { max: 5, cefr: ["A1", "A2", "A2", "B1", "B1+", "B2"],
+    desc: `5 (B2 trở lên): vượt mức B1 — trả lời đúng & phát triển ý; cấu trúc phức (mệnh đề quan hệ, điều kiện, bị động…) dùng chính xác; từ vựng phù hợp; liên kết mạch lạc.
+4 (B1.2): đúng chủ đề; nắm vững câu đơn, sai khi dùng cấu trúc phức; chính tả & dấu câu phần lớn đúng; từ vựng đủ; dùng từ nối đơn giản thành chuỗi câu tuyến tính.
+3 (B1.1): như band 4 nhưng trả lời chưa trọn ý / chỉ đúng một phần câu hỏi.
+2 (A2.2): câu đơn, lỗi thường gặp đôi khi gây khó hiểu; từ vựng chưa đủ; danh sách câu, không liên kết.
+1 (A2.1): chỉ đúng chủ đề một phần nhỏ, lỗi nhiều.
+0: dưới A2, lạc đề hoàn toàn hoặc chép bài thuộc lòng không khớp câu hỏi.` },
+  Q4: { max: 6, cefr: ["A2", "B1", "B1+", "B2", "B2+", "C1", "C2"],
+    desc: `6 (C2): vượt mức C1.
+5 (C1): đúng chủ đề, văn phong rất phù hợp; nhiều cấu trúc phức dùng chính xác (lỗi nhỏ không gây khó hiểu); từ vựng đa dạng; nhiều phương tiện liên kết làm rõ quan hệ giữa các ý.
+4 (B2.2): đúng chủ đề & đủ ý, văn phong phù hợp nhất quán; một số cấu trúc phức dùng chính xác, lỗi không gây hiểu nhầm; lỗi chính tả/dấu câu nhỏ; đủ vốn từ cho chủ đề; có một số từ nối.
+3 (B2.1): như band 4 nhưng văn phong chưa nhất quán hoặc chỉ đúng chủ đề một phần.
+2 (B1.2): đúng chủ đề một phần, văn phong không phù hợp; nắm câu đơn, sai khi dùng cấu trúc phức; vốn từ hạn chế; chỉ dùng từ nối đơn giản.
+1 (B1.1): lạc đề, không có ý thức về văn phong.
+0: dưới B1, không có ngôn ngữ có nghĩa, lạc đề hoàn toàn hoặc chép bài thuộc lòng không khớp đề.` },
+};
+function wBandKey(tag, range) {
+  if (tag === "Q4") return (range && range[0] >= 100) ? "Q4b" : "Q4a";
+  return W_BANDS[tag] ? tag : null;
+}
 const DEFAULT_RUBRIC = {
   name: "Bài viết",
   criteria: ["Đúng ý câu hỏi", "Ngữ pháp & từ vựng", "Mạch lạc"],
 };
 
-function systemPromptFor(rubric) {
-  return `Bạn là giám khảo chấm bài thi Aptis Writing, đang chấm phần "${rubric.name}".
+function systemPromptFor(rubric, bk) {
+  const B = bk ? W_BANDS[bk === "Q4a" || bk === "Q4b" ? "Q4" : bk] : null;
+  const band = B ? `
+Chấm như kỳ thi thật theo THANG BAND chính thức của Part này (0–${B.max}) — chọn band mô tả đúng nhất bài làm:
+${B.desc}
+${bk === "Q4a" ? "Đây là email THÂN MẬT gửi bạn (~50 từ): văn phong phải thân mật, tự nhiên." : bk === "Q4b" ? "Đây là email TRANG TRỌNG (120–150 từ): văn phong phải trang trọng, lịch sự, không viết tắt." : ""}
+Người học dùng một khung câu chung cho mọi đề: KHÔNG trừ điểm vì dùng khung quen thuộc, miễn nội dung khớp đúng câu hỏi; chỉ trừ khi có câu không liên quan đến đề.
+Trả về "band" là số nguyên 0–${B.max}.` : "";
+  return `Bạn là giám khảo chấm bài thi Aptis Writing, đang chấm phần "${rubric.name}".${band}
 Chấm riêng từng tiêu chí sau đây:
 ${rubric.criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 Với mỗi tiêu chí:
 - Nếu bài làm ĐÃ TỐT / không có lỗi đáng kể ở tiêu chí đó: để "comment" là chuỗi rỗng "" — KHÔNG khen, không viết gì.
 - Nếu còn điểm cần cải thiện: viết "comment" ngắn gọn (1-2 câu) bằng tiếng Việt, nêu rõ lỗi/thiếu sót và cách sửa cụ thể. Không khen trước khi góp ý, đi thẳng vào điều cần cải thiện.
-Sau đó cho điểm tổng trên thang 0-10 và một câu "summary" tóm tắt — chỉ nêu điều quan trọng nhất cần cải thiện (nếu bài đã hoàn thiện ở mọi mặt thì summary có thể ghi nhận điều đó, nhưng ưu tiên chỉ ra hướng cải thiện nếu có).
+Sau đó cho điểm tổng trên thang 0-10 (nếu có thang band thì điểm này sẽ được tính lại từ band) và một câu "summary" tóm tắt — chỉ nêu điều quan trọng nhất cần cải thiện (nếu bài đã hoàn thiện ở mọi mặt thì summary có thể ghi nhận điều đó, nhưng ưu tiên chỉ ra hướng cải thiện nếu có).
 Không chấm tuyệt đối theo đáp án mẫu — chấp nhận mọi cách diễn đạt đúng ngữ pháp và đúng ý.
 Field "criteria" phải có đúng ${rubric.criteria.length} phần tử (kể cả phần tử có comment rỗng), theo đúng thứ tự và tên tiêu chí đã liệt kê ở trên.`;
 }
 
-function schemaFor(rubric) {
+function schemaFor(rubric, bk) {
   const n = String(rubric.criteria.length);
   return {
     type: "OBJECT",
     properties: {
+      ...(bk ? { band: { type: "INTEGER" } } : {}),
       score: { type: "NUMBER", description: "Điểm tổng 0-10" },
       criteria: {
         type: "ARRAY",
@@ -114,7 +157,7 @@ function schemaFor(rubric) {
       },
       summary: { type: "STRING", description: "Tóm tắt 1 câu" },
     },
-    required: ["score", "criteria", "summary"],
+    required: bk ? ["band", "score", "criteria", "summary"] : ["score", "criteria", "summary"],
   };
 }
 
@@ -217,7 +260,14 @@ async function handleGradeWriting(request, env) {
   ].filter(Boolean).join("\n");
 
   try {
-    const { parsed, tokens } = await callGemini(env, systemPromptFor(rubric), userContent, schemaFor(rubric), 1024);
+    const bk = wBandKey(tag, range);
+    const { parsed, tokens } = await callGemini(env, systemPromptFor(rubric, bk), userContent, schemaFor(rubric, bk), 1024);
+    if (bk) {
+      const B = W_BANDS[bk === "Q4a" || bk === "Q4b" ? "Q4" : bk];
+      const band = Math.max(0, Math.min(B.max, Math.round(+parsed.band || 0)));
+      parsed.band = band; parsed.bandMax = B.max; parsed.cefr = B.cefr[band];
+      parsed.score = Math.round(band / B.max * 20) / 2;   // điểm 0–10 suy ra từ band
+    }
     parsed.partName = rubric.name;
     parsed.tokens = tokens;
     return new Response(JSON.stringify(parsed), { status: 200, headers: JH });

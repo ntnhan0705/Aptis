@@ -1211,7 +1211,7 @@ function aiResultHTML(data){
   const criteriaHTML=toImprove.length
     ? toImprove.map(c=>`<div style="margin-top:6px"><b>${esc(c.name)}</b><br>${esc(c.comment)}</div>`).join('')
     : `<div style="margin-top:6px">✅ Không có điểm nào cần sửa — bài làm đạt tốt ở mọi tiêu chí.</div>`;
-  return `<span class="score">${esc(data.partName||'')} · Điểm: ${esc(String(data.score))}/10</span>`
+  return `<span class="score">${esc(data.partName||'')} · ${data.bandMax?'band '+data.band+'/'+data.bandMax+' · ':''}Điểm: ${esc(String(data.score))}/10${data.cefr?' · '+esc(data.cefr):''}</span>`
     +criteriaHTML
     +`<div style="margin-top:8px;font-style:italic">${esc(data.summary||'')}</div>`
     +tokenLine(data.tokens);
@@ -1228,7 +1228,7 @@ async function gradeWithAI(it, answer, idx){
     const data=await fetchGradeResult(it, answer);
     box.innerHTML=aiResultHTML(data);
     // Lưu kết quả gọn (không lưu bài làm gốc) để dùng khi tổng kết cả đề / hiện lại khi quay về câu này.
-    state[idx].aiResult={tag:it.tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
+    state[idx].aiResult={tag:it.tag, partName:data.partName, score:data.score, band:data.band, bandMax:data.bandMax, cefr:data.cefr, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
     refreshAiSummaryBtn();
   }catch(e){
     box.classList.add('err');
@@ -1263,7 +1263,7 @@ async function gradeSummaryAI(){
     box.innerHTML=`Đang chấm nốt câu ${k+1}/${todo.length} trước khi tổng kết (${esc(ITEMS[i].tag)})...`;
     try{
       const data=await fetchGradeResult(ITEMS[i], state[i].value);
-      state[i].aiResult={tag:ITEMS[i].tag, partName:data.partName, score:data.score, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
+      state[i].aiResult={tag:ITEMS[i].tag, partName:data.partName, score:data.score, band:data.band, bandMax:data.bandMax, cefr:data.cefr, summary:data.summary, criteria:data.criteria, tokens:data.tokens};
       if(i===pos){ const b=$('aiBox'); if(b){ b.classList.remove('err'); b.classList.add('show'); b.innerHTML=aiResultHTML(data); } }
     }catch(e){ gradeFailed++; }
     refreshAiSummaryBtn();
@@ -1290,7 +1290,7 @@ async function gradeSummaryAI(){
     const summaryTokens=(data.tokens&&data.tokens.total)||0;
     // Liệt kê nhận xét từng câu đã chấm, theo đúng thứ tự câu trong đề.
     const perQuestionHTML=state.map((s,i)=> s.aiResult
-      ? `<div style="margin-top:8px"><b>Câu ${i+1} · ${esc(s.aiResult.tag)}</b> — ${esc(String(s.aiResult.score))}/10<br>${esc(s.aiResult.summary||'')}</div>`
+      ? `<div style="margin-top:8px"><b>Câu ${i+1} · ${esc(s.aiResult.tag)}</b> — ${esc(String(s.aiResult.score))}/10${s.aiResult.cefr?' · '+esc(s.aiResult.cefr):''}<br>${esc(s.aiResult.summary||'')}</div>`
       : ''
     ).join('');
     box.innerHTML=`<span class="score">Điểm trung bình: ${esc(String(data.averageScore))}/10 (dựa trên ${data.count} câu đã chấm${gradeFailed?`, ${gradeFailed} câu chấm lỗi bị bỏ qua`:''})</span>`
