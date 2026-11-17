@@ -244,12 +244,12 @@ const DE_SKILLS=['listening','reading','writing','speaking'];
 // Bộ đề trọng tâm: bỏ 5 đề Writing và 5 đề Speaking trùng nhiều nhất với các đề khác (vẫn mở được trong module, chỉ không xếp lịch).
 // Writing: bỏ W4 (≈W2 máy tính + W10 công nghệ), W9 (≈W3/W13 thể dục), W11 (≈W7 ăn uống), W17 (chỉ có Part 3, ≈W8 học tiếng Anh), W18 (≈W14 chụp ảnh).
 // Speaking: bỏ S7 (≈S1 nơi yên tĩnh + S2 mua sắm), S11 (≈S5/S9 phương tiện), S15 (≈S4 thiên nhiên + S12 nghệ thuật), S19 (≈S16 âm nhạc + S8 du lịch), S20 (≈S3 thư viện + S6 biển).
-const SKIP_DE={writing:[4,9,11,17,18],speaking:[7,11,15,19,20]};
+const SKIP_DE={writing:[4,9,11,17,18,5,13,15],speaking:[7,11,15,19,20]};
 const inFocus=(skill,de)=>!(SKIP_DE[skill]||[]).includes(de);
-// Số đề hiển thị: đánh số lại theo bộ đề trọng tâm (Writing 18 đề — đề 21 Community Club xếp thứ 4, đề 22 Art Club người trẻ thứ 5, đề 23 Travel Club thứ 6; Speaking 15 đề), 5 đề trùng thành "Đề phụ 1–5".
+// Số đề hiển thị: đánh số lại theo bộ đề trọng tâm (Writing 15 đề — đề 21 Community Club thứ 4, đề 22 Art Club người trẻ thứ 5, đề 23 Travel Club thứ 6; đề 5 Art Club, 13 Power Fitness, 15 Book Club trùng chủ đề → Đề phụ 6–8; Speaking 15 đề), 5 đề trùng thành "Đề phụ 1–5".
 // Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
-const DE_ORDER={writing:[1,2,3,21,22,23,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
-const DE_FOCUS={writing:18,speaking:15};
+const DE_ORDER={writing:[1,2,3,21,22,23,6,7,8,10,12,14,16,19,20,4,9,11,17,18,5,13,15],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
+const DE_FOCUS={writing:15,speaking:15};
 function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); const f=DE_FOCUS[skill]||15; return i<0?String(de):i<f?String(i+1):'phụ '+(i-f+1); }
 
 const KIND_LBL={new:'đề mới',redo:'làm lại',drill:'luyện sâu',mock:'thi thử'};
@@ -268,7 +268,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=17;
+const PLAN_VER=18;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -762,7 +762,7 @@ function renderCal(tasks){
   }
   h+='</div></div><div class="cal-leg"><span><i class="ok"></i>xong hết</span><span><i class="now"></i>hôm nay chưa xong</span><span><i class="late"></i>trễ</span><span><i class="fut"></i>sắp tới</span>'
     +'<span class="muted">V từ vựng · L/R/W/S + số đề · L+2 làm lại 2 đề bất kỳ · M thi thử · ✓ xong · ⏭ dồn sang gói mới / đã xếp lại · <b>bấm vào ký hiệu để mở đúng đề</b> (làm trước hoặc làm bù)</span>'
-    +'<span class="muted">Writing &amp; Speaking chỉ xếp <b>đề trọng tâm</b> (Writing 18, Speaking 15), đã đánh số lại W1–W18, S1–S15 (giống số trong trang Writing/Speaking); 5 đề trùng nhiều là "Đề phụ", không xếp lịch.</span></div>';
+    +'<span class="muted">Writing &amp; Speaking chỉ xếp <b>đề trọng tâm</b> (Writing 15, Speaking 15), đã đánh số lại W1–W15, S1–S15 (giống số trong trang Writing/Speaking); các đề trùng chủ đề (Writing 8, Speaking 5) là "Đề phụ", không xếp lịch.</span></div>';
   $('cal').innerHTML=h;
   bindTips($('cal'));
 }
