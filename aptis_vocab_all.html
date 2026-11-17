@@ -294,10 +294,10 @@ const PACK_MIN=40, PACK_MAX=45, NEW_MIN=8, NEW_MAX=12, PACK_RULE=3;
 const VIDX={}; VOCAB.forEach((v,i)=>{ VIDX[KEY(v.en)]=i; });
 const SKL={listening:'L',reading:'R',writing:'W',speaking:'S'};
 const SKNAME={L:'Listening',R:'Reading',W:'Writing',S:'Speaking'};
-// Số đề hiển thị: đánh số lại theo bộ đề trọng tâm (Writing 17 đề — đề 21 Community Club xếp thứ 4, đề 22 Art Club người trẻ xếp thứ 5; Speaking 15 đề), 5 đề trùng thành "Đề phụ 1–5".
+// Số đề hiển thị: đánh số lại theo bộ đề trọng tâm (Writing 18 đề — đề 21 Community Club xếp thứ 4, đề 22 Art Club người trẻ thứ 5, đề 23 Travel Club thứ 6; Speaking 15 đề), 5 đề trùng thành "Đề phụ 1–5".
 // Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
-const DE_ORDER={writing:[1,2,3,21,22,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
-const DE_FOCUS={writing:17,speaking:15};
+const DE_ORDER={writing:[1,2,3,21,22,23,5,6,7,8,10,12,13,14,15,16,19,20,4,9,11,17,18],speaking:[1,2,3,4,5,6,8,9,10,12,13,14,16,17,18,7,11,15,19,20]};
+const DE_FOCUS={writing:18,speaking:15};
 function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); const f=DE_FOCUS[skill]||15; return i<0?String(de):i<f?String(i+1):'phụ '+(i-f+1); }
 // Mã nguồn W3/S7… (số gốc) → mã hiển thị theo số mới
 function srcLabel(k){ const c=k[0], sk={W:'writing',S:'speaking'}[c]; return sk?c+deNum(sk,k.slice(1)).replace('phụ ','p'):k; }
@@ -419,7 +419,7 @@ function packHTML(){
   const deTxt=pk.de.length?pk.de.map(k=>'<b>'+k+'</b>').join(' · '):'chưa có đề nào trong Lộ trình hôm nay → gói ôn tổng hợp';
   let opts='';
   ['L','R','W','S'].forEach(c=>{
-    const n={L:16,R:15,W:22,S:20}[c];
+    const n={L:16,R:15,W:23,S:20}[c];
     const sk={W:'writing',S:'speaking'}[c], order=sk?DE_ORDER[sk]:Array.from({length:n},(_,j)=>j+1);
     order.forEach(i=>{ const k=c+i, w=deWords(k).length; if(w) opts+='<option value="'+k+'">'+SKNAME[c]+' Đề '+(sk?deNum(sk,i):i)+' — '+w+' từ</option>'; });
   });
