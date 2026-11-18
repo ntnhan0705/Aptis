@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aptis — Đề Grammar & Vocabulary</title>
+<style>
+  :root{
+    --ink:#1b2a2f; --paper:#fbf7ef; --card:#ffffff; --line:#d8cdb8;
+    --accent:#c0392b; --accent-soft:#f6e3df;
+    --green:#2e7d52; --green-soft:#e3f0e8; --muted:#7a7264;
+    --gold:#f0b429; --gold-soft:#fdf0c8; --blue:#2e6fb0; --blue-soft:#e2edf7;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.5;}
+  .wrap{max-width:700px;margin:0 auto;padding:26px 18px 80px;}
+  header.top{border-bottom:3px double var(--ink);padding-bottom:14px;margin-bottom:14px;}
+  .eyebrow{font-family:"SF Mono",ui-monospace,monospace;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin:0 0 8px;}
+  h1{font-size:1.7rem;margin:0 0 6px;letter-spacing:-.01em;}
+  .sub{margin:0;color:var(--muted);font-size:.88rem;}
+  .savebar{font-family:"SF Mono",monospace;font-size:.7rem;text-align:center;margin:12px 0;padding:7px 11px;border-radius:9px;background:var(--green-soft);color:#1f7a52;border:1px solid #cfe6d6;}
+  .savebar.local{background:var(--gold-soft);color:#8a6d00;border-color:var(--gold);}
+  .maintabs{display:flex;gap:8px;margin:0 0 16px;}
+  .maintab{flex:1;text-align:center;padding:11px 8px;border:1.5px solid var(--line);background:var(--card);border-radius:10px;cursor:pointer;font-family:"SF Mono",monospace;font-size:.78rem;color:var(--muted);}
+  .maintab.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .hide{display:none;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px;margin-bottom:14px;}
+  /* dashboard */
+  .dash-h{font-size:1.05rem;font-weight:800;margin-bottom:4px;}
+  .dash-s{font-size:.84rem;color:var(--muted);margin-bottom:14px;}
+  .lvbars{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .lvrow{display:flex;align-items:center;gap:10px;font-size:.8rem;}
+  .lvrow .nm{width:118px;flex:none;font-family:"SF Mono",monospace;font-size:.7rem;color:var(--muted);}
+  .lvrow .bar{flex:1;height:14px;background:#efe8da;border-radius:99px;overflow:hidden;}
+  .lvrow .bar>span{display:block;height:100%;border-radius:99px;}
+  .lvrow .n{width:34px;text-align:right;font-weight:700;font-family:"SF Mono",monospace;font-size:.74rem;}
+  .b5{background:var(--green);} .b4{background:#5aa77c;} .b3{background:#9dbf6a;}
+  .b2{background:var(--gold);} .b1{background:#e2953f;} .b0{background:var(--accent);} .bnew{background:#c3bbaa;}
+  .btnrow{display:flex;gap:9px;flex-wrap:wrap;}
+  .btn{border:1.5px solid var(--ink);background:var(--card);color:var(--ink);border-radius:10px;padding:11px 18px;cursor:pointer;font:inherit;font-size:.88rem;font-weight:700;}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn:hover{opacity:.9;} .btn:disabled{opacity:.45;cursor:default;}
+  .lv{font-size:.6rem;font-weight:800;border-radius:99px;padding:2px 7px;white-space:nowrap;}
+  .lvnew{background:#eee7d8;color:var(--muted);} .lv0{background:var(--accent-soft);color:var(--accent);}
+  .lv1{background:#fbe6cf;color:#a15c00;} .lv2{background:var(--gold-soft);color:#8a6d00;}
+  .lv3{background:#eaf2dc;color:#5a7d1e;} .lv4{background:var(--green-soft);color:var(--green);} .lv5{background:var(--green);color:#fff;}
+  /* trainer */
+  .qz-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .qz-mode{font-family:"SF Mono",monospace;font-size:.68rem;font-weight:700;color:var(--blue);background:var(--blue-soft);border-radius:99px;padding:3px 10px;}
+  .qz-prog{font-family:"SF Mono",monospace;font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .qz-q{font-family:"SF Mono",monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;}
+  .qz-prompt{font-size:1.4rem;font-weight:800;text-align:center;margin:10px 0 4px;line-height:1.35;}
+  .qz-sent{font-size:1.05rem;line-height:1.85;margin:8px 0;}
+  .qz-blank{display:inline-block;min-width:92px;border-bottom:2.5px solid var(--accent);color:var(--accent);text-align:center;font-weight:800;}
+  .qz-vi{text-align:center;color:var(--muted);font-size:.85rem;margin-top:6px;}
+  .qz-play{display:inline-flex;gap:6px;border:none;background:var(--blue);color:#fff;border-radius:10px;padding:10px 18px;cursor:pointer;font:inherit;font-weight:700;font-size:.88rem;margin:4px 0 8px;}
+  .qz-opts{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+  .qz-optrow{display:flex;gap:8px;align-items:stretch;}
+  .qz-optrow .qz-opt{flex:1;}
+  .qz-optplay{flex:none;border:1.5px solid var(--line);background:var(--blue-soft);color:var(--blue);
+    border-radius:10px;width:46px;font-size:1.05rem;cursor:pointer;}
+  .qz-optplay:hover{background:var(--blue);color:#fff;}
+  .qz-opt{text-align:left;padding:12px 15px;border:1.5px solid var(--line);border-radius:11px;background:var(--card);cursor:pointer;font:inherit;font-size:1rem;color:var(--ink);}
+  .qz-opt:hover:not(:disabled){border-color:var(--blue);background:var(--blue-soft);}
+  .qz-opt.correct{border-color:var(--green);background:var(--green-soft);color:var(--green);font-weight:800;}
+  .qz-opt.wrong{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+  .qz-opt:disabled{cursor:default;}
+  .qz-hints{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;}
+  .qz-hl{font-size:.78rem;color:var(--muted);font-weight:700;margin-right:2px;}
+  .qz-hint{font-size:.95rem;border:1.5px dashed var(--line);border-radius:99px;padding:4px 12px;background:var(--card);user-select:none;}
+  .qz-hint.right{border-style:solid;border-color:var(--green);background:var(--green-soft);color:var(--green);font-weight:800;}
+  .qz-hint.bad{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent);text-decoration:line-through;}
+  .qz-inrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .qz-in{flex:1;min-width:170px;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font:inherit;font-size:1.05rem;}
+  .qz-in.ok{border-color:var(--green);background:var(--green-soft);} .qz-in.no{border-color:var(--accent);background:var(--accent-soft);}
+  .qz-fb{margin-top:14px;text-align:center;font-size:1rem;font-weight:700;}
+  .qz-fb.ok{color:var(--green);} .qz-fb.no{color:var(--accent);}
+  .qz-fb .ans{font-weight:900;text-decoration:underline;}
+  .qz-meta{text-align:center;font-size:.8rem;color:var(--muted);margin-top:6px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;}
+  .qz-next{display:block;margin:16px auto 0;border:none;background:var(--ink);color:var(--paper);border-radius:10px;padding:12px 30px;cursor:pointer;font:inherit;font-weight:800;font-size:.95rem;}
+  .qz-hintwrap{background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:12px 14px;margin-top:6px;}
+  .fam-box{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--paper);}
+  .fam-h{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+  .fam-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .fam-cell{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border-radius:8px;background:var(--card);}
+  .fam-cell.fam-empty{opacity:.45;}
+  .fam-lbl{font-size:.64rem;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.03em;}
+  .fam-w{font-size:.9rem;font-weight:700;color:var(--ink);}
+  .fam-suf{font-size:.7rem;color:var(--muted);}
+  @media(max-width:480px){.fam-grid{grid-template-columns:1fr;}}
+  /* word list */
+  .wl{display:flex;flex-direction:column;gap:7px;margin-top:10px;}
+  .wrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);flex-wrap:wrap;}
+  .wrow .wen{font-weight:700;font-size:.92rem;min-width:140px;}
+  .wrow .wipa{font-family:ui-monospace,monospace;font-size:.76rem;color:var(--muted);flex:1;min-width:110px;}
+  .wrow .wvi{font-size:.85rem;color:#4a4438;flex:1;min-width:100px;}
+  .wrow .wstat{font-family:"SF Mono",monospace;font-size:.68rem;color:var(--muted);}
+  .wpos{font-family:"SF Mono",monospace;font-size:.66rem;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:2px 7px;white-space:nowrap;}
+  .wplay{border:none;background:var(--accent-soft);color:var(--accent);border-radius:8px;width:32px;height:32px;cursor:pointer;}
+  .filt{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px;}
+  .fchip{padding:6px 13px;border:1.5px solid var(--line);border-radius:99px;background:var(--card);cursor:pointer;font-family:"SF Mono",monospace;font-size:.7rem;color:var(--muted);}
+  .fchip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  /* grammar */
+  .gr-block{margin-bottom:20px;}
+  .gr-h{font-size:1.02rem;font-weight:800;margin-bottom:6px;}
+  .gr-rule{font-size:.86rem;line-height:1.65;color:#4a4438;background:var(--blue-soft);border:1px solid #cfe0ef;border-radius:9px;padding:10px 13px;margin-bottom:8px;}
+  .gr-rule b{color:var(--ink);}
+  .gr-eg{font-size:.94rem;line-height:1.7;padding:7px 12px;border-left:2px solid var(--line);margin:5px 0;}
+  .gr-eg b{background:var(--gold-soft);border-radius:3px;padding:0 3px;color:#5a4600;}
+  .gr-src{display:inline-block;font-family:"SF Mono",monospace;font-size:.58rem;font-weight:700;border-radius:99px;padding:1px 7px;margin-right:7px;vertical-align:middle;}
+  .src-Speaking{background:#e9e2f7;color:#5b3fa8;} .src-Writing{background:var(--accent-soft);color:var(--accent);}
+  .src-Reading{background:var(--gold-soft);color:#8a6d00;} .src-Listening{background:var(--blue-soft);color:var(--blue);}
+  .gr-count{font-family:"SF Mono",monospace;font-size:.62rem;color:var(--muted);}
+  .gr-vi{margin-top:10px;font-size:.94rem;line-height:1.6;color:#4a4438;background:var(--paper);
+    border:1px solid var(--line);border-radius:9px;padding:9px 12px;text-align:left;}
+  .gr-gp{margin-top:8px;font-size:.86rem;line-height:1.6;color:#1d4f7a;background:var(--blue-soft);
+    border:1px solid #cfe0ef;border-radius:9px;padding:9px 12px;text-align:left;font-weight:600;}
+  .gr-why{margin-top:8px;font-size:.88rem;line-height:1.75;color:#4a4438;background:var(--gold-soft);
+    border:1px solid var(--gold);border-radius:9px;padding:10px 13px;text-align:left;}
+  .gr-why b{color:#5a4600;}
+  footer{text-align:center;color:var(--muted);font-size:.75rem;margin-top:26px;}
+.gchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin:10px 0}
+.gchip{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:6px 2px;cursor:pointer;font:inherit;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.gchip b{font-size:15px}.gchip span{font-size:10.5px;color:var(--muted);font-family:'SF Mono',monospace}
+.gchip.done{background:#e3f4ec;border-color:#bfe3cf}.gchip.cur{border-color:var(--accent);box-shadow:0 0 0 2px rgba(224,83,61,.18)}
+.qz-grp{display:inline-block;background:#fbe8e3;color:#b23a26;border-radius:99px;padding:1px 8px;margin-right:4px;font-weight:700}
+.qz-letters{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin:12px 0 6px}
+.ql{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:32px;border-bottom:2px solid var(--ink);font-family:'SF Mono',ui-monospace,monospace;font-size:18px;font-weight:700}
+.ql-blank{border-bottom-color:var(--muted)}
+input.ql-in{width:28px;min-width:28px;padding:0;border:0;border-bottom:2px solid var(--muted);border-radius:0;background:transparent;text-align:center;color:var(--accent);outline:none;text-transform:lowercase}
+input.ql-in:focus{border-bottom-color:var(--accent);background:var(--accent-soft)}
+.ql-fix{color:var(--ink)!important}
+input.ql-in.ql-fix{color:var(--muted)!important}
+input.ql-in.ql-ok{color:var(--green)!important;border-bottom-color:var(--green)}
+input.ql-in.ql-bad{color:#fff!important;background:var(--accent);border-bottom-color:var(--accent)}
+.qz-letters.shake{animation:qlshake .3s}
+@keyframes qlshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.ql-gap{display:inline-block;width:14px}
+.pchips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.pchip{font-size:13px;border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:3px 10px}
+.pchip em{font-style:normal;font-size:10px;font-weight:700;color:var(--muted);margin-left:5px}
+.pchip i{font-style:normal;font-size:10px;font-weight:700;color:var(--accent);margin-left:5px;text-transform:uppercase}
+.pchip.done{background:#e3f4ec;border-color:#bfe3cf;text-decoration:line-through;color:var(--muted)}
+.desel{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff}
+.wsrc{font-family:'SF Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted);margin-left:6px}
+/* đề Grammar & Vocabulary */
+.tq{border-top:1px solid var(--line);padding:16px 0 6px}
+.tq-n{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.tq-s{font-size:1rem;line-height:1.6;margin-bottom:4px}
+.tq .qz-opts{margin-top:10px;gap:6px}
+.tq .qz-opt{padding:10px 14px;display:flex;gap:12px;align-items:center}
+.tq .qz-opt .L{font-family:"SF Mono",ui-monospace,monospace;font-weight:700;color:var(--muted);width:14px}
+.tq .qz-opt.pick{border-color:var(--ink);background:#eceaf6}
+.tq .qz-fb{text-align:left}
+.tm-row{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)}
+.tm-row:last-child{border-bottom:0}
+.tm-l{font-size:.95rem;line-height:1.5}
+.tm-row select{width:100%;padding:8px 9px;border:1.5px solid var(--line);border-radius:9px;font:inherit;font-size:.92rem;background:#fff;color:var(--ink)}
+.tm-row select.ok{border-color:var(--green);background:var(--green-soft)}
+.tm-row select.no{border-color:var(--accent);background:var(--accent-soft)}
+.tm-fix{grid-column:1/-1;font-size:.86rem;line-height:1.55;color:#4a4438;padding:0 0 4px}
+.tm-fix b{color:var(--green)}
+.tscore{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px}
+.tscore div{flex:1;min-width:110px;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;text-align:center}
+.tscore b{display:block;font-size:1.5rem}
+.tscore span{font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;color:var(--muted)}
+.tbar{position:sticky;bottom:0;background:var(--paper);padding:12px 0;border-top:1px solid var(--line);margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.home{font-family:"SF Mono",monospace;font-size:.72rem;color:var(--muted);text-decoration:none}
+@media (max-width:520px){.tm-row{grid-template-columns:1fr}}
+.rtab{width:100%;border-collapse:collapse;font-size:.86rem;margin-top:10px}
+.rtab th,.rtab td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left}
+.rtab th{font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;color:var(--muted);font-weight:700}
+.rtab .ravg td{background:var(--paper);font-weight:700}
+.rext{font-family:"SF Mono",ui-monospace,monospace;font-size:10px;color:var(--muted)}
+.rrep{margin:6px 0 0;padding-left:18px;font-size:.9rem;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="index.html">‹ Trang chủ</a>
+  <header class="top">
+    <p class="eyebrow">Aptis General</p>
+    <h1>Đề Grammar &amp; Vocabulary</h1>
+    <p class="sub">Làm đề như thi thật · 30 câu / 50 điểm · có đáp án, dịch và giải thích tiếng Việt</p>
+  </header>
+
+  <div class="savebar" id="savebar">Đang kiểm tra chế độ lưu…</div>
+
+  <div class="card" id="gvtest"></div>
+
+  <footer>Tiến độ lưu chung ở <b>aptis_progress.json</b> · mục <b>gvtest</b></footer>
+</div>
+
+<script>
+/* ===== Đồng bộ đám mây — mã đồng bộ = ID blob (jsonblob). Dùng chung mọi app. ===== */
+window.ACLOUD=window.ACLOUD||(function(){
+  var API='/progress',CK='aptis_sync_code',t=null;
+  function code(){try{return localStorage.getItem(CK)||'';}catch(e){return'';}}
+  function setCode(c){try{localStorage.setItem(CK,c||'');}catch(e){}}
+  function clear(){try{localStorage.removeItem(CK);}catch(e){}}
+  function on(){return !!code();}
+  function isMap(x){return x&&typeof x==='object'&&!Array.isArray(x);}
+  function score(r){if(!isMap(r))return 0;return (r.attempts||0)*1000+(r.seen||0)*10+(r.correct||0)+((r.history&&r.history.length)||0);}
+  function mm(a,b){a=isMap(a)?a:{};b=isMap(b)?b:{};var o={},ks={};Object.keys(a).concat(Object.keys(b)).forEach(function(k){ks[k]=1;});
+    Object.keys(ks).forEach(function(k){var av=a[k],bv=b[k];
+      if(av===undefined){o[k]=bv;return;}if(bv===undefined){o[k]=av;return;}
+      if(isMap(av)&&isMap(bv)&&!('seen'in av)&&!('attempts'in av)&&!('correct'in av)){o[k]=mm(av,bv);}
+      else{o[k]=score(bv)>=score(av)?bv:av;}});return o;}
+  function merge(a,b){a=isMap(a)?a:{};b=isMap(b)?b:{};var o={},ks={};Object.keys(a).concat(Object.keys(b)).forEach(function(k){ks[k]=1;});
+    Object.keys(ks).forEach(function(k){if(k==='updated'){o.updated=((a.updated||'')>(b.updated||''))?a.updated:b.updated;return;}
+      var av=a[k],bv=b[k];if(isMap(av)||isMap(bv)){o[k]=mm(av,bv);}else{o[k]=(bv!==undefined?bv:av);}});return o;}
+  function u(){return API+'?code='+encodeURIComponent(code());}
+  function pull(){if(!code())return Promise.resolve(null);
+    return fetch(u(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}
+  function pushNow(data){if(!code())return Promise.resolve(false);
+    return fetch(u(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){return r.ok;}).catch(function(){return false;});}
+  function push(data){if(!code())return;clearTimeout(t);t=setTimeout(function(){pushNow(data);},1200);}
+  function syncOnLoad(local){if(!code())return Promise.resolve(local);
+    return pull().then(function(remote){return remote===null?local:merge(local||{},remote||{});});}
+  return {code:code,setCode:setCode,clear:clear,on:on,merge:merge,pull:pull,push:push,pushNow:pushNow,syncOnLoad:syncOnLoad,API:API};
+})();
+const SERVED = /^https?:$/.test(location.protocol);
+let PROG = {};
+function lsGet(){ try{ return JSON.parse(localStorage.getItem('aptis_progress')||'{}'); }catch(e){ return {}; } }
+async function progLoad(){
+  let d={};
+  if(SERVED){ try{ const r=await fetch('/api/progress',{cache:'no-store'}); d=await r.json(); }catch(e){ d=lsGet(); } }
+  else d=lsGet();
+  d=d||{};
+  if(ACLOUD.on()){try{const m=await ACLOUD.syncOnLoad(d);if(m){d=m;
+    try{localStorage.setItem('aptis_progress',JSON.stringify(d));}catch(e){}
+    if(SERVED){try{await fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(e){}}
+    ACLOUD.push(d);}}catch(e){}}
+  PROG=d||{}; if(!PROG.vocab)PROG.vocab={};
+}
+let saveT=null;
+function progSave(){
+  PROG.updated=new Date().toISOString();
+  try{ localStorage.setItem('aptis_progress',JSON.stringify(PROG)); }catch(e){}
+  if(SERVED){ clearTimeout(saveT); saveT=setTimeout(()=>{
+    fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(PROG)}).catch(()=>{});
+  },250); }
+  ACLOUD.push(PROG);
+}
+function setSaveBar(){
+  const el=document.getElementById('savebar');
+  if(SERVED){ el.className='savebar'; el.innerHTML='✅ Đang chạy qua server — điểm làm đề <b>lưu tự động</b>'; }
+  else { el.className='savebar local'; el.innerHTML='⚠️ Mở trực tiếp (file://) — lưu tạm trong trình duyệt. Mở bằng <b>start.bat</b> để lưu tự động.'; }
+}
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+/* ============ dữ liệu đề: 25 ngữ pháp + 5 nhóm từ vựng (giống bài thi thật) ============ */
+const GVTESTS=[{id:'t1',name:'Đề 1 — Aptis General practice',ext:{d:'2026-11-17',g:20,v:15,wrong:['g2','g11','g15','g17','g23','v0_2','v0_3','v2_0','v2_1','v2_2','v3_2','v3_4','v4_1','v4_2','v4_4']},
+gram:[
+{s:"I have lived in Toronto ___ 3 months.",vi:"Tôi đã sống ở Toronto được 3 tháng.",o:["since","for","from"],a:"for",why:"<b>for</b> + khoảng thời gian (3 months). <b>since</b> + mốc thời gian (since May). <i>from</i> phải đi với <i>to</i> (from May to July)."},
+{s:"You ___ to do your homework by tomorrow.",vi:"Bạn phải làm xong bài tập trước ngày mai.",o:["should","have","must"],a:"have",why:"<b>have to + V</b> = phải. <b>should / must</b> là động từ khuyết thiếu, không bao giờ đi với <i>to</i> (✗ should to do, ✗ must to do)."},
+{s:"He emphasised in his speech that ___ education he received when younger had been excellent.",vi:"Ông nhấn mạnh trong bài phát biểu rằng nền giáo dục ông nhận được hồi trẻ rất tuyệt vời.",o:["a","an","the"],a:"the",why:"Danh từ đã được <b>xác định</b> bởi mệnh đề phía sau (<i>he received when younger</i> = nền giáo dục cụ thể nào) → dùng <b>the</b>. Ngoài ra <i>education</i> bắt đầu bằng âm phụ âm /e-dʒu/ nên không thể là <i>an</i>."},
+{s:"We had ___ a good time at the concert.",vi:"Chúng tôi đã có một khoảng thời gian rất vui ở buổi hòa nhạc.",o:["so","such","very"],a:"such",why:"<b>such a + adj + N</b> (such a good time). <b>so + adj</b> khi không có danh từ (it was so good). <i>very</i> không đứng trước <i>a</i>."},
+{s:"The concert was called ___ because the singer was sick.",vi:"Buổi hòa nhạc bị hủy vì ca sĩ bị ốm.",o:["off","on","in"],a:"off",why:"<b>call off</b> = hủy bỏ (cancel). <i>call on</i> = ghé thăm / kêu gọi; <i>call in</i> = gọi đến, triệu tập."},
+{s:"My father, ___ is a dentist, told me not to drink sugary drinks.",vi:"Bố tôi, người là nha sĩ, bảo tôi đừng uống đồ uống có đường.",o:["who","which","that"],a:"who",why:"Chỉ <b>người</b> → <b>who</b> (<i>which</i> chỉ vật). Mệnh đề nằm giữa hai dấu phẩy (không xác định) thì <b>không</b> dùng <i>that</i>."},
+{s:"My sister ___ the money.",vi:"Chị tôi thừa nhận đã lấy trộm tiền.",o:["admitted","to steal","admitted stealing"],a:"admitted stealing",why:"<b>admit + V-ing</b> = thừa nhận đã làm gì. Câu cần động từ chính nên <i>to steal</i> sai; <i>admitted</i> một mình thiếu nghĩa. Cùng nhóm + V-ing: <b>deny, enjoy, avoid, suggest, mind</b>."},
+{s:"If you ___ a decision, I will support you.",vi:"Nếu bạn đưa ra quyết định, tôi sẽ ủng hộ bạn.",o:["make","made","could make"],a:"make",why:"Điều kiện loại 1 (có thật ở tương lai): <b>If + hiện tại đơn, will + V</b>. Thấy <i>will</i> ở vế sau → vế If dùng hiện tại đơn."},
+{s:"Coffee ___ to be much cheaper a few years ago.",vi:"Cà phê từng rẻ hơn nhiều vài năm trước.",o:["would","has","used"],a:"used",why:"<b>used to + V</b> = trạng thái/thói quen trong quá khứ, nay không còn. <i>would</i> chỉ dùng cho hành động lặp lại, không dùng cho trạng thái (<i>be</i>). <i>has to be</i> sai thì (có <i>ago</i>)."},
+{s:"A: I enjoy working on challenging projects at work. B: So ___ I!",vi:"A: Tôi thích làm các dự án thử thách ở công ty. B: Tôi cũng vậy!",o:["Can","Do","am"],a:"Do",why:"Đồng tình: <b>So + trợ động từ + I</b>. Câu gốc ở hiện tại đơn với động từ thường (<i>enjoy</i>) → <b>So do I</b>. (I am… → So am I · I can… → So can I)"},
+{s:"You really should ___ to Barcelona – it's a wonderful city.",vi:"Bạn thật sự nên đến Barcelona – đó là một thành phố tuyệt vời.",o:["go","to go","going"],a:"go",why:"<b>should + V nguyên mẫu</b> (không <i>to</i>, không <i>-ing</i>)."},
+{s:"Call me tomorrow after 8.30, because I will just ___ at home.",vi:"Gọi cho tôi ngày mai sau 8 giờ 30 nhé, vì lúc đó tôi chỉ đang nghỉ ngơi ở nhà thôi.",o:["about to relax","have relax","be relaxing"],a:"be relaxing",why:"Tương lai tiếp diễn <b>will be + V-ing</b>: hành động <b>đang diễn ra</b> tại một thời điểm trong tương lai (sau 8.30). <i>have relax</i> sai dạng; <i>will about to</i> thiếu <i>be</i>."},
+{s:"If I hadn't gone out last night, I ___ be so tired now.",vi:"Nếu tối qua tôi không đi chơi, thì bây giờ tôi đã không mệt đến vậy.",o:["won't","wouldn't","hadn't"],a:"wouldn't",why:"Điều kiện <b>hỗn hợp</b>: điều kiện trong quá khứ (If + <b>had V3</b>, last night) → kết quả ở hiện tại (<b>would + V</b>, now)."},
+{s:"Jake's car is in the garage. He ___ be home.",vi:"Xe của Jake đang ở trong gara. Chắc chắn anh ấy đang ở nhà.",o:["could","can","must"],a:"must",why:"<b>must</b> = suy luận <b>chắc chắn</b> dựa trên bằng chứng (xe đang ở nhà). <i>could</i> chỉ là có thể; <i>can</i> không dùng để suy đoán khẳng định."},
+{s:"If you were a better cook, you ___ need to eat out all the time.",vi:"Nếu bạn nấu ăn giỏi hơn, bạn đã không phải ăn ngoài suốt.",o:["won't","wouldn't","hadn't"],a:"wouldn't",why:"Điều kiện loại 2 (không có thật ở hiện tại): <b>If + quá khứ đơn (were), would + V</b>."},
+{s:"I don't really get ___ with my older sister. We always fight.",vi:"Tôi không thật sự hợp với chị gái. Chúng tôi lúc nào cũng cãi nhau.",o:["around","in","along"],a:"along",why:"<b>get along (with sb)</b> = hòa hợp với ai. <i>get around</i> = đi lại / lách (vấn đề); <i>get in</i> = vào trong."},
+{s:"The way I see it, you ___ have sold the land then – prices are higher now.",vi:"Theo tôi thấy, lẽ ra lúc đó bạn không nên bán mảnh đất – giờ giá cao hơn rồi.",o:["mustn't","shouldn't","can't"],a:"shouldn't",why:"<b>shouldn't have + V3</b> = lẽ ra không nên (chê trách việc đã làm). <i>can't have + V3</i> = chắc chắn đã không xảy ra. <i>mustn't have</i> không dùng."},
+{s:"When I lived in Colombia, I ___ drive to work.",vi:"Khi sống ở Colombia, tôi từng lái xe đi làm.",o:["was","was used to","used to"],a:"used to",why:"<b>used to + V</b> = thói quen trong quá khứ. Bẫy: <i>was used to + V-ing</i> = đã <b>quen với</b> (I was used to driving)."},
+{s:"She has ___ two books.",vi:"Cô ấy đã viết hai cuốn sách.",o:["written","wrote","write"],a:"written",why:"Hiện tại hoàn thành <b>has + V3</b>: write → wrote → <b>written</b>."},
+{s:"I ___ from Moscow, but now I live in New York.",vi:"Tôi đến từ Moscow, nhưng giờ tôi sống ở New York.",o:["am coming","come","was"],a:"come",why:"<b>come from</b> = quê ở đâu — sự thật cố định → hiện tại đơn. <i>am coming from</i> = đang trên đường từ đó đến."},
+{s:"I wish it ___ the time of year when I could go on holiday.",vi:"Ước gì bây giờ là thời điểm trong năm tôi có thể đi nghỉ.",o:["were","will be","is"],a:"were",why:"<b>wish + quá khứ đơn</b> cho điều trái với hiện tại; với <i>be</i> dùng <b>were</b> cho mọi ngôi."},
+{s:"I live ___ Canada.",vi:"Tôi sống ở Canada.",o:["at","on","in"],a:"in",why:"<b>in</b> + quốc gia / thành phố. <i>at</i> + địa chỉ cụ thể; <i>on</i> + tên đường."},
+{s:"I ___ London but it's expensive.",vi:"Tôi thích London nhưng ở đó đắt đỏ.",o:["likes","like","liking"],a:"like",why:"Chủ ngữ <b>I</b> + V nguyên mẫu (không thêm -s). <i>like</i> là động từ trạng thái, không chia tiếp diễn."},
+{s:"We ___ have caught the early train, as the football match was delayed.",vi:"Lẽ ra chúng tôi không cần bắt chuyến tàu sớm, vì trận bóng bị hoãn.",o:["didn't","needn't","mustn't"],a:"needn't",why:"<b>needn't have + V3</b> = đã làm nhưng <b>hóa ra không cần</b>. <i>didn't have caught</i> sai ngữ pháp."},
+{s:"He asked where he ___ put the suitcase.",vi:"Anh ấy hỏi nên để va li ở đâu.",o:["should","ought","shall"],a:"should",why:"Câu hỏi tường thuật: <i>\"Where shall/should I put it?\"</i> → he asked where he <b>should</b> put it (lùi thì). <i>ought</i> phải đi với <i>to</i>."}
+],
+voc:[
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa",
+ opts:["expect","function","allow","debate","look","collect","build","propose","match","tell"],
+ items:[{l:"argue",a:"debate",vi:"tranh luận"},{l:"suggest",a:"propose",vi:"đề xuất, gợi ý"},{l:"grant",a:"allow",vi:"cho phép, cấp (grant permission / a visa)"},{l:"operate",a:"function",vi:"vận hành, hoạt động (operate a machine)"},{l:"inform",a:"tell",vi:"thông báo, cho biết"}]},
+{h:"Complete each definition using a word from the drop-down list.",vi:"Định nghĩa",
+ opts:["attend","assemble","approach","wrap","admit","arrange","adjust","arrive","announce","accept"],
+ items:[{l:"To cover with paper or material is to ___",a:"wrap",vi:"gói, bọc"},{l:"To improve or change is to ___",a:"adjust",vi:"điều chỉnh"},{l:"To state or make public is to ___",a:"announce",vi:"thông báo, công bố"},{l:"To get somewhere is to ___",a:"arrive",vi:"đến nơi"},{l:"To put something together is to ___",a:"assemble",vi:"lắp ráp"}]},
+{h:"Complete each sentence using a word from each drop-down list.",vi:"Điền câu — sau the / your cần DANH TỪ",
+ opts:["canteen","corridor","approve","compensate","feather","museum","obtain","discipline","fringe","wardrobe"],
+ items:[{l:"He had to walk down a long dark ___ to get to his room.",a:"corridor",vi:"hành lang"},{l:"The teacher should maintain the ___ in the classroom to make the lesson effective.",a:"discipline",vi:"kỷ luật (maintain discipline = giữ kỷ luật)"},{l:"She opened the ___ and took a coat out of it.",a:"wardrobe",vi:"tủ quần áo (canteen = căng tin)"},{l:"You should cut your ___ regularly otherwise your hair will get in your eyes.",a:"fringe",vi:"tóc mái"},{l:"The local ___ has an exhibit about the history of this area.",a:"museum",vi:"bảo tàng"}]},
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa",
+ opts:["hide","use","make","lie","run","buy","see","catch","influence","fix"],
+ items:[{l:"jog",a:"run",vi:"chạy bộ"},{l:"inspire",a:"influence",vi:"truyền cảm hứng, tác động"},{l:"notice",a:"see",vi:"để ý thấy, nhận ra"},{l:"utilize",a:"use",vi:"sử dụng"},{l:"conceal",a:"hide",vi:"che giấu (trái nghĩa: reveal); lie = nói dối"}]},
+{h:"Select a word from each drop-down list on the right that is most often used with each word on the left.",vi:"Collocation — cụm từ hay đi cùng",
+ opts:["bus","traffic","boots","history","pounds","insects","face","image","potatoes","expectations"],
+ items:[{l:"express",a:"bus",vi:"xe buýt tốc hành"},{l:"heavy",a:"traffic",vi:"giao thông đông đúc / kẹt xe"},{l:"rich",a:"history",vi:"lịch sử phong phú"},{l:"high",a:"expectations",vi:"kỳ vọng cao"},{l:"spitting",a:"image",vi:"the spitting image of sb = giống ai y đúc"}]}
+]},
+{id:'t2',name:'Đề 2 — Aptis General practice',ext:{d:'2026-11-17',g:16,v:20,wrong:['g2','g4','g5','g8','g11','g16','g18','g21','g22','v0_3','v4_1','v4_2','v4_3','v4_4']},
+gram:[
+{s:"She'll call you once she ___ home, don't worry!",vi:"Cô ấy sẽ gọi cho bạn ngay khi về đến nhà, đừng lo!",o:["will get","gets","'s going to get"],a:"gets",why:"Sau từ chỉ thời gian <b>once / when / as soon as / after / before</b> dùng <b>hiện tại đơn</b> dù nói về tương lai. Không dùng <i>will</i> hay <i>going to</i> sau các từ này."},
+{s:"You really should ___ to Barcelona – it's a wonderful city.",vi:"Bạn thật sự nên đến Barcelona – đó là một thành phố tuyệt vời.",o:["go","to go","going"],a:"go",why:"<b>should + V nguyên mẫu</b> (không <i>to</i>, không <i>-ing</i>). Tương tự: must, can, could, would, may, might."},
+{s:"He had been working for hours when he ___ asleep.",vi:"Anh ấy đã làm việc hàng giờ liền thì ngủ thiếp đi.",o:["has fallen","falls","fell"],a:"fell",why:"Câu kể chuyện quá khứ (<i>had been working</i>) → hành động xảy ra tiếp theo sau <i>when</i> dùng <b>quá khứ đơn</b>: fall → <b>fell</b> → fallen. Không dùng hiện tại hoàn thành trong câu chuyện quá khứ."},
+{s:"John: I love riding bikes. Paul: ___? Me too!",vi:"John: Tôi thích đạp xe. Paul: Thật à? Tôi cũng vậy!",o:["really","right","anyway"],a:"really",why:"<b>Really?</b> = Thật à? — phản ứng ngạc nhiên, quan tâm khi nghe tin. <i>right</i> = đúng không; <i>anyway</i> = dù sao thì (chuyển chủ đề)."},
+{s:"They ate their lunch while they ___ coming home from school.",vi:"Họ ăn trưa trong khi đang trên đường đi học về.",o:["were","was","are"],a:"were",why:"Chủ ngữ <b>they</b> → <b>were</b> (quá khứ tiếp diễn: were + V-ing). <i>was</i> chỉ đi với I / he / she / it. <i>are</i> sai thì (ate là quá khứ)."},
+{s:"It ___ be meat free, it tastes just like chicken!",vi:"Không thể nào là đồ chay được, nó có vị y hệt thịt gà!",o:["could","can","can't"],a:"can't",why:"Suy luận dựa trên bằng chứng: <b>must</b> = chắc chắn đúng, <b>can't</b> = chắc chắn KHÔNG. Vị y hệt gà → chắc chắn không phải đồ chay → <b>can't</b>. <i>could</i> chỉ là \"có thể\", quá yếu."},
+{s:"If only I ___ law instead of English when I was at university.",vi:"Giá mà hồi đại học tôi đã học luật thay vì tiếng Anh.",o:["studied","had studied","have studied"],a:"had studied",why:"<b>If only / wish + quá khứ hoàn thành (had V3)</b> = hối tiếc về chuyện đã qua (<i>when I was at university</i>). <i>If only + quá khứ đơn</i> dùng cho hiện tại."},
+{s:"William ___ in South America now.",vi:"Hiện giờ William đang sống ở Nam Mỹ.",o:["is living","was living","will live"],a:"is living",why:"<b>now</b> → hiện tại tiếp diễn: tình huống đang diễn ra (tạm thời) ở hiện tại."},
+{s:"In those old days, my father ___ never eat dinner after eight o'clock.",vi:"Ngày xưa, bố tôi không bao giờ ăn tối sau 8 giờ.",o:["would","will","used to"],a:"would",why:"<b>would + V</b> = thói quen lặp lại trong quá khứ → <b>would never eat</b>. Bẫy: <i>used to</i> thì <i>never</i> phải đứng TRƯỚC: <i>my father <b>never used to</b> eat</i>, nên <i>used to never eat</i> sai trật tự."},
+{s:"___ you finish your work?",vi:"Bạn đã làm xong việc chưa?",o:["Did","Have","Are"],a:"Did",why:"Nhìn dạng động từ chính: <i>finish</i> là V nguyên mẫu → <b>Did</b>. <i>Have</i> cần V3 (finished); <i>Are</i> cần V-ing (finishing)."},
+{s:"He asked where he ___ put the suitcase.",vi:"Anh ấy hỏi nên để va li ở đâu.",o:["should","ought","shall"],a:"should",why:"Câu hỏi tường thuật: <i>\"Where shall I put it?\"</i> → he asked where he <b>should</b> put it (lùi thì). <i>ought</i> phải đi với <i>to</i>."},
+{s:"I don't know where to eat. I'm hopeless ___ making decisions!",vi:"Tôi không biết ăn ở đâu. Tôi dở tệ khoản ra quyết định!",o:["on","in","at"],a:"at",why:"Tính từ chỉ khả năng + <b>at</b>: <b>good at, bad at, hopeless at, brilliant at, terrible at</b> + N / V-ing."},
+{s:"She bought it herself, ___ she?",vi:"Cô ấy tự mua nó, phải không?",o:["hasn't","didn't","shouldn't"],a:"didn't",why:"Câu hỏi đuôi: <i>bought</i> là quá khứ đơn → trợ động từ <b>did</b>; câu khẳng định → đuôi phủ định <b>didn't</b>."},
+{s:"I have lived in Toronto ___ 3 months.",vi:"Tôi đã sống ở Toronto được 3 tháng.",o:["since","for","from"],a:"for",why:"<b>for</b> + khoảng thời gian (3 months). <b>since</b> + mốc thời gian (since May)."},
+{s:"When I was at school I used ___ a good student.",vi:"Hồi đi học tôi từng là một học sinh giỏi.",o:["to be","be","being"],a:"to be",why:"<b>used to + V nguyên mẫu</b> = trạng thái / thói quen trong quá khứ."},
+{s:"My sister ___ the money.",vi:"Chị tôi thừa nhận đã lấy trộm tiền.",o:["admitted","to steal","admitted stealing"],a:"admitted stealing",why:"<b>admit + V-ing</b>. Cùng nhóm + V-ing: deny, enjoy, avoid, suggest, mind."},
+{s:"Chris is ___ by Vally this afternoon.",vi:"Chiều nay Chris được Vally cắt tóc cho.",o:["cutting her hair","having her hair cut","going to cut her hair"],a:"having her hair cut",why:"Thể nhờ / thuê người khác làm: <b>have / get + vật + V3</b>. Có <i>by Vally</i> → người khác cắt cho Chris → <b>having her hair cut</b>. Ví dụ: <i>I'm having my car repaired.</i>"},
+{s:"We ate dinner and ___ we watched a film.",vi:"Chúng tôi ăn tối rồi sau đó xem phim.",o:["then","since","so"],a:"then",why:"<b>then</b> = sau đó (trình tự). <i>since</i> = vì / kể từ; <i>so</i> = vì vậy (kết quả)."},
+{s:"My boss has just ___ to finish the report by the end of the day.",vi:"Sếp vừa bảo tôi phải hoàn thành báo cáo trước cuối ngày.",o:["said me","told me","told about"],a:"told me",why:"<b>tell + người + to V</b> (told me to finish). <b>say</b> không có người đứng ngay sau: ✗ said me → ✓ said <b>to</b> me / said that…"},
+{s:"A: I enjoy working on challenging projects at work. B: So ___ I!",vi:"A: Tôi thích làm các dự án thử thách ở công ty. B: Tôi cũng vậy!",o:["Can","Do","am"],a:"Do",why:"<b>So + trợ động từ + I</b>. Câu gốc hiện tại đơn với động từ thường (<i>enjoy</i>) → <b>So do I</b>."},
+{s:"She reads every day ___ she isn't serious.",vi:"Cô ấy đọc sách mỗi ngày nhưng không nghiêm túc.",o:["because","but","and"],a:"but",why:"Hai ý <b>trái ngược</b> → <b>but</b>. <i>because</i> = vì (lý do); <i>and</i> = và (bổ sung)."},
+{s:"Coffee ___ to be much cheaper a few years ago.",vi:"Cà phê từng rẻ hơn nhiều vài năm trước.",o:["would","have","used"],a:"used",why:"<b>used to + V</b> = trạng thái trong quá khứ, nay không còn. <i>would</i> không dùng cho trạng thái (<i>be</i>). <i>have to be</i> = phải là."},
+{s:"Colt ___ to the store yesterday.",vi:"Colt đã đi đến cửa hàng hôm qua.",o:["go","went","gone"],a:"went",why:"<b>yesterday</b> → quá khứ đơn: go → <b>went</b> → gone. <i>gone</i> (V3) chỉ dùng sau <i>have / has / had</i>."},
+{s:"A: Do you think you will get the job? B: ___, but I'm not sure.",vi:"A: Bạn nghĩ mình sẽ được nhận không? B: Có lẽ, nhưng tôi không chắc.",o:["Possible","Possibility","Possibly"],a:"Possibly",why:"Cần <b>trạng từ</b> đứng một mình để trả lời = \"có lẽ\" (= maybe). <i>possible</i> là tính từ; <i>possibility</i> là danh từ."},
+{s:"My older sister always gives me ___ advice when I need help.",vi:"Chị gái tôi luôn cho tôi lời khuyên khi tôi cần giúp.",o:["– (no article)","an","the"],a:"– (no article)",why:"<b>advice</b> là danh từ <b>không đếm được</b> → không dùng <i>a / an</i>. Muốn đếm: <i>a piece of advice</i>. Tương tự: information, furniture, news."}
+],
+voc:[
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa",
+ opts:["fall","build","remind","happen","exchange","guess","possess","disagree","construct","approach"],
+ items:[{l:"argue",a:"disagree",vi:"tranh cãi = không đồng ý"},{l:"swap",a:"exchange",vi:"đổi, hoán đổi"},{l:"collapse",a:"fall",vi:"sụp đổ, ngã quỵ"},{l:"own",a:"possess",vi:"sở hữu (bẫy: construct = build = xây dựng)"},{l:"occur",a:"happen",vi:"xảy ra"}]},
+{h:"Complete each definition using a word from the drop-down list.",vi:"Định nghĩa",
+ opts:["Explain","Decide","Excite","Believe","Struggle","Make","Quote","Invite","Hire","Prefer"],
+ items:[{l:"To ask someone to come to a social event",a:"Invite",vi:"mời"},{l:"To state exactly what someone else has said or written",a:"Quote",vi:"trích dẫn"},{l:"To employ someone for wages",a:"Hire",vi:"thuê, tuyển (trả lương)"},{l:"To have a greater liking for one thing rather than another",a:"Prefer",vi:"thích hơn"},{l:"To try hard to do or deal with something difficult",a:"Struggle",vi:"vật lộn, chật vật"}]},
+{h:"Complete each sentence using a word from each drop-down list.",vi:"Điền câu — tìm từ khóa đi kèm",
+ opts:["error","light","champion","hood","port","call","country","winter","script","witness"],
+ items:[{l:"Just one more ___ is enough to end the project.",a:"error",vi:"lỗi"},{l:"The jacket has a/an ___ to protect your head.",a:"hood",vi:"mũ trùm đầu (protect your head)"},{l:"The ship sailed into the ___ on time.",a:"port",vi:"cảng (ship sailed into)"},{l:"The actors read their lines from the ___.",a:"script",vi:"kịch bản (actors… lines)"},{l:"The cycling ___ broke the world record.",a:"champion",vi:"nhà vô địch (broke the world record)"}]},
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa",
+ opts:["hide","use","make","lie","run","buy","see","catch","influence","fix"],
+ items:[{l:"jog",a:"run",vi:"chạy bộ"},{l:"inspire",a:"influence",vi:"truyền cảm hứng, tác động"},{l:"notice",a:"see",vi:"để ý thấy, nhận ra"},{l:"utilize",a:"use",vi:"sử dụng (từ trang trọng)"},{l:"conceal",a:"hide",vi:"che giấu"}]},
+{h:"Select a word from each drop-down list on the right that is most often used with each word on the left.",vi:"Collocation — cụm từ hay đi cùng",
+ opts:["issue","argument","rafting","surfing","family","value","goods","price","jewels","nostalgia"],
+ items:[{l:"reduced",a:"price",vi:"giá đã giảm"},{l:"sentimental",a:"value",vi:"sentimental value = giá trị tình cảm (quý vì kỷ niệm)"},{l:"immediate",a:"family",vi:"immediate family = gia đình ruột thịt gần nhất"},{l:"white-",a:"rafting",vi:"white-water rafting = chèo thuyền vượt thác (white goods = đồ điện gia dụng, không có gạch nối)"},{l:"semi-",a:"jewels",vi:"semi-precious jewels = đá bán quý"}]}
+]},
+{id:'t3',name:'Đề 3 — Aptis General practice',ext:{d:'2026-11-17',g:19,v:19,wrong:['g6','g8','g17','g18','g19','g24','v0_0','v1_3','v2_1','v2_2','v2_4','v3_4']},
+gram:[
+{s:"Jake's car is in the garage. He ___ be home.",vi:"Xe của Jake đang ở trong gara. Chắc chắn anh ấy đang ở nhà.",o:["could","can","must"],a:"must",why:"<b>must</b> = suy luận <b>chắc chắn</b> dựa trên bằng chứng (xe đang ở nhà). <i>could</i> chỉ là có thể; <i>can</i> không dùng để suy đoán khẳng định."},
+{s:"If I ___ taller, I would be better at basketball.",vi:"Nếu tôi cao hơn, tôi sẽ chơi bóng rổ giỏi hơn.",o:["am","could","were"],a:"were",why:"Điều kiện loại 2 (trái với hiện tại): <b>If + quá khứ đơn, would + V</b>. Với <i>be</i> dùng <b>were</b> cho mọi ngôi."},
+{s:"She ___ that she would be late.",vi:"Cô ấy nói rằng cô ấy sẽ đến muộn.",o:["said","told","asked"],a:"said",why:"<b>say (that) + mệnh đề</b> — không cần người nghe. <i>tell</i> bắt buộc có người: <i>told <b>me</b> that…</i>. <i>asked</i> dùng cho câu hỏi / lời nhờ."},
+{s:"I have a boat ___ is blue.",vi:"Tôi có một chiếc thuyền màu xanh.",o:["who","which","whose"],a:"which",why:"Chỉ <b>vật</b> (boat) → <b>which</b>. <i>who</i> chỉ người; <i>whose</i> phải đi kèm danh từ (whose + N)."},
+{s:"My city is ___ than New York.",vi:"Thành phố của tôi nhỏ hơn New York.",o:["smaller","smallest","small"],a:"smaller",why:"Có <b>than</b> → so sánh hơn <b>adj-er + than</b>. <i>smallest</i> là so sánh nhất (the smallest)."},
+{s:"I would love ___ dinner with you.",vi:"Tôi rất muốn ăn tối cùng bạn.",o:["having","to have","have"],a:"to have",why:"<b>would love / would like + to V</b>. (Khác với <i>love + V-ing</i> khi nói sở thích chung.)"},
+{s:"My parents always ___ me vacuum the house.",vi:"Bố mẹ tôi lúc nào cũng bắt tôi hút bụi nhà.",o:["tell","let","make"],a:"make",why:"<b>make + sb + V nguyên mẫu</b> = bắt ai làm gì. <i>tell</i> cần <b>to</b> (tell me <b>to</b> vacuum). <i>let</i> = cho phép — đúng ngữ pháp nhưng sai nghĩa (hút bụi là việc bị bắt làm)."},
+{s:"I ___ the magazine by the time a new one arrived in the mail.",vi:"Tôi đã đọc xong cuốn tạp chí trước khi số mới được gửi đến.",o:["had finished","finished","was finishing"],a:"had finished",why:"<b>By the time + quá khứ đơn</b> → việc xảy ra trước dùng quá khứ hoàn thành <b>had + V3</b>."},
+{s:"I was out of town! I ___ have committed the crime!",vi:"Tôi đâu có ở thành phố! Tôi không thể nào gây ra vụ án đó được!",o:["couldn't","wouldn't","shouldn't"],a:"couldn't",why:"<b>couldn't have + V3</b> = <b>không thể nào</b> đã làm (có bằng chứng: tôi không ở đó). <i>wouldn't have</i> = đã không làm (do ý muốn/điều kiện); <i>shouldn't have</i> = lẽ ra không nên."},
+{s:"Would you like ___ cereal for breakfast?",vi:"Bạn có muốn ăn ngũ cốc cho bữa sáng không?",o:["a","the","-"],a:"-",why:"<b>cereal</b> là danh từ <b>không đếm được</b> → không dùng <i>a</i>. Đang nói chung chung (không phải loại cụ thể đã nhắc) → không dùng <i>the</i>."},
+{s:"Colt ___ to the store yesterday.",vi:"Hôm qua Colt đã đi đến cửa hàng.",o:["go","went","gone"],a:"went",why:"Có <b>yesterday</b> → quá khứ đơn: go → <b>went</b> → gone. <i>gone</i> phải đi với <i>has/had</i>."},
+{s:"I live ___ Canada.",vi:"Tôi sống ở Canada.",o:["at","on","in"],a:"in",why:"<b>in</b> + quốc gia / thành phố. <i>at</i> + địa chỉ cụ thể; <i>on</i> + tên đường."},
+{s:"When I lived in Colombia, I ___ drive to work.",vi:"Khi sống ở Colombia, tôi từng lái xe đi làm.",o:["was","was used to","used to"],a:"used to",why:"<b>used to + V</b> = thói quen trong quá khứ. Bẫy: <i>was used to + V-ing</i> = đã <b>quen với</b> (I was used to driving)."},
+{s:"She's your cousin, ___ she?",vi:"Cô ấy là chị họ của bạn, phải không?",o:["isn't","doesn't","wasn't"],a:"isn't",why:"Câu hỏi đuôi: vế trước <i>She's</i> = <b>she is</b> (khẳng định, hiện tại) → đuôi phủ định cùng trợ động từ: <b>isn't she?</b>"},
+{s:"I'm lost. ___ you help me, please?",vi:"Tôi bị lạc. Bạn có thể giúp tôi được không?",o:["Should","Could","Shall"],a:"Could",why:"<b>Could you…?</b> = nhờ ai đó lịch sự. <i>Shall I/we…?</i> dùng để đề nghị giúp; <i>Should you</i> không dùng để nhờ."},
+{s:"I was hungry, ___ I ate a sandwich.",vi:"Tôi đói, nên tôi đã ăn một cái bánh mì kẹp.",o:["so","and","but"],a:"so",why:"<b>so</b> = vì vậy (nguyên nhân → kết quả). <i>but</i> = nhưng (đối lập); <i>and</i> chỉ nối thêm ý, không thể hiện kết quả."},
+{s:"I have lived in Toronto ___ 3 months.",vi:"Tôi đã sống ở Toronto được 3 tháng.",o:["since","for","from"],a:"for",why:"<b>for</b> + khoảng thời gian (3 months). <b>since</b> + mốc thời gian (since May)."},
+{s:"He got injured while they ___ soccer.",vi:"Anh ấy bị thương trong lúc họ đang chơi bóng đá.",o:["was playing","were playing","had played"],a:"were playing",why:"<b>while + quá khứ tiếp diễn</b>: hành động <b>đang diễn ra</b> thì bị việc khác xen vào (got injured). Chủ ngữ <i>they</i> → <b>were</b> (không phải was)."},
+{s:"If you ___ a decision, I will support you.",vi:"Nếu bạn đưa ra quyết định, tôi sẽ ủng hộ bạn.",o:["make","made","could make"],a:"make",why:"Điều kiện loại 1: <b>If + hiện tại đơn, will + V</b>. Thấy <i>will</i> ở vế sau → vế If dùng hiện tại đơn."},
+{s:"I ___ from Moscow, but now I live in New York.",vi:"Tôi đến từ Moscow, nhưng giờ tôi sống ở New York.",o:["am coming","come","was"],a:"come",why:"<b>come from</b> = quê ở đâu — sự thật cố định → hiện tại đơn. <i>I was from</i> nghe như giờ không còn là người Moscow → sai."},
+{s:"I don't really get ___ with my older sister. We always fight.",vi:"Tôi không thật sự hợp với chị gái. Chúng tôi lúc nào cũng cãi nhau.",o:["around","in","along"],a:"along",why:"<b>get along (with sb)</b> = hòa hợp với ai. <i>get around</i> = đi lại / lách (vấn đề)."},
+{s:"The concert was called ___ because the singer was sick.",vi:"Buổi hòa nhạc bị hủy vì ca sĩ bị ốm.",o:["off","on","in"],a:"off",why:"<b>call off</b> = hủy bỏ (cancel)."},
+{s:"If I ___ schools, we wouldn't have met.",vi:"Nếu tôi không chuyển trường, chúng ta đã không gặp nhau.",o:["wasn't changed","didn't change","hadn't changed"],a:"hadn't changed",why:"Điều kiện loại 3 (trái với quá khứ): <b>If + had V3, would have V3</b>. Vế sau <i>wouldn't have met</i> → vế If <b>hadn't changed</b>."},
+{s:"You work ___ hard! Take a break or you'll burn out.",vi:"Bạn làm việc quá sức rồi! Nghỉ ngơi đi kẻo kiệt sức.",o:["too","so","very"],a:"too",why:"<b>too + adj/adv</b> = <b>quá mức</b>, dẫn tới hậu quả xấu (burn out). <i>so / very</i> chỉ nhấn mạnh, không mang ý \"quá đà\"."},
+{s:"By the end of next week, I ___ my course.",vi:"Đến cuối tuần sau, tôi sẽ hoàn thành xong khóa học.",o:["will finish","will have finished","will be finished"],a:"will have finished",why:"<b>By + mốc tương lai</b> → tương lai hoàn thành <b>will have + V3</b> (xong trước mốc đó). <i>will be finished</i> là bị động — sai vì <i>I</i> tự hoàn thành."}
+],
+voc:[
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa",
+ opts:["teach","deliver","challenge","jump","propose","argue","bother","pick","believe","take"],
+ items:[{l:"annoy",a:"bother",vi:"làm phiền, gây khó chịu (= irritate)"},{l:"choose",a:"pick",vi:"chọn"},{l:"train",a:"teach",vi:"đào tạo, dạy"},{l:"think",a:"believe",vi:"nghĩ, tin rằng"},{l:"send",a:"deliver",vi:"gửi, giao"}]},
+{h:"Complete each definition using a word from the drop-down list.",vi:"Định nghĩa",
+ opts:["hesitate","measure","choose","stretch","fire","socialize","cover","sleep","watch","act"],
+ items:[{l:"To interact with people is to ___",a:"socialize",vi:"giao lưu, giao tiếp xã hội"},{l:"To perform in a play is to ___",a:"act",vi:"diễn xuất"},{l:"To stop because you are nervous is to ___",a:"hesitate",vi:"do dự, ngập ngừng"},{l:"To let someone go from a job is to ___",a:"fire",vi:"sa thải (= dismiss, sack; trái nghĩa: hire)"},{l:"To find the size of something is to ___",a:"measure",vi:"đo"}]},
+{h:"Complete each sentence using a word from each drop-down list.",vi:"Điền câu — đọc cả câu sau để hiểu ngữ cảnh",
+ opts:["good","fine","cheap","statement","discussion","principle","tricky","music","gig","lifestyle"],
+ items:[{l:"The president is going to give a ___ today about his new healthcare policies.",a:"statement",vi:"tuyên bố (give a statement)"},{l:"My friend's band is playing a ___ at our local pub next Friday night.",a:"gig",vi:"buổi diễn nhạc nhỏ (music không đếm được, không đi với a)"},{l:"This T-shirt I bought is ___ quality. It ripped as soon as I washed it.",a:"cheap",vi:"chất lượng kém, rẻ tiền (áo rách ngay khi giặt)"},{l:"Grace lost a lot of weight! She has a very active and healthy ___",a:"lifestyle",vi:"lối sống"},{l:"On my way home from work today, a police officer gave me a ___ for speeding.",a:"fine",vi:"tiền phạt (a fine for speeding)"}]},
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa",
+ opts:["clothes","fight","village","tradition","graveyard","park","ship","command","journey","outfit"],
+ items:[{l:"trip",a:"journey",vi:"chuyến đi"},{l:"cemetery",a:"graveyard",vi:"nghĩa trang"},{l:"boat",a:"ship",vi:"thuyền, tàu"},{l:"town",a:"village",vi:"thị trấn, làng"},{l:"custom",a:"tradition",vi:"phong tục (≠ costume = trang phục, customs = hải quan)"}]},
+{h:"Select a word from each drop-down list on the right that is most often used with each word on the left.",vi:"Collocation — cụm từ hay đi cùng",
+ opts:["history","potatoes","face","expectations","bus","boots","pounds","image","traffic","insects"],
+ items:[{l:"express",a:"bus",vi:"xe buýt tốc hành"},{l:"heavy",a:"traffic",vi:"giao thông đông đúc / kẹt xe"},{l:"rich",a:"history",vi:"lịch sử phong phú"},{l:"high",a:"expectations",vi:"kỳ vọng cao"},{l:"spitting",a:"image",vi:"the spitting image of sb = giống ai y đúc"}]}
+]},
+{id:'t4',name:'Đề 4 — Aptis General practice',ext:{d:'2026-11-18',g:13,v:15,wrong:['g1','g2','g4','g5','g7','g9','g11','g13','g15','g18','g22','g23','v0_2','v2_0','v2_3','v3_0','v3_1','v3_4','v4_0','v4_1','v4_2','v4_3']},
+gram:[
+{s:"My grandfather ___ always tell me about his time in the war.",vi:"Ông tôi hồi đó hay kể cho tôi nghe về thời chiến tranh.",o:["might","would","could"],a:"would",why:"<b>would + V</b> = thói quen lặp lại trong quá khứ (hay làm gì). <i>would</i> không dùng cho trạng thái (✗ would be cheaper → used to be)."},
+{s:"The new hospital ___ built by now!",vi:"Bệnh viện mới lẽ ra đến giờ phải được xây xong rồi!",o:["should","should have","should have been"],a:"should have been",why:"<b>by now</b> + việc lẽ ra đã xong → <b>should have + V3</b>. Bệnh viện <b>được</b> xây → bị động: <b>should have been built</b>. <i>should built / should have built</i> sai (thiếu be / sai nghĩa)."},
+{s:"The exam was postponed ___ the pandemic.",vi:"Kỳ thi bị hoãn do đại dịch.",o:["as a result","because","due to"],a:"due to",why:"Sau chỗ trống là <b>danh từ</b> (the pandemic) → <b>due to / because of + N</b>. <i>because</i> + mệnh đề (S + V). <i>as a result</i> = kết quả là (đứng đầu câu sau)."},
+{s:"If only I ___ more money! Then I could go to the Maldives.",vi:"Giá mà tôi kiếm được nhiều tiền hơn! Thế thì tôi đã có thể đi Maldives.",o:["will earn","earned","earn"],a:"earned",why:"<b>If only / wish + quá khứ đơn</b> = ước điều trái với hiện tại."},
+{s:"She'll call you once she ___ home, don't worry!",vi:"Cô ấy sẽ gọi cho bạn ngay khi về đến nhà, đừng lo!",o:["will get","gets","'s going to get"],a:"gets",why:"Sau <b>once / when / as soon as / after / before / until</b> nói về tương lai vẫn dùng <b>hiện tại đơn</b> — không dùng <i>will / going to</i>."},
+{s:"I can't make ___ what's written, I need a glasses.",vi:"Tôi không đọc ra được chữ viết gì, tôi cần kính.",o:["up","out","down"],a:"out",why:"<b>make out</b> = nhìn ra, đọc ra (khó thấy). <i>make up</i> = bịa ra / trang điểm / làm lành; <i>make down</i> không có nghĩa này."},
+{s:"Chris is ___ by Vally this afternoon.",vi:"Chiều nay Chris được Vally cắt tóc cho.",o:["cutting her hair","having her hair cut","going to cut her hair"],a:"having her hair cut",why:"Thể nhờ người khác làm: <b>have + vật + V3</b>. Có <i>by Vally</i> → người khác cắt cho Chris."},
+{s:"We ___ with the final decision.",vi:"Chúng tôi rất đồng ý với quyết định cuối cùng.",o:["much agree","very much agree","agree much"],a:"very much agree",why:"<b>very much</b> đứng <b>trước</b> agree / appreciate để nhấn mạnh. <i>much</i> đơn lẻ không đứng trước động từ ở câu khẳng định; <i>agree much</i> không tự nhiên."},
+{s:"He asked where he ___ put the suitcase.",vi:"Anh ấy hỏi nên để va li ở đâu.",o:["should","ought","shall"],a:"should",why:"Câu hỏi tường thuật: <i>\"Where shall I put it?\"</i> → he asked where he <b>should</b> put it. <i>ought</i> phải có <i>to</i>."},
+{s:"I don't know where to eat. I'm hopeless ___ making decisions!",vi:"Tôi không biết ăn ở đâu. Tôi dở tệ khoản ra quyết định!",o:["on","in","at"],a:"at",why:"Tính từ chỉ khả năng + <b>at</b>: <b>good at, bad at, hopeless at, brilliant at</b> + V-ing."},
+{s:"It's a bit expensive. Would you be prepared ___ the price?",vi:"Hơi đắt. Bạn có sẵn lòng giảm giá không?",o:["lowering","lowered","to lower"],a:"to lower",why:"<b>be prepared + to V</b> = sẵn lòng làm gì."},
+{s:"We have my mother staying with us ___ the moment.",vi:"Hiện giờ mẹ tôi đang ở cùng chúng tôi.",o:["in","on","at"],a:"at",why:"<b>at the moment</b> = hiện giờ (cụm cố định). Tương tự: <i>at present, at the same time, at the weekend</i>."},
+{s:"My boss has just ___ to finish the report by the end of the day.",vi:"Sếp vừa bảo tôi phải hoàn thành báo cáo trước cuối ngày.",o:["said me","told me","told about"],a:"told me",why:"<b>tell + người + to V</b>. Không bao giờ <i>said me</i> (phải là <i>said to me</i>)."},
+{s:"Saul wasn't sure if he ___ the film before.",vi:"Saul không chắc là trước đó anh ấy đã xem bộ phim chưa.",o:["saw","had seen","had been seeing"],a:"had seen",why:"Mốc quá khứ (<i>wasn't sure</i>) + <b>before</b> → việc xảy ra trước đó dùng quá khứ hoàn thành <b>had + V3</b>."},
+{s:"They ___ they'd had a great time in New Zealand.",vi:"Họ ước giá mà họ đã có khoảng thời gian tuyệt vời ở New Zealand.",o:["mean","decide","wish"],a:"wish",why:"<b>wish + had V3</b> = tiếc nuối về quá khứ. <i>mean / decide</i> không đi với mệnh đề quá khứ hoàn thành kiểu này."},
+{s:"The woman, ___ car was parked outside, is my new neighbor.",vi:"Người phụ nữ có chiếc xe đỗ bên ngoài là hàng xóm mới của tôi.",o:["that","who","whose"],a:"whose",why:"Sau chỗ trống là <b>danh từ</b> (car) và xe <b>của</b> người phụ nữ → <b>whose + N</b>. <i>who</i> phải đi với động từ ngay sau; <i>that</i> không dùng sau dấu phẩy."},
+{s:"My sister ___ the money.",vi:"Chị tôi thừa nhận đã lấy trộm tiền.",o:["admitted","to steal","admitted stealing"],a:"admitted stealing",why:"<b>admit + V-ing</b>. Cùng nhóm: deny, enjoy, avoid, suggest, mind."},
+{s:"He described ___",vi:"Anh ấy mô tả tình hình cho tôi.",o:["me the situation","the situation to me","the situation me"],a:"the situation to me",why:"<b>describe / explain + vật + to + người</b>. Không nói ✗ <i>describe me…</i>, ✗ <i>explain me…</i>"},
+{s:"I don't know what I'd have done if ___",vi:"Tôi không biết mình sẽ làm gì nếu đã không tìm thấy ví.",o:["I wouldn't have found my wallet","I hadn't found my wallet","I wouldn't find my wallet"],a:"I hadn't found my wallet",why:"Điều kiện loại 3: vế chính <i>would have done</i> → vế <b>if</b> dùng <b>had (not) + V3</b>. Vế <i>if</i> không bao giờ có <i>would</i>."},
+{s:"The traffic lights turned red and I ___ hard.",vi:"Đèn giao thông chuyển đỏ và tôi phanh gấp.",o:["brake","broke","braked"],a:"braked",why:"<b>brake</b> (phanh) → quá khứ <b>braked</b> (quy tắc). Bẫy: <i>broke</i> là quá khứ của <i>break</i> (làm vỡ)."},
+{s:"The book, ___ was very interesting, told the story of a young adventurer.",vi:"Cuốn sách, vốn rất thú vị, kể câu chuyện về một nhà thám hiểm trẻ.",o:["that","which","whom"],a:"which",why:"Chỉ vật, nằm giữa hai dấu phẩy → <b>which</b>. <i>that</i> không dùng sau dấu phẩy; <i>whom</i> chỉ người (tân ngữ)."},
+{s:"I ___ my eyes aren't as good as they used to.",vi:"Tôi thừa nhận mắt tôi không còn tốt như trước.",o:["was admitting","am admitting","admit"],a:"admit",why:"<b>admit</b> (thừa nhận) là động từ chỉ quan điểm → hiện tại đơn: <i>I admit (that)…</i>"},
+{s:"The ___ broken.",vi:"Thiết bị bị hỏng rồi.",o:["equipments were","equipment was","equipment were"],a:"equipment was",why:"<b>equipment</b> là danh từ <b>không đếm được</b> → không thêm -s, động từ số ít (<b>was</b>). Cùng nhóm: information, advice, furniture, luggage, news."},
+{s:"If I hadn't given up studying German, ___ it fluently now.",vi:"Nếu tôi không bỏ học tiếng Đức, thì giờ có lẽ tôi đã nói trôi chảy rồi.",o:["I'd probably speak","I would probably spoken","I had probably spoken"],a:"I'd probably speak",why:"Điều kiện <b>hỗn hợp</b>: quá khứ (<i>hadn't given up</i>) → kết quả <b>bây giờ</b> (<i>now</i>) → <b>would + V</b>. <i>would spoken</i> sai ngữ pháp."},
+{s:"Can you tell me the reason ___ you were late for the meeting?",vi:"Bạn có thể cho tôi biết lý do bạn đến họp muộn không?",o:["which","why","all"],a:"why",why:"<b>the reason why</b> + mệnh đề."}
+],
+voc:[
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa (trùng câu 26 Đề 1)",
+ opts:["look","build","allow","match","collect","debate","tell","function","propose","expect"],
+ items:[{l:"argue",a:"debate",vi:"tranh luận"},{l:"suggest",a:"propose",vi:"đề xuất, gợi ý"},{l:"grant",a:"allow",vi:"cho phép, cấp (grant permission / a loan) — mỗi từ chỉ dùng 1 lần, đừng dùng propose 2 lần"},{l:"operate",a:"function",vi:"vận hành, hoạt động"},{l:"inform",a:"tell",vi:"thông báo, cho biết"}]},
+{h:"Complete each definition using a word from the drop-down list.",vi:"Định nghĩa (trùng câu 27 Đề 2)",
+ opts:["Believe","Hire","Excite","Struggle","Quote","Prefer","Explain","Make","Invite","Decide"],
+ items:[{l:"To ask someone to come to a social event",a:"Invite",vi:"mời"},{l:"To state exactly what someone else has said or written",a:"Quote",vi:"trích dẫn"},{l:"To employ someone for wages",a:"Hire",vi:"thuê, tuyển (≠ fire = sa thải)"},{l:"To have a greater liking for one thing rather than another",a:"Prefer",vi:"thích hơn"},{l:"To try hard to do or deal with something difficult",a:"Struggle",vi:"vật lộn, chật vật"}]},
+{h:"Complete each sentence using a word from each drop-down list.",vi:"Điền câu — tìm từ khóa trong câu",
+ opts:["elbow","witness","literature","barn","piano","blanket","winter","penalty","rope","shelter"],
+ items:[{l:"They found ___ in an old building during the storm.",a:"shelter",vi:"nơi trú ẩn (find shelter — storm)"},{l:"He hurt his ___ when he fell on the ice.",a:"elbow",vi:"khuỷu tay"},{l:"The musician played a beautiful piece on the ___",a:"piano",vi:"đàn piano"},{l:"That old ___ is used for storing hay.",a:"barn",vi:"nhà kho nông trại (hay = cỏ khô)"},{l:"He used a strong piece of ___ to tie the boat to the dock.",a:"rope",vi:"dây thừng (tie the boat)"}]},
+{h:"Select a word from each drop-down list on the right that has the same or a very similar meaning to each word on the left.",vi:"Từ đồng nghĩa — đừng bỏ trống",
+ opts:["Purpose","Literature","Penalty","Origin","Core","Source","Inspiration","Advantage","Bargain","Reason"],
+ items:[{l:"Heart",a:"Core",vi:"cốt lõi, trung tâm (the heart / core of the problem)"},{l:"Writings",a:"Literature",vi:"tác phẩm viết, văn học"},{l:"Source",a:"Origin",vi:"nguồn gốc"},{l:"Punishment",a:"Penalty",vi:"hình phạt"},{l:"Deal",a:"Bargain",vi:"thỏa thuận, món hời (a good deal = a bargain)"}]},
+{h:"Select a word from each drop-down list on the right that is most often used with each word on the left.",vi:"Collocation — cụm từ hay đi cùng",
+ opts:["beginnings","magazine","row","artist","smile","energy","coffee","opening","steam","sunshine"],
+ items:[{l:"Thermal",a:"energy",vi:"thermal energy = nhiệt năng"},{l:"Solo",a:"artist",vi:"solo artist = nghệ sĩ đơn ca / biểu diễn đơn"},{l:"Glossy",a:"magazine",vi:"glossy magazine = tạp chí giấy bóng (thời trang, người nổi tiếng)"},{l:"Humble",a:"beginnings",vi:"humble beginnings = khởi đầu khiêm tốn, xuất thân nghèo"},{l:"Furious",a:"row",vi:"furious row = trận cãi nhau dữ dội (row /raʊ/ = cuộc cãi vã)"}]}
+]}];
+
+/* ============ bộ chạy đề ============ */
+let tv={on:false,ti:0,only:null,done:false};
+function tRec(id){ return ((PROG.gvtest||{})[id])||null; }
+/* ---- ghi thành tích làm ở web khác (t.ext) vào tiến độ — chỉ ghi 1 lần mỗi đề ---- */
+function seedExt(){
+  let ch=false; if(!PROG.gvtest)PROG.gvtest={};
+  GVTESTS.forEach(t=>{ if(!t.ext)return;
+    const e=t.ext, tot=e.g+e.v, r=PROG.gvtest[t.id]||{attempts:0,best:0,last:0,history:[]};
+    if(r.ext)return;
+    r.ext=true; r.attempts=(r.attempts||0)+1; r.best=Math.max(r.best||0,tot);
+    r.history=[{d:e.d,g:e.g,v:e.v,ext:true}].concat(r.history||[]);
+    if(r.attempts===1){ r.last=tot; r.lastScore=Math.round(tot/50*100); r.lastDate=e.d+'T12:00:00.000Z'; r.wrong=e.wrong.slice(); }
+    PROG.gvtest[t.id]=r; ch=true; });
+  if(ch)progSave();
+}
+/* ---- bảng kết quả tổng hợp ---- */
+function resultsHTML(){
+  const rows=[]; GVTESTS.forEach(t=>{ const r=tRec(t.id); ((r&&r.history)||[]).forEach((x,k)=>rows.push({t:t,k:k,d:x.d,g:x.g,v:x.v,ext:x.ext})); });
+  if(!rows.length) return '<div class="dash-h">📊 Kết quả</div><div class="dash-s">Chưa có lần làm nào.</div>';
+  rows.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+  const n=rows.length, avg=f=>Math.round(rows.reduce((s,x)=>s+f(x),0)/n*10)/10;
+  const aT=avg(x=>x.g+x.v), aG=avg(x=>x.g), aV=avg(x=>x.v), best=Math.max(...rows.map(x=>x.g+x.v));
+  const first=rows[0], lastR=rows[n-1], delta=(lastR.g+lastR.v)-(first.g+first.v);
+  const fmtD=d=>d.slice(8,10)+'/'+d.slice(5,7);
+  let tb='<table class="rtab"><tr><th>Đề</th><th>Ngày</th><th>Grammar</th><th>Vocab</th><th>Tổng</th></tr>'
+    +rows.map(x=>'<tr><td>'+esc(x.t.name.split(' — ')[0])+(x.ext?' <span class="rext">web khác</span>':'')+'</td><td>'+fmtD(x.d)+'</td><td>'+x.g+'/25</td><td>'+x.v+'/25</td><td><b>'+(x.g+x.v)+'/50</b> · '+Math.round((x.g+x.v)*2)+'%</td></tr>').join('')
+    +'<tr class="ravg"><td colspan="2">Trung bình '+n+' lần</td><td>'+aG+'</td><td>'+aV+'</td><td><b>'+aT+'/50</b> · '+Math.round(aT*2)+'%</td></tr></table>';
+  // lỗi lặp lại: cùng một câu (theo nội dung) sai ở ≥2 đề / lần
+  const cnt={}, seen={};
+  GVTESTS.forEach(t=>{ const r=tRec(t.id); if(!r)return;
+    t.gram.forEach((q,i)=>{ const key='G|'+q.s; seen[key]=(seen[key]||0)+1; if((r.wrong||[]).includes('g'+i)){ cnt[key]=(cnt[key]||{n:0,a:q.a,s:q.s}); cnt[key].n++; } });
+    t.voc.forEach((v,vi)=>v.items.forEach((it,k)=>{ const key='V|'+it.l+'|'+it.a; seen[key]=(seen[key]||0)+1; if((r.wrong||[]).includes('v'+vi+'_'+k)){ cnt[key]=(cnt[key]||{n:0,a:it.a,s:it.l}); cnt[key].n++; } }));
+  });
+  const rep=Object.keys(cnt).filter(k=>cnt[k].n>=2).map(k=>'<li>'+esc(cnt[k].s).replace('___','<b>…</b>')+' → <b>'+esc(cnt[k].a)+'</b> <span class="rext">sai '+cnt[k].n+'/'+seen[k]+' lần gặp</span></li>');
+  const weak=aG<aV?'Grammar':aV<aG?'Vocabulary':'';
+  return '<div class="dash-h">📊 Kết quả ('+n+' lần làm)</div>'
+    +'<div class="tscore"><div><b>'+aT+'</b><span>TB /50 · '+Math.round(aT*2)+'%</span></div><div><b>'+best+'</b><span>cao nhất /50</span></div>'
+    +'<div><b>'+(delta>=0?'▲ +':'▼ ')+delta+'</b><span>lần cuối so với lần đầu</span></div></div>'
+    +tb
+    +'<div class="dash-s" style="margin-top:8px">TB grammar <b>'+aG+'/25</b> · vocab <b>'+aV+'/25</b>'+(weak?' → phần yếu hơn: <b>'+weak+'</b>':'')+'. '
+    +'Phần Grammar &amp; Vocabulary không quy ra CEFR riêng; mục tiêu tham khảo nên đạt ≥ 40/50 (80%).</div>'
+    +(rep.length?'<div class="dash-h" style="font-size:.95rem;margin-top:12px">🔁 Câu sai lặp lại (gặp lại vẫn sai)</div><ul class="rrep">'+rep.join('')+'</ul>':'');
+}
+function renderTests(){
+  tv.on=false;
+  $('gvtest').innerHTML='<div class="dash-s">Giống bài thi thật: <b>25 câu ngữ pháp</b> (1 điểm/câu) + <b>5 nhóm từ vựng</b> × 5 từ (1 điểm/từ) = <b>50 điểm</b>. Làm hết rồi bấm <b>Nộp bài</b> — mỗi câu hiện đáp án, <b>nghĩa tiếng Việt</b> và <b>giải thích</b>.</div>'
+    +resultsHTML()
+    +'<div class="dash-h" style="margin-top:20px">📝 Danh sách đề</div>'
+    +GVTESTS.map((t,i)=>{ const r=tRec(t.id), wrong=r&&r.wrong?r.wrong.length:0;
+      return '<div class="gr-block" style="margin-top:14px"><div class="gr-h">'+esc(t.name)+'</div>'
+        +'<div class="gr-count">'+(r?'đã làm '+r.attempts+' lần · cao nhất '+r.best+'/50 · gần nhất '+r.last+'/50':'chưa làm trên app')
+        +(t.ext?' · lần đầu (web khác): '+(t.ext.g+t.ext.v)+'/50':'')+'</div>'
+        +'<div class="btnrow" style="margin-top:10px"><button class="btn primary" data-ts="'+i+'">▶ Làm cả đề</button>'
+        +(wrong?'<button class="btn" data-tw="'+i+'">⚠️ Làm lại '+wrong+' câu sai</button>':'')+'</div></div>'; }).join('');
+  document.querySelectorAll('[data-ts]').forEach(b=>b.onclick=()=>startTest(+b.dataset.ts,null));
+  document.querySelectorAll('[data-tw]').forEach(b=>b.onclick=()=>{ const t=GVTESTS[+b.dataset.tw]; startTest(+b.dataset.tw,new Set(tRec(t.id).wrong)); });
+}
+function startTest(ti,only){
+  tv={on:true,ti:ti,only:only,done:false};
+  const t=GVTESTS[ti], keep=k=>!only||only.has(k);
+  let h='<div class="qz-top"><span class="qz-mode">'+esc(t.name)+(only?' · câu sai':'')+'</span>'
+    +'<span class="qz-prog"><button class="fchip" id="tExit">Thoát</button></span></div><div id="tScore"></div>';
+  t.gram.forEach((q,i)=>{ if(!keep('g'+i))return;
+    h+='<div class="tq" data-k="g'+i+'"><div class="tq-n">Question '+(i+1)+' of 30 · Grammar</div>'
+      +'<div class="tq-s">'+esc(q.s).replace('___','<b>…</b>')+'</div><div class="qz-opts">'
+      +q.o.map((o,j)=>'<button class="qz-opt" data-o="'+esc(o)+'"><span class="L">'+'ABC'[j]+'</span>'+esc(o)+'</button>').join('')
+      +'</div><div class="tfb"></div></div>'; });
+  t.voc.forEach((v,vi)=>{ const its=v.items.map((it,k)=>({it,k})).filter(x=>keep('v'+vi+'_'+x.k)); if(!its.length)return;
+    h+='<div class="tq"><div class="tq-n">Question '+(26+vi)+' of 30 · Vocabulary — '+esc(v.vi)+'</div>'
+      +'<div class="tq-s" style="font-weight:700;font-size:.92rem">'+esc(v.h)+'</div>'
+      +its.map(x=>'<div class="tm-row" data-k="v'+vi+'_'+x.k+'"><div class="tm-l">'+esc(x.it.l).replace('___','<b>…</b>')+'</div>'
+        +'<select><option value=""></option>'+v.opts.map(o=>'<option>'+esc(o)+'</option>').join('')+'</select></div>').join('')
+      +'</div>'; });
+  h+='<div class="tbar"><button class="btn primary" id="tSubmit">Nộp bài</button><span class="gr-count" id="tLeft"></span></div>';
+  $('gvtest').innerHTML=h;
+  $('tExit').onclick=renderTests;
+  const box=$('gvtest');
+  box.querySelectorAll('.tq[data-k] .qz-opt').forEach(b=>b.onclick=()=>{ if(tv.done)return;
+    b.parentNode.querySelectorAll('.qz-opt').forEach(x=>x.classList.remove('pick')); b.classList.add('pick'); tLeft(); });
+  box.querySelectorAll('select').forEach(s=>s.onchange=tLeft);
+  $('tSubmit').onclick=submitTest; tLeft();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function tLeft(){
+  const box=$('gvtest'); let n=0;
+  box.querySelectorAll('.tq[data-k]').forEach(q=>{ if(!q.querySelector('.pick'))n++; });
+  box.querySelectorAll('.tm-row select').forEach(s=>{ if(!s.value)n++; });
+  const el=$('tLeft'); if(el) el.textContent=n?'còn '+n+' chỗ chưa chọn':'đã chọn hết ✓';
+}
+function submitTest(){
+  if(tv.done)return;
+  const box=$('gvtest'), t=GVTESTS[tv.ti]; let g=0,gn=0,v=0,vn=0; const wrong=[];
+  box.querySelectorAll('.tq[data-k]').forEach(el=>{ const i=+el.dataset.k.slice(1), q=t.gram[i], p=el.querySelector('.pick'), ok=!!p&&p.dataset.o===q.a;
+    gn++; if(ok)g++; else wrong.push('g'+i);
+    el.querySelectorAll('.qz-opt').forEach(b=>{ b.disabled=true; if(b.dataset.o===q.a)b.classList.add('correct'); else if(b===p)b.classList.add('wrong'); });
+    el.querySelector('.tfb').innerHTML=(ok?'<div class="qz-fb ok">✓ Đúng</div>':'<div class="qz-fb no">✗ '+(p?'Bạn chọn <b>'+esc(p.dataset.o)+'</b> — ':'Bỏ trống — ')+'đáp án: <span class="ans">'+esc(q.a)+'</span></div>')
+      +'<div class="gr-vi">🇻🇳 '+esc(q.vi)+'</div><div class="gr-why">💡 '+q.why+'</div>'; });
+  box.querySelectorAll('.tm-row').forEach(el=>{ const m=el.dataset.k.match(/^v(\d+)_(\d+)$/), it=t.voc[+m[1]].items[+m[2]], s=el.querySelector('select'), ok=s.value===it.a;
+    vn++; if(ok)v++; else wrong.push(el.dataset.k);
+    s.disabled=true; s.classList.add(ok?'ok':'no');
+    el.insertAdjacentHTML('beforeend','<div class="tm-fix">'+(ok?'✓ ':'✗ '+(s.value?'bạn chọn <s>'+esc(s.value)+'</s> → ':'bỏ trống → '))
+      +'<b>'+esc(it.a)+'</b> — '+esc(it.vi)+'</div>'); });
+  tv.done=true;
+  const tot=g+v, max=gn+vn;
+  if(!tv.only){                                   // chỉ tính điểm khi làm cả đề
+    if(!PROG.gvtest)PROG.gvtest={};
+    const r=PROG.gvtest[t.id]||{attempts:0,best:0,last:0,history:[]};
+    r.attempts++; r.last=tot; r.best=Math.max(r.best||0,tot); r.wrong=wrong;
+    r.lastScore=Math.round(tot/max*100); r.lastDate=new Date().toISOString();
+    r.history=(r.history||[]).concat([{d:todayStr(),g:g,v:v}]); PROG.gvtest[t.id]=r; progSave();
+  } else if(PROG.gvtest&&PROG.gvtest[t.id]){       // làm lại câu sai: câu nào đúng thì gỡ khỏi danh sách sai
+    const r=PROG.gvtest[t.id]; r.wrong=(r.wrong||[]).filter(k=>wrong.includes(k)); progSave();
+  }
+  $('tScore').innerHTML='<div class="tscore"><div><b>'+tot+'/'+max+'</b><span>tổng · '+Math.round(tot/max*100)+'%</span></div>'
+    +'<div><b>'+g+'/'+gn+'</b><span>grammar</span></div><div><b>'+v+'/'+vn+'</b><span>vocabulary</span></div></div>'
+    +'<div class="dash-s">Đáp án, nghĩa tiếng Việt và giải thích nằm ngay dưới từng câu. Câu sai được lưu lại để bấm <b>⚠️ Làm lại câu sai</b>.</div>';
+  $('tSubmit').outerHTML='<button class="btn primary" id="tAgain">Làm lại</button><button class="btn" id="tBack">‹ Về danh sách đề</button>';
+  $('tAgain').onclick=()=>startTest(tv.ti,tv.only); $('tBack').onclick=renderTests; $('tLeft').textContent='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+setSaveBar(); renderTests();
+progLoad().then(()=>{ seedExt(); if(!tv.on) renderTests(); });
+</script>
+</body>
+</html>
