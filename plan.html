@@ -234,9 +234,10 @@ const EXAM_DATE='2026-12-07'; // dời từ 23/11 sang 7/12
 const PLAN_START='2026-10-21'; // ngày đầu tiên của lộ trình (xếp lại 21/10)
 const SK={
   listening:{name:'Listening',ic:'🎧',file:'aptis_listening_all.html',total:16},
-  reading:  {name:'Reading',  ic:'📖',file:'aptis_reading_all.html',  total:17},
+  reading:  {name:'Reading',  ic:'📖',file:'aptis_reading_all.html',  total:19},
   writing:  {name:'Writing',  ic:'✍️',file:'aptis_writing_all.html',  total:23},
   speaking: {name:'Speaking', ic:'🗣️',file:'aptis_speaking_all.html', total:21},
+  gvtest:   {name:'Grammar & Vocab',ic:'📝',file:'aptis_gv_test.html',total:10},
   vocab:    {name:'Từ vựng',  ic:'📚',file:'aptis_vocab_all.html',    total:184},
   all:      {name:'Thi thử',  ic:'🎯',file:'index.html',              total:0},
 };
@@ -244,13 +245,14 @@ const DE_SKILLS=['listening','reading','writing','speaking'];
 // Bộ đề trọng tâm: bỏ các đề Writing và Speaking trùng nhiều nhất với các đề khác (vẫn mở được trong module, chỉ không xếp lịch).
 // Writing: bỏ W4 (≈W2 máy tính + W10 công nghệ), W9 (≈W3/W13 thể dục), W11 (≈W7 ăn uống), W17 (chỉ có Part 3, ≈W8 học tiếng Anh), W18 (≈W14 chụp ảnh).
 // Speaking: bỏ S7 (≈S1 nơi yên tĩnh + S2 mua sắm), S11 (≈S5/S9 phương tiện), S15 (≈S4 thiên nhiên + S12 nghệ thuật), S19 (≈S16 âm nhạc + S8 du lịch), S20 (≈S3 thư viện + S6 biển), S18 (≈S21 nhận quà cả Part 4 + S5 game).
-const SKIP_DE={reading:[1,3],writing:[4,9,11,17,18,5,13,15],speaking:[7,11,15,19,20,18]};
+const SKIP_DE={reading:[1,3,4,6],writing:[4,9,11,17,18,5,13,15],speaking:[7,11,15,19,20,18]};
 const inFocus=(skill,de)=>!(SKIP_DE[skill]||[]).includes(de);
 // Số đề hiển thị: đánh số lại theo bộ đề trọng tâm (Writing 15 đề — đề 21 Community Club thứ 4, đề 22 Art Club người trẻ thứ 5, đề 23 Travel Club thứ 6; đề 5 Art Club, 13 Power Fitness, 15 Book Club trùng chủ đề → Đề phụ 6–8; Speaking 15 đề — đề 21 Nhóm người xếp hàng thứ 1; đề 18 Nhận quà trùng chủ đề với đề 21 → Đề phụ 6), 5 đề trùng thành "Đề phụ 1–5".
 // Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
-// Reading 15 đề chính: đề gốc 16 (Email gửi Sally, Music Festivals) là Đề 1, đề gốc 17 (Email gửi Victor, Trò chơi tuổi thơ, Four-day week) là Đề 2;
-// đề gốc 1 (trùng cả 5 phần với Đề 1 + Đề 2) và 3 (trùng 3/5 phần) thành Đề phụ 1–2, không xếp lịch (SKIP_DE).
-const DE_ORDER={reading:[16,17,2,4,5,6,7,8,9,10,11,12,13,14,15,1,3],writing:[1,2,3,21,22,23,6,7,8,10,12,14,16,19,20,4,9,11,17,18,5,13,15],speaking:[21,1,2,3,4,5,6,8,9,10,12,13,14,16,17,7,11,15,19,20,18]};
+// Reading 15 đề chính: gốc 16 (Email gửi Sally, Music Festivals) là Đề 1, gốc 17 (Email gửi Victor, Four-day week) là Đề 2,
+// gốc 18 (Email gửi Mia, Extreme sport – Everest, Women Mathematician) là Đề 3, gốc 19 (gộp phần riêng của gốc 4 + 6) là Đề 6;
+// gốc 1, 3, 4, 6 (mọi phần đã có ở đề chính) thành Đề phụ 1–4, không xếp lịch (SKIP_DE).
+const DE_ORDER={reading:[16,17,18,2,5,19,7,8,9,10,11,12,13,14,15,1,3,4,6],writing:[1,2,3,21,22,23,6,7,8,10,12,14,16,19,20,4,9,11,17,18,5,13,15],speaking:[21,1,2,3,4,5,6,8,9,10,12,13,14,16,17,7,11,15,19,20,18]};
 const DE_FOCUS={reading:15,writing:15,speaking:15};
 function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); const f=DE_FOCUS[skill]||15; return i<0?String(de):i<f?String(i+1):'phụ '+(i-f+1); }
 
@@ -270,13 +272,28 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=21;
+const PLAN_VER=22;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 // plan/coach được bọc trong 1 khoá con có trường "attempts" (= số phiên bản) để
 // hàm merge dùng chung coi chúng là 1 khối và luôn giữ bản có phiên bản cao hơn.
 function newer(...xs){return xs.filter(Boolean).sort((a,b)=>(b.attempts||0)-(a.attempts||0))[0]||null;}
+// Điểm G&V làm ở web khác (ext trong aptis_gv_test.html) → ghi vào tiến độ nếu máy này chưa có, để xếp đề yếu trước.
+async function seedGv(){
+  if(!SERVED)return;
+  let txt='';try{const r=await fetch('aptis_gv_test.html',{cache:'no-store'});if(!r.ok)return;txt=await r.text();}catch(e){return;}
+  const re=/\{id:'(t\d+)',name:'[^']*',ext:\{d:'([\d-]+)',g:(\d+),v:(\d+),wrong:\[([^\]]*)\]\}/g;let m;
+  if(!PROG.gvtest)PROG.gvtest={};
+  while((m=re.exec(txt))){
+    const id=m[1],d=m[2],g=+m[3],v=+m[4],tot=g+v,wrong=(m[5].match(/'[^']*'/g)||[]).map(x=>x.slice(1,-1));
+    const r=PROG.gvtest[id]||{attempts:0,best:0,last:0,history:[]};if(r.ext)continue;
+    r.ext=true;r.attempts=(r.attempts||0)+1;r.best=Math.max(r.best||0,tot);
+    r.history=[{d:d,g:g,v:v,ext:true}].concat(r.history||[]);
+    if(r.attempts===1){r.last=tot;r.lastScore=Math.round(tot/50*100);r.lastDate=d+'T12:00:00.000Z';r.wrong=wrong;}
+    PROG.gvtest[id]=r;
+  }
+}
 async function load(){
   let d={};
   if(SERVED){try{const r=await fetch('/api/progress',{cache:'no-store'});d=await r.json();}catch(e){d=_lsGet('aptis_progress')||{};}}
@@ -284,6 +301,7 @@ async function load(){
   d=d||{};
   if(ACLOUD.on()){try{const m=await ACLOUD.syncOnLoad(d);if(m)d=m;}catch(e){}}
   PROG=d;
+  await seedGv();
   // Một tab module mở từ trước có thể đã ghi đè bản lịch cũ — lấy bản mới nhất trong cả bản sao lưu riêng.
   const p=newer(PROG.plan&&PROG.plan.cur,_lsGet(PLAN_BK));
   const coach=newer(PROG.coach&&PROG.coach.log,_lsGet(COACH_BK));
@@ -366,6 +384,20 @@ const vocabWeekend=()=>task('vocab',0,'new',10,'Cuối tuần: chỉ ôn từ đ
 const WARM_N=3;
 const speakWarm=()=>task('speaking',0,'drill',15,'Thu âm 3 câu Part 1 → 🤖 Gửi AI chấm từng câu',{warm:true});
 const SLOT=['Buổi sáng','Buổi chiều','Buổi tối'];
+// Grammar & Vocab: mỗi ngày 1 đề (trừ hôm trước ngày thi), đề điểm thấp nhất làm trước rồi quay vòng.
+const GV_MIN=20;
+function gvOrder(){
+  const G=PROG.gvtest||{},a=[];
+  for(let i=1;i<=SK.gvtest.total;i++){const r=G['t'+i];a.push({de:i,s:r&&r.attempts>0?(r.last||0):-1});}
+  return a.sort((x,y)=>x.s-y.s||x.de-y.de).map(x=>x.de);
+}
+function gvTask(de){const r=(PROG.gvtest||{})['t'+de];
+  return task('gvtest',de,'redo',GV_MIN,'Làm lại cả đề — lần trước '+(r&&r.attempts>0?(r.last||0)+'/50':'chưa có điểm')+' · xem 🔁 câu sai lặp lại sau khi nộp · mục tiêu ≤20′ (thi thật 25′)');}
+function gvSubs(){
+  const G=PROG.gvtest||{},ev=[];
+  for(let i=1;i<=SK.gvtest.total;i++)((G['t'+i]&&G['t'+i].history)||[]).forEach(h=>{if(h.d&&!h.ext)ev.push({day:h.d,de:i,used:false});});
+  return ev.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:0);
+}
 // Ghi chú riêng cho tuần cuối: [ngày, kỹ năng] → ghi chú cho việc đầu tiên của kỹ năng đó trong ngày
 const NOTES={
   '2026-11-29|speaking':'THI THỬ Speaking: ⏱ Thi bấm giờ cả đề như thật',
@@ -389,6 +421,9 @@ function generateDays(from,skip){
     const N=SK[s].total,start=nextDeAfterRecent(s);
     cyc[s]=Array.from({length:N},(_,i)=>((start-1+i)%N)+1).filter(de=>inFocus(s,de));ptr[s]=0;
   });
+  // Đề G&V đã làm hôm nay (lúc xếp lại) thì đẩy xuống cuối vòng
+  const gvToday=gvSubs().filter(e=>e.day===TODAY).map(e=>e.de);
+  const gvq=gvOrder().filter(de=>!gvToday.includes(de)).concat(gvToday);let gvp=0;
   const next=s=>{
     const tip='chọn ⏱ Thi bấm giờ để lưu thời gian';
     if(q[s].length)return task(s,q[s].shift(),'new',MIN[s],tip);
@@ -398,9 +433,10 @@ function generateDays(from,skip){
   for(let d=from;d<=last;d=addDays(d,1)){
     const list=[],isToday=d===TODAY,sk=x=>isToday?(skip[x]||0):0;
     const we=isWeekend(d), want=we?{vocab:1,speaking:d===last?1:WE_SPEAKING}:{vocab:1,listening:1,reading:1,writing:WD_WRITING,warm:1};
+    if(d!==last)want.gvtest=1;
     Object.keys(want).forEach(s=>{
       for(let k=sk(s);k<want[s];k++){
-        const t=s==='vocab'?(we?vocabWeekend():vocabRev()):s==='warm'?speakWarm():next(s);
+        const t=s==='vocab'?(we?vocabWeekend():vocabRev()):s==='warm'?speakWarm():s==='gvtest'?gvTask(gvq[gvp++%gvq.length]):next(s);
         if(k===sk(s)&&NOTES[d+'|'+s])t.note=NOTES[d+'|'+s];
         if(we&&s==='speaking'&&want[s]>1)t.note=SLOT[k%3]+' · '+t.note;
         list.push(t);
@@ -419,6 +455,7 @@ function doneTodayTasks(){
   }));
   const pk=vpack(TODAY);if(pk&&pk.doneAt)out.push(isWeekend(TODAY)?vocabWeekend():vocabRev());
   if(!isWeekend(TODAY)&&slogN(TODAY)>=WARM_N)out.push(speakWarm());
+  gvSubs().filter(e=>e.day===TODAY).forEach(e=>out.push(Object.assign(gvTask(e.de),{note:'đã làm hôm nay'})));
   return out;
 }
 // Giữ nguyên các ngày trước "from", xếp lại từ "from" đến hết lịch.
@@ -455,7 +492,7 @@ function submissions(skill){
   return ev.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:0);
 }
 function computeStatus(){
-  const ev={};DE_SKILLS.forEach(s=>ev[s]=submissions(s));
+  const ev={};DE_SKILLS.forEach(s=>ev[s]=submissions(s));ev.gvtest=gvSubs();
   const vlog=PROG.vlog||{},vSeen={},vNew={};
   Object.keys(vlog).forEach(d=>{vSeen[d]=vlog[d].seen||0;vNew[d]=vlog[d].newWords||0;});
   const take=(s,from,de)=>{const e=ev[s].find(x=>!x.used&&x.day>=from&&(!de||x.de===de));if(e)e.used=true;return e||null;};
@@ -464,6 +501,8 @@ function computeStatus(){
   [1,2].forEach(pass=>dates.forEach(date=>D[date].forEach((t,i)=>{
     const key=date+'|'+i,from=addDays(date,-6);
     if(t.moved){if(pass===1)st[key]={done:false,skip:true,by:'đã xếp lại sang lịch mới'};return;}
+    if(t.skill==='gvtest'){if(pass===1){const e=take('gvtest',from,t.de),r=(PROG.gvtest||{})['t'+t.de],h=e&&r?(r.history||[]).filter(x=>!x.ext&&x.d===e.day).pop():null;
+      st[key]=e?{done:true,by:'nộp '+fmt(e.day)+(h?' · '+(h.g+h.v)+'/50':'')}:{done:false};}return;}
     if(t.warm){if(pass===1){const n=slogN(date);st[key]={done:n>=WARM_N,by:Math.min(n,WARM_N)+'/'+WARM_N+' câu AI chấm'};}return;}
     if(DE_SKILLS.includes(t.skill)&&t.de>0){
       if(pass!==1)return;
@@ -507,6 +546,7 @@ function taskTitle(t){
   const s=SK[t.skill]||SK.all;
   if(t.skill==='vocab'&&t.pack)return s.ic+(t.wk?' Từ vựng — ôn từ đến hạn':' Từ vựng — gói từ của đề hôm nay');
   if(t.warm)return s.ic+' Speaking — khởi động 15′ (3 câu Part 1)';
+  if(t.skill==='gvtest')return s.ic+' Grammar & Vocab — Đề '+t.de;
   if(t.skill==='vocab'&&t.group)return s.ic+' Từ vựng — học thuộc Nhóm '+t.group;
   if(t.skill==='vocab'&&t.to)return s.ic+' Từ vựng — học từ '+t.from+'–'+t.to;
   if(t.skill==='vocab')return s.ic+' Từ vựng — '+(t.kind==='new'?(t.need||13)+' từ mới':'ôn '+(t.need||40)+' lượt');
@@ -727,6 +767,7 @@ function taskHref(t){
 function taskCode(t){
   if(t.skill==='vocab')return 'V';
   if(t.skill==='all')return 'M';
+  if(t.skill==='gvtest')return 'G'+t.de;
   if(t.warm)return 'S·15′';
   const c={listening:'L',reading:'R',writing:'W',speaking:'S'}[t.skill]||'?';
   return t.de>0?c+deNum(t.skill,t.de).replace('phụ ','p'):c+'+'+(t.need||1);
@@ -807,7 +848,7 @@ function validateNext7(next7){
   (next7||[]).slice().sort((a,b)=>a.date<b.date?-1:1).forEach(d=>{
     if(!win.includes(d.date)){issues.push('Bỏ qua ngày ngoài khung: '+d.date);return;}
     days[d.date]=(d.tasks||[]).filter(t=>SK[t.skill]).map(t=>{
-      const total=SK[t.skill].total,de=(DE_SKILLS.includes(t.skill)&&t.de>=1&&t.de<=total)?t.de:0;
+      const total=SK[t.skill].total,de=((DE_SKILLS.includes(t.skill)||t.skill==='gvtest')&&t.de>=1&&t.de<=total)?t.de:0;
       let kind=['new','redo','drill','mock'].includes(t.kind)?t.kind:'redo';
       if(t.skill==='all')kind='mock';
       // Việc không gắn đề của 4 kỹ năng = "làm lại 1 đề bất kỳ" để còn kiểm tra được bằng bài nộp.

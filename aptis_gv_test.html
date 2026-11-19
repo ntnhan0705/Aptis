@@ -918,6 +918,9 @@ function submitTest(){
 }
 
 setSaveBar(); renderTests();
+// ?de=N (từ lộ trình ôn) → mở thẳng Đề N
+const DE_Q=+(new URLSearchParams(location.search).get('de')||0);
+if(DE_Q>=1&&DE_Q<=GVTESTS.length) startTest(DE_Q-1);
 progLoad().then(()=>{ seedExt(); if(!tv.on) renderTests(); });
 </script>
 </body>
