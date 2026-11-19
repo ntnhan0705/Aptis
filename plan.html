@@ -272,7 +272,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=22;
+const PLAN_VER=23;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -385,7 +385,7 @@ const WARM_N=3;
 const speakWarm=()=>task('speaking',0,'drill',15,'Thu âm 3 câu Part 1 → 🤖 Gửi AI chấm từng câu',{warm:true});
 const SLOT=['Buổi sáng','Buổi chiều','Buổi tối'];
 // Grammar & Vocab: mỗi ngày 1 đề (trừ hôm trước ngày thi), đề điểm thấp nhất làm trước rồi quay vòng.
-const GV_MIN=20;
+const GV_MIN=20, GV_MAX=15, GV_START='2026-11-19'; // tối đa 15 lượt G&V cả đợt (10 đề + 5 đề yếu nhất làm lại)
 function gvOrder(){
   const G=PROG.gvtest||{},a=[];
   for(let i=1;i<=SK.gvtest.total;i++){const r=G['t'+i];a.push({de:i,s:r&&r.attempts>0?(r.last||0):-1});}
@@ -424,6 +424,7 @@ function generateDays(from,skip){
   // Đề G&V đã làm hôm nay (lúc xếp lại) thì đẩy xuống cuối vòng
   const gvToday=gvSubs().filter(e=>e.day===TODAY).map(e=>e.de);
   const gvq=gvOrder().filter(de=>!gvToday.includes(de)).concat(gvToday);let gvp=0;
+  const gvLeft=GV_MAX-gvSubs().filter(e=>e.day>=GV_START).length;
   const next=s=>{
     const tip='chọn ⏱ Thi bấm giờ để lưu thời gian';
     if(q[s].length)return task(s,q[s].shift(),'new',MIN[s],tip);
@@ -433,7 +434,7 @@ function generateDays(from,skip){
   for(let d=from;d<=last;d=addDays(d,1)){
     const list=[],isToday=d===TODAY,sk=x=>isToday?(skip[x]||0):0;
     const we=isWeekend(d), want=we?{vocab:1,speaking:d===last?1:WE_SPEAKING}:{vocab:1,listening:1,reading:1,writing:WD_WRITING,warm:1};
-    if(d!==last)want.gvtest=1;
+    if(d!==last&&gvp<gvLeft&&!(isToday&&skip.gvtest))want.gvtest=1;
     Object.keys(want).forEach(s=>{
       for(let k=sk(s);k<want[s];k++){
         const t=s==='vocab'?(we?vocabWeekend():vocabRev()):s==='warm'?speakWarm():s==='gvtest'?gvTask(gvq[gvp++%gvq.length]):next(s);
