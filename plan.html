@@ -272,7 +272,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=23;
+const PLAN_VER=24;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -385,7 +385,9 @@ const WARM_N=3;
 const speakWarm=()=>task('speaking',0,'drill',15,'Thu âm 3 câu Part 1 → 🤖 Gửi AI chấm từng câu',{warm:true});
 const SLOT=['Buổi sáng','Buổi chiều','Buổi tối'];
 // Grammar & Vocab: mỗi ngày 1 đề (trừ hôm trước ngày thi), đề điểm thấp nhất làm trước rồi quay vòng.
-const GV_MIN=20, GV_MAX=15, GV_START='2026-11-19'; // tối đa 15 lượt G&V cả đợt (10 đề + 5 đề yếu nhất làm lại)
+const GV_MIN=20, GV_MAX=15, GV_START='2026-11-19';
+// Listening / Reading / Writing / Speaking: mỗi kỹ năng tối đa 15 lượt đề cả đợt ôn tính từ 19/11 (không kể khởi động Speaking).
+const SESS_MAX=15, CAP_START=GV_START; // tối đa 15 lượt G&V cả đợt (10 đề + 5 đề yếu nhất làm lại)
 function gvOrder(){
   const G=PROG.gvtest||{},a=[];
   for(let i=1;i<=SK.gvtest.total;i++){const r=G['t'+i];a.push({de:i,s:r&&r.attempts>0?(r.last||0):-1});}
@@ -431,20 +433,32 @@ function generateDays(from,skip){
     return task(s,cyc[s][ptr[s]++%cyc[s].length],'redo',MIN[s],'Làm lại — chú ý câu sai lần trước · '+tip);
   };
   const last=addDays(EXAM_DATE,-1);
+  // Lượt 1: xếp chỗ (ngày, kỹ năng) theo khung mỗi ngày.
+  const slots=[];let gvn=0;
   for(let d=from;d<=last;d=addDays(d,1)){
-    const list=[],isToday=d===TODAY,sk=x=>isToday?(skip[x]||0):0;
+    const isToday=d===TODAY,sk=x=>isToday?(skip[x]||0):0;
     const we=isWeekend(d), want=we?{vocab:1,speaking:d===last?1:WE_SPEAKING}:{vocab:1,listening:1,reading:1,writing:WD_WRITING,warm:1};
-    if(d!==last&&gvp<gvLeft&&!(isToday&&skip.gvtest))want.gvtest=1;
-    Object.keys(want).forEach(s=>{
-      for(let k=sk(s);k<want[s];k++){
-        const t=s==='vocab'?(we?vocabWeekend():vocabRev()):s==='warm'?speakWarm():s==='gvtest'?gvTask(gvq[gvp++%gvq.length]):next(s);
-        if(k===sk(s)&&NOTES[d+'|'+s])t.note=NOTES[d+'|'+s];
-        if(we&&s==='speaking'&&want[s]>1)t.note=SLOT[k%3]+' · '+t.note;
-        list.push(t);
-      }
-    });
-    days[d]=list;
+    if(d!==last&&gvn<gvLeft&&!(isToday&&skip.gvtest)){want.gvtest=1;gvn++;}
+    Object.keys(want).forEach(s=>{for(let k=sk(s);k<want[s];k++)slots.push({d,s,k,we,n:want[s],note:k===sk(s)?NOTES[d+'|'+s]:''});});
   }
+  // Giới hạn mỗi kỹ năng L/R/W/S tối đa SESS_MAX lượt cả đợt (tính cả bài đã nộp từ CAP_START):
+  // giữ các buổi thi thử, phần còn lại rải đều đến ngày thi.
+  DE_SKILLS.forEach(s=>{
+    const sl=slots.filter(x=>x.s===s),left=Math.max(0,SESS_MAX-submissions(s).filter(e=>e.day>=CAP_START).length);
+    if(sl.length<=left)return;
+    const fixed=sl.filter(x=>x.note),rest=sl.filter(x=>!x.note),m=Math.max(0,left-fixed.length),keep=new Set(fixed.slice(0,left));
+    for(let i=0;i<m;i++)keep.add(rest[Math.floor((i+0.5)*rest.length/m)]);
+    sl.forEach(x=>{if(!keep.has(x))x.drop=true;});
+  });
+  // Lượt 2: gán đề theo thứ tự cho các chỗ còn lại.
+  slots.forEach(x=>{
+    if(x.drop)return;
+    const s=x.s,t=s==='vocab'?(x.we?vocabWeekend():vocabRev()):s==='warm'?speakWarm():s==='gvtest'?gvTask(gvq[gvp++%gvq.length]):next(s);
+    if(x.note)t.note=x.note;
+    if(x.we&&s==='speaking'&&x.n>1)t.note=SLOT[x.k%3]+' · '+t.note;
+    (days[x.d]=days[x.d]||[]).push(t);
+  });
+  for(let d=from;d<=last;d=addDays(d,1))if(!days[d])days[d]=[];
   return days;
 }
 // Những gì đã làm xong trong hôm nay (đề đã nộp, nhóm từ đã thuộc) — giữ lại khi xếp lại lịch.
