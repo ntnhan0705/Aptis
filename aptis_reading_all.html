@@ -4629,6 +4629,24 @@ const DE_ORDER_R=[16,17,18,2,5,19,7,8,9,10,11,12,13,14,15,1,3,4,6];
 const DE_FOCUS_R=15;
 function deNum(de){ const i=DE_ORDER_R.indexOf(+de); return i<0?String(de):i<DE_FOCUS_R?String(i+1):'phụ '+(i-DE_FOCUS_R+1); }
 TESTS.forEach((t,i)=>{ t.id='Đề '+deNum(i+1); });
+/* ---- Điểm làm ở web khác (thi thử ngoài app) → ghi vào tiến độ, mỗi lượt đúng 1 lần (cùng quy tắc seedExt của Grammar & Vocab).
+   de = số gốc; ok/n = số câu đúng / số câu đã chấm; q = số câu của các phần có thứ tự cố định (P1, PM, PH) để ghi perQ,
+   wrong = câu sai trong các phần đó (Part 2 xáo thứ tự mỗi lần nên không ghi perQ). Lộ trình (plan.html) đọc mảng JSON này. */
+const READING_EXT=[
+{"ext":"r2026-11-19-de16","de":16,"d":"2026-11-19","ok":23,"n":29,"q":{"P1":5,"PM":7,"PH":7},"wrong":["P1_2","PH_2","PH_4"]},
+{"ext":"r2026-11-19-de17","de":17,"d":"2026-11-19","ok":29,"n":29,"q":{"P1":5,"PM":7,"PH":7},"wrong":[]},
+{"ext":"r2026-11-19-de18","de":18,"d":"2026-11-19","ok":22,"n":24,"q":{"P1":5,"PM":7,"PH":7},"wrong":["PH_1","PH_5"]}
+];
+function applyReadingExt(S,list){ let ch=false;
+  list.forEach(e=>{ const k='de'+e.de, r=S[k]||{attempts:0,bestScore:0,lastScore:0,history:[],perQ:{}};
+    r.extIds=r.extIds||[]; if(r.extIds.includes(e.ext))return;
+    const sc=Math.round(e.ok/e.n*100), date=e.d+'T12:00:00.000Z';
+    r.extIds.push(e.ext); r.attempts=(r.attempts||0)+1; r.bestScore=Math.max(r.bestScore||0,sc);
+    r.history=(r.history||[]).concat([{date:date,score:sc,ext:true}]).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    if(!r.lastDate||r.lastDate<=date){ r.lastScore=sc; r.lastDate=date; }
+    r.perQ=r.perQ||{}; Object.keys(e.q).forEach(p=>{ for(let i=1;i<=e.q[p];i++){ const key=p+'_'+i, q=r.perQ[key]||{seen:0,wrong:0}; q.seen++; if(e.wrong.includes(key))q.wrong++; r.perQ[key]=q; } });
+    S[k]=r; ch=true; });
+  return ch; }
 const PARTLABEL={P1:'Part 1 · Điền từ',P2:'Part 2 · Sắp xếp (a)',P3:'Part 2 · Sắp xếp (b)',PM:'Part 3 · Ghép người',PH:'Part 4 · Chọn tiêu đề',PX:'Part 2+ · Sắp xếp câu'};
 // exam budget (Reading ~35'): P1 8', P2 7', P3 7', PM 7', PH 6'
 const PART_BUDGET={P1:8*60,P2:7*60,P3:7*60,PM:7*60,PH:6*60};
@@ -5108,7 +5126,7 @@ function renderProgPanel(){
 { const n=+new URLSearchParams(location.search).get('de'); if(n>=1&&n<=TESTS.length){ sel.test=n-1; sel.part='all'; } }
 buildSetup();
 startRun();
-progLoad().then(()=>buildSetup());
+progLoad().then(()=>{ if(applyReadingExt(APTIS_PROG[APTIS_SKILL],READING_EXT)) progSave(); buildSetup(); });
 </script>
 </body>
 </html>
