@@ -65,7 +65,7 @@
   <a class="card plancard" href="plan.html">
     <div class="ic">🗓</div>
     <h2>Lộ trình ôn thi · AI coach</h2>
-    <div class="csub">Lịch 19/10 → 23/11 · tự đánh dấu khi làm đề · AI phân tích điểm &amp; điều chỉnh lịch</div>
+    <div class="csub">Lịch 19/10 → 7/12 · tự đánh dấu khi làm đề · AI phân tích điểm &amp; điều chỉnh lịch</div>
   </a>
 
   <div class="grid" id="grid"></div>
@@ -83,7 +83,7 @@
 
 <script>
 const SKILLS = [
-  {key:'reading',   name:'Reading',   ic:'📖', file:'aptis_reading_all.html',   total:15, sub:'15 đề · điền từ, sắp xếp, nối'},
+  {key:'reading',   name:'Reading',   ic:'📖', file:'aptis_reading_all.html',   total:17, sub:'15 đề + 2 đề phụ · điền từ, sắp xếp, nối'},
   {key:'listening', name:'Listening', ic:'🎧', file:'aptis_listening_all.html', total:16, sub:'16 đề · nghe (TTS) & chọn'},
   {key:'writing',   name:'Writing',   ic:'✍️', file:'aptis_writing_all.html',   total:23, sub:'23 đề · gõ lại bài mẫu'},
   {key:'speaking',  name:'Speaking',  ic:'🗣️', file:'aptis_speaking_all.html',  total:21, sub:'21 đề · nói, từ vựng, flashcard'},
@@ -181,7 +181,34 @@ function setStatus(){
   if(SERVED){ el.className='status'; el.innerHTML='✅ Đang chạy qua server — tiến độ <b>lưu tự động</b> vào aptis_progress.json'; }
   else{ el.className='status file'; el.innerHTML='⚠️ Đang mở trực tiếp (file://). Tiến độ lưu tạm trong trình duyệt — để lưu tự động, hãy mở bằng <b>start.bat</b>.'; }
 }
+/* Đề Grammar & Vocab: điểm làm ở web khác nằm trong aptis_gv_test.html (ext) và chỉ được ghi vào tiến độ
+   khi mở trang đó. Trang chủ đọc luôn file đề để thẻ hiện đúng ngay — cùng quy tắc seedExt, mỗi đề ghi 1 lần. */
+async function seedGvExt(){
+  let txt=''; try{ const r=await fetch('aptis_gv_test.html',{cache:'no-store'}); if(!r.ok)return false; txt=await r.text(); }catch(e){ return false; }
+  const re=/\{id:'(t\d+)',name:'[^']*',ext:\{d:'([\d-]+)',g:(\d+),v:(\d+),wrong:\[([^\]]*)\]\}/g;
+  let m, ch=false; if(!PROG.gvtest)PROG.gvtest={};
+  while((m=re.exec(txt))){
+    const id=m[1], d=m[2], g=+m[3], v=+m[4], tot=g+v, wrong=(m[5].match(/'[^']*'/g)||[]).map(s=>s.slice(1,-1));
+    const r=PROG.gvtest[id]||{attempts:0,best:0,last:0,history:[]};
+    if(r.ext)continue;
+    r.ext=true; r.attempts=(r.attempts||0)+1; r.best=Math.max(r.best||0,tot);
+    r.history=[{d:d,g:g,v:v,ext:true}].concat(r.history||[]);
+    if(r.attempts===1){ r.last=tot; r.lastScore=Math.round(tot/50*100); r.lastDate=d+'T12:00:00.000Z'; r.wrong=wrong; }
+    PROG.gvtest[id]=r; ch=true;
+  }
+  if(ch){ PROG.updated=new Date().toISOString(); persistLocal(); ACLOUD.push(PROG); }
+  return ch;
+}
+function gvSummary(sk){
+  const s=PROG.gvtest||{}, ids=Object.keys(s).filter(k=>s[k]&&s[k].attempts>0);
+  const runs=[]; let last=null;
+  ids.forEach(k=>{ (s[k].history||[]).forEach(h=>{ runs.push((h.g||0)+(h.v||0)); if(h.d&&(!last||h.d>last))last=h.d; });
+    const d=s[k].lastDate; if(d&&(!last||d>last))last=d; });
+  const avg=runs.length?Math.round(runs.reduce((a,b)=>a+b,0)/runs.length*10)/10:null;
+  return {done:Math.min(ids.length,sk.total), total:sk.total, runs:runs.length, avg50:avg, best:runs.length?Math.max(...runs):null, last};
+}
 function summary(sk){
+  if(sk.key==='gvtest') return gvSummary(sk);
   if(sk.isVocab){
     const V=PROG.vocab||{}; const ids=Object.keys(V).filter(k=>V[k]&&V[k].seen>0);
     const accs=ids.map(k=>Math.round(V[k].correct/V[k].seen*100));
@@ -211,9 +238,15 @@ function render(){
       '<h2>'+sk.name+' '+(su.done===0?'<span class="pill">chưa ôn</span>':'')+'</h2>'+
       '<div class="csub">'+sk.sub+'</div>'+
       '<div class="bar"><span style="width:'+pct+'%"></span></div>'+
-      '<div class="stats"><span><b>'+su.done+'</b>/'+su.total+' đề đã ôn</span>'+
-        '<span>Điểm TB: <b>'+(su.avg==null?'—':su.avg+'%')+'</b></span>'+
-        '<span>Gần nhất: <b>'+fmtDate(su.last)+'</b></span></div>';
+      (sk.key==='gvtest'
+       ? '<div class="stats"><span><b>'+su.done+'</b>/'+su.total+' đề đã làm</span>'+
+         '<span><b>'+su.runs+'</b> lần làm</span>'+
+         '<span>TB: <b>'+(su.avg50==null?'—':su.avg50+'/50 · '+Math.round(su.avg50*2)+'%')+'</b></span>'+
+         '<span>Cao nhất: <b>'+(su.best==null?'—':su.best+'/50')+'</b></span>'+
+         '<span>Gần nhất: <b>'+fmtDate(su.last)+'</b></span></div>'
+       : '<div class="stats"><span><b>'+su.done+'</b>/'+su.total+' đề đã ôn</span>'+
+         '<span>Điểm TB: <b>'+(su.avg==null?'—':su.avg+'%')+'</b></span>'+
+         '<span>Gần nhất: <b>'+fmtDate(su.last)+'</b></span></div>');
     g.appendChild(a);
   });
 }
@@ -241,7 +274,7 @@ document.getElementById('resetBtn').onclick=async()=>{
   localStorage.removeItem('aptis_progress'); ACLOUD.push(PROG); render();
 };
 
-(async()=>{ setStatus(); await loadProg(); render(); renderSync(); })();
+(async()=>{ setStatus(); await loadProg(); render(); renderSync(); if(await seedGvExt()) render(); })();
 </script>
 </body>
 </html>

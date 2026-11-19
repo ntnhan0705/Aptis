@@ -161,7 +161,7 @@
 <div class="wrap">
   <header>
     <a class="back" href="index.html">‹ Trang chủ</a>
-    <div class="eyebrow">Aptis General · thi 23/11</div>
+    <div class="eyebrow">Aptis General · thi 7/12</div>
     <h1>Lộ trình ôn tập</h1>
   </header>
 
@@ -230,11 +230,11 @@ window.ACLOUD=window.ACLOUD||(function(){
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const SERVED=/^https?:$/.test(location.protocol);
-const EXAM_DATE='2026-11-23';
+const EXAM_DATE='2026-12-07'; // dời từ 23/11 sang 7/12
 const PLAN_START='2026-10-21'; // ngày đầu tiên của lộ trình (xếp lại 21/10)
 const SK={
   listening:{name:'Listening',ic:'🎧',file:'aptis_listening_all.html',total:16},
-  reading:  {name:'Reading',  ic:'📖',file:'aptis_reading_all.html',  total:15},
+  reading:  {name:'Reading',  ic:'📖',file:'aptis_reading_all.html',  total:17},
   writing:  {name:'Writing',  ic:'✍️',file:'aptis_writing_all.html',  total:23},
   speaking: {name:'Speaking', ic:'🗣️',file:'aptis_speaking_all.html', total:21},
   vocab:    {name:'Từ vựng',  ic:'📚',file:'aptis_vocab_all.html',    total:184},
@@ -244,12 +244,14 @@ const DE_SKILLS=['listening','reading','writing','speaking'];
 // Bộ đề trọng tâm: bỏ các đề Writing và Speaking trùng nhiều nhất với các đề khác (vẫn mở được trong module, chỉ không xếp lịch).
 // Writing: bỏ W4 (≈W2 máy tính + W10 công nghệ), W9 (≈W3/W13 thể dục), W11 (≈W7 ăn uống), W17 (chỉ có Part 3, ≈W8 học tiếng Anh), W18 (≈W14 chụp ảnh).
 // Speaking: bỏ S7 (≈S1 nơi yên tĩnh + S2 mua sắm), S11 (≈S5/S9 phương tiện), S15 (≈S4 thiên nhiên + S12 nghệ thuật), S19 (≈S16 âm nhạc + S8 du lịch), S20 (≈S3 thư viện + S6 biển), S18 (≈S21 nhận quà cả Part 4 + S5 game).
-const SKIP_DE={writing:[4,9,11,17,18,5,13,15],speaking:[7,11,15,19,20,18]};
+const SKIP_DE={reading:[1,3],writing:[4,9,11,17,18,5,13,15],speaking:[7,11,15,19,20,18]};
 const inFocus=(skill,de)=>!(SKIP_DE[skill]||[]).includes(de);
 // Số đề hiển thị: đánh số lại theo bộ đề trọng tâm (Writing 15 đề — đề 21 Community Club thứ 4, đề 22 Art Club người trẻ thứ 5, đề 23 Travel Club thứ 6; đề 5 Art Club, 13 Power Fitness, 15 Book Club trùng chủ đề → Đề phụ 6–8; Speaking 15 đề — đề 21 Nhóm người xếp hàng thứ 1; đề 18 Nhận quà trùng chủ đề với đề 21 → Đề phụ 6), 5 đề trùng thành "Đề phụ 1–5".
 // Dữ liệu & tiến độ vẫn dùng số gốc (de1…de20) nên không mất bài đã làm.
-const DE_ORDER={writing:[1,2,3,21,22,23,6,7,8,10,12,14,16,19,20,4,9,11,17,18,5,13,15],speaking:[21,1,2,3,4,5,6,8,9,10,12,13,14,16,17,7,11,15,19,20,18]};
-const DE_FOCUS={writing:15,speaking:15};
+// Reading 15 đề chính: đề gốc 16 (Email gửi Sally, Music Festivals) là Đề 1, đề gốc 17 (Email gửi Victor, Trò chơi tuổi thơ, Four-day week) là Đề 2;
+// đề gốc 1 (trùng cả 5 phần với Đề 1 + Đề 2) và 3 (trùng 3/5 phần) thành Đề phụ 1–2, không xếp lịch (SKIP_DE).
+const DE_ORDER={reading:[16,17,2,4,5,6,7,8,9,10,11,12,13,14,15,1,3],writing:[1,2,3,21,22,23,6,7,8,10,12,14,16,19,20,4,9,11,17,18,5,13,15],speaking:[21,1,2,3,4,5,6,8,9,10,12,13,14,16,17,7,11,15,19,20,18]};
+const DE_FOCUS={reading:15,writing:15,speaking:15};
 function deNum(skill,de){ const o=DE_ORDER[skill]; if(!o) return String(de); const i=o.indexOf(+de); const f=DE_FOCUS[skill]||15; return i<0?String(de):i<f?String(i+1):'phụ '+(i-f+1); }
 
 const KIND_LBL={new:'đề mới',redo:'làm lại',drill:'luyện sâu',mock:'thi thử'};
@@ -268,7 +270,7 @@ const TODAY=(new URLSearchParams(location.search).get('today'))||ymd(new Date())
 
 /* ===== Tiến độ ===== */
 const PLAN_BK='aptis_plan_backup', COACH_BK='aptis_coach_backup';
-const PLAN_VER=20;
+const PLAN_VER=21;
 let PROG={};
 function _lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -366,12 +368,12 @@ const speakWarm=()=>task('speaking',0,'drill',15,'Thu âm 3 câu Part 1 → 🤖
 const SLOT=['Buổi sáng','Buổi chiều','Buổi tối'];
 // Ghi chú riêng cho tuần cuối: [ngày, kỹ năng] → ghi chú cho việc đầu tiên của kỹ năng đó trong ngày
 const NOTES={
-  '2026-11-15|speaking':'THI THỬ Speaking: ⏱ Thi bấm giờ cả đề như thật',
-  '2026-11-19|listening':'THI THỬ Listening: ⏱ Thi bấm giờ như thật',
-  '2026-11-19|reading':'THI THỬ Reading: ⏱ Thi bấm giờ như thật',
-  '2026-11-20|writing':'THI THỬ Writing: ⏱ 50 phút bấm giờ + chấm AI',
-  '2026-11-21|speaking':'THI THỬ Speaking lần 2: ⏱ Thi bấm giờ cả đề',
-  '2026-11-22|speaking':'Ôn nhẹ trước ngày thi — 1 đề, nghe lại bài mẫu',
+  '2026-11-29|speaking':'THI THỬ Speaking: ⏱ Thi bấm giờ cả đề như thật',
+  '2026-12-03|listening':'THI THỬ Listening: ⏱ Thi bấm giờ như thật',
+  '2026-12-03|reading':'THI THỬ Reading: ⏱ Thi bấm giờ như thật',
+  '2026-12-04|writing':'THI THỬ Writing: ⏱ 50 phút bấm giờ + chấm AI',
+  '2026-12-05|speaking':'THI THỬ Speaking lần 2: ⏱ Thi bấm giờ cả đề',
+  '2026-12-06|speaking':'Ôn nhẹ trước ngày thi — 1 đề, nghe lại bài mẫu',
 };
 // skip: số việc mỗi kỹ năng đã làm xong trong HÔM NAY — không xếp thêm kỹ năng đó cho hôm nay
 // và không lấy đề/nhóm khỏi hàng đợi cho nó.
@@ -561,7 +563,7 @@ function renderForecast(tasks){
   el.innerHTML='⚠️ <b>Dự báo đến ngày thi:</b> đang trễ <b>'+f.lateCount+' việc</b> (~'+h(f.lateMin)+': '
     +Object.entries(f.lateBySkill).map(([k,n])=>k+' '+n).join(', ')+'). '
     +'Tức là đang trễ <b>'+f.behindPct+'%</b> so với kế hoạch tính tới hôm nay. '
-    +'Nếu giữ tốc độ hiện tại (~'+f.pacePct+'% việc xong đúng hạn, tính trên '+f.pastDays+' ngày), đến 23/11 sẽ xong khoảng <b>'+f.projectedPct+'%</b> lộ trình — '
+    +'Nếu giữ tốc độ hiện tại (~'+f.pacePct+'% việc xong đúng hạn, tính trên '+f.pastDays+' ngày), đến 7/12 sẽ xong khoảng <b>'+f.projectedPct+'%</b> lộ trình — '
     +'<b>thiếu '+f.shortfallPct+'%</b> (~'+f.missingTasks+' việc).'
     +'<div class="fc-fix"><b>Cách bù:</b> thêm <b>~'+f.extraMinPerDay7+' phút/ngày trong 7 ngày tới</b>'
     +' · hoặc <b>~'+f.extraMinPerDayToExam+' phút/ngày</b> tới ngày thi'
@@ -701,7 +703,7 @@ function render(){
   $('kpis').innerHTML='<div class="kpi"><div class="v">'+left+'</div><div class="l">ngày đến hôm thi</div><div class="s">hôm nay '+tdDone+'/'+td.length+' việc</div></div>'
     +'<div class="kpi"><div class="v">'+allPct+'%</div><div class="l">lộ trình đã xong</div><div class="s">còn '+(100-allPct)+'%</div></div>'
     +'<div class="kpi '+(diff>0?'ahead':diff<0?'behind':'')+'"><div class="v">'+(diff>0?'▲ '+diff:diff<0?'▼ '+(-diff):'✓')+'</div><div class="l">'+(diff>0?'việc vượt lịch':diff<0?'việc chậm lịch':'đúng lịch')+'</div><div class="s">'+(diff<0?'chậm '+behindPct+'% kế hoạch tới hôm nay':diff>0?'làm trước lịch':'không có việc trễ')+'</div></div>'
-    +'<div class="kpi '+(fc.projectedPct>=95?'ahead':fc.projectedPct<85?'behind':'')+'"><div class="v">~'+fc.projectedPct+'%</div><div class="l">dự báo xong vào 23/11</div><div class="s">theo tốc độ hiện tại</div></div>';
+    +'<div class="kpi '+(fc.projectedPct>=95?'ahead':fc.projectedPct<85?'behind':'')+'"><div class="v">~'+fc.projectedPct+'%</div><div class="l">dự báo xong vào 7/12</div><div class="s">theo tốc độ hiện tại</div></div>';
   $('planBar').style.width=(tasks.length?Math.round(doneAll/tasks.length*100):0)+'%';
   $('planBarLbl').textContent='Cả lộ trình: '+doneAll+'/'+tasks.length+' việc xong · các ngày trước còn '+(due.length-dueDone)+' việc chưa xong'
     +(ahead>0?' · đã làm trước '+ahead+' việc của các ngày sau':'');
@@ -788,7 +790,7 @@ function buildSnapshot(){
     timePerTask:(()=>{const f=(k,d)=>RM[k]?RM[k].min+' phút (thực tế: trung vị '+RM[k].raw+' phút làm bài, '+RM[k].n+' lần)':d+' phút (mặc định, chưa có dữ liệu)';
       return 'Một đề Listening '+f('listening',MIN.listening)+'; Reading '+f('reading',MIN.reading)+'; Writing '+f('writing',MIN.writing)+'; Speaking '+f('speaking',MIN.speaking)+'; gói từ vựng ngày thường ~25 phút.';})(),
     realMinutesPerSet:Object.fromEntries(DE_SKILLS.map(k=>[k,RM[k]?RM[k].min:null])),
-    deLabels:Object.fromEntries(['writing','speaking'].map(k=>[k,Object.fromEntries(DE_ORDER[k].map(de=>[de,'Đề '+deNum(k,de)]))])),
+    deLabels:Object.fromEntries(['reading','writing','speaking'].map(k=>[k,Object.fromEntries(DE_ORDER[k].map(de=>[de,'Đề '+deNum(k,de)]))])),
     skills, vocab:{total:VTOTAL,dailyPack:'40–45 từ B2+ (≥8 từ mới): từ đến hạn ôn (Lv1–5 ôn sau 1/2/4/7/14 ngày) + từ mới của các đề trong ngày',packsDoneLast7:(()=>{let n=0;for(let i=-7;i<0;i++){const k=vpack(addDays(TODAY,i));if(k&&k.doneAt)n++;}return n;})(),learnedWords:seen.length,accuracy:vSeen?Math.round(vOk/vSeen*100):null,last7days:last7},
     grammar:{sets:gk.length,accuracy:(()=>{const s=gk.reduce((a,k)=>a+(G[k].seen||0),0),c=gk.reduce((a,k)=>a+(G[k].correct||0),0);return s?Math.round(c/s*100):null;})()},
     planStatus:{dueBeforeToday:due.length,doneOfDue:due.filter(x=>x.done).length,doneTotal:tasks.filter(x=>x.done).length,totalTasks:tasks.length,
