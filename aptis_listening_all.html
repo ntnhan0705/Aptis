@@ -5484,282 +5484,144 @@ const TESTS=[
     "p1": [
       {
         "n": 1,
-        "q": "A man is calling his sister. Where are they going to meet?",
+        "q": "A girl is calling her mother. Which dress does she want?",
         "opts": [
           {
             "k": "A",
-            "t": "At the station"
+            "t": "Short and green"
           },
           {
             "k": "B",
-            "t": "At the park"
+            "t": "Long and red"
           },
           {
             "k": "C",
-            "t": "At the university"
+            "t": "Short and red"
           }
         ],
-        "narration": "Man: Hi, it's me! I wanted to confirm where we're meeting today. I thought we agreed to meet at the park, right? It's a nice place to relax and catch up. The station would be too crowded, and the university is a bit far for me. Let's stick to the park so we can enjoy the weather. What time should I meet you there?",
+        "narration": "Girl: Hi Mum, I'm at the shop now. I tried on the short green dress, but it felt a bit tight. There's also a short red one, but it's too informal for tonight's gala. So I've decided. The long and red dress is the one I want. Can you lend me a little money for it?",
         "correct": "B",
-        "a": "At the park",
-        "trHL": "Man: I wanted to confirm where we're meeting. We agreed to meet at the park, right? **The station would be too crowded, and the university is a bit far. Let's stick to the park.**",
-        "viHL": "Nam: Chào, tớ đây! Tớ muốn xác nhận chỗ mình gặp hôm nay. Mình đã hẹn gặp ở công viên đúng không? Đó là nơi thư giãn và trò chuyện thoải mái. **Ga thì quá đông, còn trường thì hơi xa với tớ. Cứ gặp ở công viên nhé** để tận hưởng thời tiết. Mấy giờ tớ gặp cậu ở đó? (→ ở công viên)"
+        "a": "Long and red",
+        "trHL": "The short green dress felt a bit tight. The short red one is too informal for tonight's gala. **The long and red dress is the one I want.**",
+        "viHL": "Con gái: Mẹ ơi, con đang ở cửa hàng. Con mặc thử chiếc váy ngắn màu xanh lá nhưng hơi chật. Còn một chiếc ngắn màu đỏ, nhưng quá giản dị cho buổi dạ tiệc tối nay. Nên con quyết rồi. **Chiếc váy dài màu đỏ là cái con muốn.** Mẹ cho con mượn ít tiền nhé? (→ dài và đỏ)"
       },
       {
         "n": 2,
-        "q": "A woman is talking about her vacation. What is the relationship between the speaker and Lisa?",
+        "q": "A woman is talking about her weekends. What did she do last week?",
         "opts": [
           {
             "k": "A",
-            "t": "Best friends"
+            "t": "Went to the beach"
           },
           {
             "k": "B",
-            "t": "Mother and daughter"
+            "t": "Visited friends"
           },
           {
             "k": "C",
-            "t": "Teacher and student"
+            "t": "Stayed at home"
           }
         ],
-        "narration": "Woman: I just got back from an amazing vacation with Lisa! We've been friends for years, and this trip really brought us closer. I can't imagine going with anyone else. Some people think we look like mother and daughter because we care for each other so much, but it's really just best friends hanging out!",
-        "correct": "A",
-        "a": "Best friends",
-        "trHL": "I just got back from a vacation with Lisa! **We've been friends for years.** Some think we look like mother and daughter, **but it's really just best friends hanging out!**",
-        "viHL": "Nữ: Tớ vừa đi nghỉ với Lisa về, tuyệt lắm! **Bọn tớ là bạn nhiều năm rồi,** và chuyến đi này khiến bọn tớ thân nhau hơn. Tớ không tưởng tượng nổi đi với ai khác. Vài người tưởng tụi tớ là mẹ con vì quan tâm nhau quá, nhưng thật ra chỉ là bạn thân đi chơi thôi! (→ bạn thân)"
+        "narration": "Woman: I usually love going out at the weekend. A couple of weeks back, we drove down to the coast and spent the whole day on the sand. Last weekend, I had fully intended to visit my friends in the city, but I caught the flu. So I stayed at home the whole time to rest.",
+        "correct": "C",
+        "a": "Stayed at home",
+        "trHL": "A couple of weeks back, we drove down to the coast. Last weekend, I had fully intended to visit my friends, but I caught the flu. **So I stayed at home the whole time to rest.**",
+        "viHL": "Nữ: Tôi thường rất thích ra ngoài vào cuối tuần. Vài tuần trước, chúng tôi lái xe ra bờ biển và ở trên bãi cát cả ngày. Cuối tuần trước, tôi đã định đi thăm bạn bè trong thành phố, nhưng tôi bị cúm. **Nên tôi ở nhà suốt để nghỉ ngơi.** (→ ở nhà; biển là vài tuần trước, thăm bạn chỉ là dự định)"
       },
       {
         "n": 3,
-        "q": "Anna is calling her brother Max. What does Anna do later in the afternoon?",
+        "q": "Listen to a saleswoman talking about a property. Which room is the largest?",
         "opts": [
           {
             "k": "A",
-            "t": "Stay late at the office"
+            "t": "Living room"
           },
           {
             "k": "B",
-            "t": "Pick up her kids"
+            "t": "Kitchen"
           },
           {
             "k": "C",
-            "t": "Hang out with friends"
+            "t": "Bedroom"
           }
         ],
-        "narration": "Woman: Hey Max, it's Anna. I wanted to ask you for a favor this afternoon. I have to stay late at the office to finish some work. Could you please pick up my kids from school? After that, I know you'll want to hang out with your friends, so feel free to take them along. I really appreciate your help!",
-        "correct": "A",
-        "a": "Stay late at the office",
-        "trHL": "Anna: I have to stay late at the office to finish some work. **Could you please pick up my kids from school?**",
-        "viHL": "Anna: Này Max, Anna đây. Chiều nay chị muốn nhờ em một việc. Chị phải ở lại văn phòng làm nốt việc. **Em đón giúp bọn nhỏ ở trường được không?** Sau đó, chị biết em sẽ muốn đi chơi với bạn, nên cứ dẫn tụi nhỏ theo cũng được. Cảm ơn em nhiều nhé! (→ chị ấy ở lại văn phòng)"
+        "narration": "Woman: Welcome to the house. As you can see, the living room has plenty of space for a big family, and the main bedroom is a decent size too. But the best part is at the back. The previous owners built an extension, so the kitchen is now officially the largest room in the house.",
+        "correct": "B",
+        "a": "Kitchen",
+        "trHL": "The living room has plenty of space, and the main bedroom is a decent size too. **The previous owners built an extension, so the kitchen is now officially the largest room in the house.**",
+        "viHL": "Nữ: Chào mừng đến với ngôi nhà. Như anh chị thấy, phòng khách đủ rộng cho cả gia đình lớn, và phòng ngủ chính cũng khá rộng. Nhưng phần tuyệt nhất ở phía sau. **Chủ cũ đã xây thêm phần mở rộng, nên giờ bếp chính thức là phòng rộng nhất nhà.** (→ bếp)"
       },
       {
         "n": 4,
-        "q": "A man is talking about his trip. What did he enjoy last year?",
+        "q": "Two friends are talking about their trip. What will the weather be like?",
         "opts": [
           {
             "k": "A",
-            "t": "Go for a walk"
+            "t": "Hot and sunny"
           },
           {
             "k": "B",
-            "t": "Go picnic"
+            "t": "Cold and wet"
           },
           {
             "k": "C",
-            "t": "Go cycling"
+            "t": "Warm and windy"
           }
         ],
-        "narration": "Man: Last year, I had an amazing trip! One of the best things I enjoyed was going cycling in the countryside. The views were stunning, and it felt great to be outdoors. I also went for a walk a few times, but cycling really allowed me to explore more areas. We even had a picnic one day, which was lovely too!",
-        "correct": "C",
-        "a": "Go cycling",
-        "trHL": "One of the best things I enjoyed was **going cycling in the countryside.** Cycling really allowed me to explore more areas.",
-        "viHL": "Nam: Năm ngoái tớ có một chuyến đi tuyệt vời! Một trong những điều tớ thích nhất là **đạp xe ở vùng quê.** Cảnh đẹp mê hồn, và cảm giác ở ngoài trời thật tuyệt. Tớ cũng đi bộ vài lần, nhưng đạp xe mới cho tớ khám phá được nhiều nơi hơn. Có một hôm bọn tớ còn đi picnic nữa, cũng thích lắm! (→ đạp xe)"
+        "narration": "Man: Have you checked the weather for our trip?\nWoman: Yes, and it's not great news. I was certainly hoping for hot and sunny days at the lake.\nMan: So what does the forecast say?\nWoman: Cold air is coming down from the north, so it will be cold and wet all weekend. We'd better pack our raincoats.",
+        "correct": "B",
+        "a": "Cold and wet",
+        "trHL": "I was certainly hoping for hot and sunny days. **Cold air is coming down from the north, so it will be cold and wet all weekend.**",
+        "viHL": "Nam: Cậu xem thời tiết cho chuyến đi chưa?\nNữ: Rồi, tin không vui lắm. Tớ đã rất mong có những ngày nắng nóng ở hồ.\nNam: Thế dự báo nói gì?\nNữ: **Không khí lạnh tràn xuống từ phía bắc, nên cả cuối tuần sẽ lạnh và ẩm ướt.** Mình nên mang áo mưa. (→ lạnh và ướt; nắng nóng chỉ là mong muốn)"
       },
       {
         "n": 5,
-        "q": "Doctor's office is calling to change the appointment. When is the new appointment?",
+        "q": "A customer is calling a department store. Which number to press in order to buy a computer?",
         "opts": [
           {
             "k": "A",
-            "t": "On Friday 14th"
+            "t": "One"
           },
           {
             "k": "B",
-            "t": "On Thursday 30th"
+            "t": "Two"
           },
           {
             "k": "C",
-            "t": "On Thursday 13th"
+            "t": "Three"
           }
         ],
-        "narration": "Hello! This is the doctor's office calling to change your appointment. I wanted to let you know that the new appointment is on Thursday the 13th. I understand you might have been expecting it to be on Friday the 14th, but we're all off this day due to the national dentist holiday. Please let us know if that works for you!",
+        "narration": "Thank you for calling City Department Store. For clothing and fashion, press one. For home appliances, such as fridges and washing machines, press two. To purchase laptops, desktops and other electronic devices, press three. To speak to a member of staff, please stay on the line.",
         "correct": "C",
-        "a": "On Thursday 13th",
-        "trHL": "This is the doctor's office. **The new appointment is on Thursday the 13th.** You might have expected Friday the 14th, but we're off that day.",
-        "viHL": "Chào! Đây là phòng khám gọi để đổi lịch hẹn của bạn. **Tôi muốn báo rằng lịch hẹn mới là Thứ Năm ngày 13.** Tôi hiểu bạn có thể đã mong nó vào Thứ Sáu ngày 14, nhưng hôm đó chúng tôi nghỉ do ngày lễ nha khoa toàn quốc. Báo lại cho chúng tôi nếu ngày đó tiện nhé!"
+        "a": "Three",
+        "trHL": "For clothing and fashion, press one. For home appliances, press two. **To purchase laptops, desktops and other electronic devices, press three.**",
+        "viHL": "Cảm ơn quý khách đã gọi đến Cửa hàng bách hóa City. Quần áo và thời trang, bấm phím một. Đồ gia dụng như tủ lạnh, máy giặt, bấm phím hai. **Để mua máy tính xách tay, máy tính để bàn và thiết bị điện tử khác, bấm phím ba.** Để gặp nhân viên, vui lòng giữ máy. (→ phím ba)"
       },
       {
         "n": 6,
-        "q": "A man calls the teleshop. What is the teleshop number?",
+        "q": "A girl is talking about her journey to school. How does she go to school?",
         "opts": [
           {
             "k": "A",
-            "t": "102030"
+            "t": "By bus"
           },
           {
             "k": "B",
-            "t": "201030"
+            "t": "On foot"
           },
           {
             "k": "C",
-            "t": "301020"
+            "t": "By bicycle"
           }
         ],
-        "narration": "Hello, I need to call the teleshop for some information. My phone is not working. Can you remind me of the number? I think it starts with 20 or 10 or 30 something. Is it 102030 or 301020? No, wait! I remember now—it's 201030! I really need to order that new gadget. Thanks for your help!",
+        "narration": "Girl: Last semester I used to cycle to school, but my bike broke down and it's too expensive to fix. My classmates suggested taking the bus, but it's always overcrowded in the morning. So I walk to school every day now. It only takes twenty minutes.",
         "correct": "B",
-        "a": "201030",
-        "trHL": "Is it 102030 or 301020? **No, wait! I remember now—it's 201030!**",
-        "viHL": "Xin chào, tôi cần gọi cho cửa hàng bán qua truyền hình để hỏi thông tin. Điện thoại tôi hỏng rồi. Bạn nhắc giúp tôi số nhé? Tôi nghĩ nó bắt đầu bằng 20 hoặc 10 hoặc 30 gì đó. Là 102030 hay 301020 nhỉ? **À khoan, tôi nhớ ra rồi — là 201030!** Tôi thật sự cần đặt món đồ công nghệ mới đó. Cảm ơn bạn nhé!"
+        "a": "On foot",
+        "trHL": "I used to cycle to school, but my bike broke down. My classmates suggested taking the bus, but it's always overcrowded. **So I walk to school every day now.**",
+        "viHL": "Cô gái: Học kỳ trước mình đạp xe đi học, nhưng xe bị hỏng và sửa thì quá đắt. Các bạn cùng lớp gợi ý đi xe buýt, nhưng buổi sáng xe luôn quá đông. **Nên giờ ngày nào mình cũng đi bộ đến trường.** Chỉ mất hai mươi phút. (→ đi bộ)"
       },
       {
         "n": 7,
-        "q": "Vincent is calling James. Why does Vincent call James?",
-        "opts": [
-          {
-            "k": "A",
-            "t": "To say hello"
-          },
-          {
-            "k": "B",
-            "t": "To arrange meeting"
-          },
-          {
-            "k": "C",
-            "t": "To suggest a drink"
-          }
-        ],
-        "narration": "Man: Hi James, it's Vincent. I just wanted to check in and see how you're doing. It's been a while since we last caught up! How about we grab a drink later? I know a great new place that has very nice tea. You should definitely try it next time you visit me. Text me back!",
-        "correct": "C",
-        "a": "To suggest a drink",
-        "trHL": "Hi James, it's Vincent. **How about we grab a drink later?** I know a great new place that has very nice tea.",
-        "viHL": "Nam: Chào James, Vincent đây. Tớ chỉ muốn hỏi thăm xem cậu dạo này thế nào. Lâu rồi mình chưa gặp nhau! **Hay lát nữa mình đi làm ly nước nhé?** Tớ biết một quán mới rất hay có trà ngon lắm. Lần sau ghé tớ nhất định phải thử. Nhắn lại cho tớ nhé! (→ rủ đi uống nước)"
-      },
-      {
-        "n": 8,
-        "q": "Two people are talking about meeting for dinner. What time does Ahmed meet Rose?",
-        "opts": [
-          {
-            "k": "A",
-            "t": "quarter past seven"
-          },
-          {
-            "k": "B",
-            "t": "half past seven"
-          },
-          {
-            "k": "C",
-            "t": "quarter to eight"
-          }
-        ],
-        "narration": "Man: Hi Rose. It's Ahmed. What time should we meet for dinner tonight? How about we meet at quarter past seven instead? Oh wait, I just remembered—I have a meeting ending at half past seven. Let's make it quarter to eight instead so we could have 15 minutes to travel. Does that work for you?",
-        "correct": "C",
-        "a": "quarter to eight",
-        "trHL": "How about we meet at quarter past seven? Oh wait, I have a meeting ending at half past seven. **Let's make it quarter to eight instead.**",
-        "viHL": "Nam: Chào Rose. Ahmed đây. Tối nay mình gặp nhau ăn tối lúc mấy giờ? Hay mình gặp lúc 7 giờ 15 nhé? Ồ khoan, tớ vừa nhớ ra — tớ có cuộc họp kết thúc lúc 7 giờ 30. **Vậy đổi thành 8 giờ kém 15 (7:45) đi** để mình có 15 phút di chuyển. Thế được không? (→ 7:45)"
-      },
-      {
-        "n": 9,
-        "q": "Max is calling his friend. How much can Max pay for the computer?",
-        "opts": [
-          {
-            "k": "A",
-            "t": "150 pounds"
-          },
-          {
-            "k": "B",
-            "t": "250 pounds"
-          },
-          {
-            "k": "C",
-            "t": "350 pounds"
-          }
-        ],
-        "narration": "Hi, it's me Max. I'm calling about the computer that you are selling. You see, my computer is old and slow. I can't play any games on it any more and would like to replace it with a new one. How much do you offer? I can pay 250 pounds. This afternoon I am busy but we can discuss this tomorrow morning. Is that okay? Call me back soon.",
-        "correct": "B",
-        "a": "250 pounds",
-        "trHL": "Hi, it's me Max. I'm calling about the computer you're selling. My computer is old and slow. **How much do you offer? I can pay 250 pounds.**",
-        "viHL": "Chào, Max đây. Tớ gọi về cái máy tính cậu đang bán. Máy của tớ cũ và chậm rồi. Tớ không chơi game được nữa và muốn thay máy mới. **Cậu bán bao nhiêu? Tớ trả được 250 bảng.** Chiều nay tớ bận nhưng sáng mai mình bàn tiếp được. Ổn chứ? Gọi lại cho tớ sớm nhé. (→ 250 bảng)"
-      },
-      {
-        "n": 10,
-        "q": "A man is talking to the shopping assistant. What color top does he buy?",
-        "opts": [
-          {
-            "k": "A",
-            "t": "Red"
-          },
-          {
-            "k": "B",
-            "t": "Blue"
-          },
-          {
-            "k": "C",
-            "t": "Black"
-          }
-        ],
-        "narration": "Man: Hello, I would like to buy a top, please. Woman: Sure, do you have anything particular in mind? Man: I like the design of that green one over there. Do you have it in blue? Woman: Maybe. What size are you? Man: I am wearing large. Woman: Let me see. Ohh. We have that one in blue but small. The red and black ones, however, are available in large. Man: Red is not my cup of tea. Well, I will go with the other option then.",
-        "correct": "C",
-        "a": "Black",
-        "trHL": "We have that one in blue but small. The red and black ones are available in large. **Man: Red is not my cup of tea. I will go with the other option then.**",
-        "viHL": "Nam: Chào, tôi muốn mua một chiếc áo. Nữ: Vâng, anh có kiểu nào cụ thể không? Nam: Tôi thích thiết kế của cái áo xanh lá đằng kia. Có màu xanh dương không? Nữ: Có thể. Anh mặc cỡ nào? Nam: Tôi mặc cỡ lớn. Nữ: Để tôi xem. Ồ, cái đó có màu xanh dương nhưng cỡ nhỏ. Còn màu đỏ và đen thì có cỡ lớn. **Nam: Đỏ không hợp gu tôi. Vậy tôi lấy lựa chọn còn lại.** (→ đen)"
-      },
-      {
-        "n": 11,
-        "q": "Alice is calling her friend. What did she lose?",
-        "opts": [
-          {
-            "k": "A",
-            "t": "A book"
-          },
-          {
-            "k": "B",
-            "t": "A laptop"
-          },
-          {
-            "k": "C",
-            "t": "A phone"
-          }
-        ],
-        "narration": "Hey, it's Alice. I think I might have left something at your house. I had my book with me. It's in my backpack. My laptop's here too. But I can't find my phone anywhere! Did you happen to see it after I left? I think I might have left it on the table.",
-        "correct": "C",
-        "a": "A phone",
-        "trHL": "I had my book in my backpack. My laptop's here too. **But I can't find my phone anywhere!**",
-        "viHL": "Này, Alice đây. Hình như tớ để quên gì đó ở nhà cậu. Sách thì tớ có mang theo, nó trong ba lô. Laptop cũng ở đây. **Nhưng tớ tìm mãi không thấy điện thoại đâu cả!** Cậu có thấy nó sau khi tớ về không? Tớ nghĩ chắc để quên trên bàn rồi. (→ điện thoại)"
-      },
-      {
-        "n": 12,
-        "q": "A man is talking about the city concert. How will the concert end?",
-        "opts": [
-          {
-            "k": "A",
-            "t": "The city's favorite group"
-          },
-          {
-            "k": "B",
-            "t": "Fireworks performance"
-          },
-          {
-            "k": "C",
-            "t": "Singing from orchestra"
-          }
-        ],
-        "narration": "Man: I can't wait for the concert this weekend! It's going to be such an exciting event. The highlight ending will be the city's favorite group performing on stage. I've heard they have some amazing songs planned. There will also be a fireworks performance to celebrate before that, and I'm sure the orchestra will do some singing as well. It's going to be a night to remember!",
-        "correct": "A",
-        "a": "The city's favorite group",
-        "trHL": "**The highlight ending will be the city's favorite group performing on stage.** There will also be fireworks before that.",
-        "viHL": "Nam: Tớ nóng lòng chờ buổi hòa nhạc cuối tuần này! Sẽ là một sự kiện cực kỳ hào hứng. **Phần kết đỉnh nhất là nhóm nhạc yêu thích của thành phố biểu diễn trên sân khấu.** Tớ nghe nói họ đã chuẩn bị vài bài rất hay. Trước đó còn có màn pháo hoa để chào mừng, và chắc chắn dàn nhạc cũng sẽ hát vài bài. Sẽ là một đêm đáng nhớ! (→ nhóm nhạc yêu thích của thành phố)"
-      },
-      {
-        "n": 13,
         "q": "Jana is talking to her friend. What does Jana's sister look like?",
         "opts": [
           {
@@ -5768,192 +5630,332 @@ const TESTS=[
           },
           {
             "k": "B",
-            "t": "Short"
+            "t": "Slim"
           },
           {
             "k": "C",
-            "t": "Curly hair"
+            "t": "Short"
           }
         ],
-        "narration": "Woman: Hey, could you do me a favor? My sister is waiting outside, and I need you to give her my book. She's the one who is short and has straight hair, so you can't miss her. I also think she's wearing a blue jacket today. If you see her, just hand it to her, and I'll be so grateful. Thanks for helping me out!",
-        "correct": "B",
+        "narration": "Woman: You'll meet Jana's sister at the party tonight. People often assume she looks just like Jana, tall and slim, but actually they're very different. Jana's sister is quite short, with curly brown hair, and she'll probably be wearing glasses.",
+        "correct": "C",
         "a": "Short",
-        "trHL": "My sister is waiting outside. **She's the one who is short and has straight hair, so you can't miss her.**",
-        "viHL": "Jana: Này, giúp tớ một việc nhé? Em gái tớ đang đợi ngoài kia, tớ cần cậu đưa cho nó cuốn sách của tớ. **Nó là đứa thấp và tóc thẳng, nên không lẫn được đâu.** Tớ nghĩ hôm nay nó còn mặc áo khoác xanh dương nữa. Thấy nó thì đưa giúp nhé, tớ biết ơn lắm. Cảm ơn cậu! (→ thấp)"
+        "trHL": "People often assume she looks just like Jana, tall and slim. **Jana's sister is quite short**",
+        "viHL": "Nữ: Tối nay cậu sẽ gặp chị gái của Jana ở bữa tiệc. Người ta hay nghĩ cô ấy giống Jana, cao và mảnh khảnh, nhưng thật ra hai người rất khác nhau. **Chị của Jana khá thấp**, tóc nâu xoăn, và có lẽ sẽ đeo kính. (→ thấp; cao và mảnh là suy đoán sai)"
+      },
+      {
+        "n": 8,
+        "q": "Linda is talking about her sister. What does she have for lunch?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Coffee"
+          },
+          {
+            "k": "B",
+            "t": "Juice"
+          },
+          {
+            "k": "C",
+            "t": "Tea"
+          }
+        ],
+        "narration": "Woman: My sister and I had lunch with some friends yesterday. Most of my friends opted for iced coffee or juice, because it was such a hot day. But not my sister. She drinks tea with every lunch. It's her go-to beverage, whatever the weather.",
+        "correct": "C",
+        "a": "Tea",
+        "trHL": "Most of my friends opted for iced coffee or juice. **She drinks tea with every lunch. It's her go-to beverage**",
+        "viHL": "Nữ: Hôm qua em gái tôi và tôi ăn trưa với vài người bạn. Hầu hết bạn tôi chọn cà phê đá hoặc nước ép vì trời quá nóng. Nhưng em gái tôi thì không. **Bữa trưa nào em ấy cũng uống trà. Đó là đồ uống quen thuộc của em ấy**, dù thời tiết thế nào. (→ trà)"
+      },
+      {
+        "n": 9,
+        "q": "A professor is talking to his student. What does the professor ask his student to do?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Submit the essay early"
+          },
+          {
+            "k": "B",
+            "t": "Speak at the conference"
+          },
+          {
+            "k": "C",
+            "t": "Join a new research club"
+          }
+        ],
+        "narration": "Man: Anna, I've read your essay on climate change, and it's excellent. Rather than just submitting it for a grade, I think more people should hear your ideas. So I'd like you to speak at the annual conference next month. Would you be interested?",
+        "correct": "B",
+        "a": "Speak at the conference",
+        "trHL": "Rather than just submitting it for a grade, I think more people should hear your ideas. **So I'd like you to speak at the annual conference next month.**",
+        "viHL": "Nam: Anna, thầy đã đọc bài luận về biến đổi khí hậu của em, rất xuất sắc. Thay vì chỉ nộp để lấy điểm, thầy nghĩ nên có nhiều người nghe ý tưởng của em hơn. **Nên thầy muốn em phát biểu tại hội nghị thường niên tháng sau.** Em có muốn không? (→ phát biểu ở hội nghị)"
+      },
+      {
+        "n": 10,
+        "q": "A man and a woman are talking about their old school days. What was the man's favorite thing about school?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Sports activities"
+          },
+          {
+            "k": "B",
+            "t": "History classes"
+          },
+          {
+            "k": "C",
+            "t": "Art lessons"
+          }
+        ],
+        "narration": "Woman: Do you miss school?\nMan: Sometimes. Most of my peers were obsessed with sports activities, but I was never very good at football. I also spent considerable time in the art workshops, which were fun. But history classes were definitely my favorite. I loved learning about the past.",
+        "correct": "B",
+        "a": "History classes",
+        "trHL": "Most of my peers were obsessed with sports activities. I also spent considerable time in the art workshops. **But history classes were definitely my favorite.**",
+        "viHL": "Nữ: Cậu có nhớ thời đi học không?\nNam: Thỉnh thoảng. Hầu hết bạn bè tớ mê các hoạt động thể thao, nhưng tớ chẳng giỏi bóng đá. Tớ cũng dành khá nhiều thời gian ở các buổi học vẽ, cũng vui. **Nhưng tớ thích nhất chắc chắn là giờ lịch sử.** Tớ rất thích tìm hiểu về quá khứ. (→ giờ lịch sử)"
+      },
+      {
+        "n": 11,
+        "q": "Listen to a radio man talking about a new popular song. Which is the most attractive part of the song?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "The melody"
+          },
+          {
+            "k": "B",
+            "t": "The rhythm"
+          },
+          {
+            "k": "C",
+            "t": "The words"
+          }
+        ],
+        "narration": "Man: This week's number one is a new song from a young band. Listeners immediately praise its catchy melody, and the upbeat drum rhythm makes you want to dance. But in my opinion, the most attractive part of the song are the words. They tell a beautiful story about growing up.",
+        "correct": "C",
+        "a": "The words",
+        "trHL": "Listeners immediately praise its catchy melody, and the upbeat drum rhythm makes you want to dance. **But in my opinion, the most attractive part of the song are the words.**",
+        "viHL": "Nam: Bài số một tuần này là ca khúc mới của một ban nhạc trẻ. Người nghe khen ngay giai điệu bắt tai, và nhịp trống sôi động khiến bạn muốn nhảy. **Nhưng theo tôi, phần hấp dẫn nhất của bài hát là lời.** Lời kể một câu chuyện đẹp về tuổi trưởng thành. (→ lời bài hát)"
+      },
+      {
+        "n": 12,
+        "q": "A man is talking about the environment of the countryside. What is the main cause of poor air quality?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Industrial factories"
+          },
+          {
+            "k": "B",
+            "t": "Vehicle emissions"
+          },
+          {
+            "k": "C",
+            "t": "Fires from the countryside"
+          }
+        ],
+        "narration": "Man: People often think the countryside always has clean air, unlike cities full of vehicle emissions and industrial factories. But that's not always true here. In the dry season, farmers burn their fields after the harvest, and the main cause of poor air quality in our area comes from fires from the countryside.",
+        "correct": "C",
+        "a": "Fires from the countryside",
+        "trHL": "Unlike cities full of vehicle emissions and industrial factories. **the main cause of poor air quality in our area comes from fires from the countryside.**",
+        "viHL": "Nam: Người ta hay nghĩ nông thôn lúc nào cũng có không khí sạch, không như thành phố đầy khí thải xe cộ và nhà máy. Nhưng ở đây không hẳn vậy. Mùa khô, nông dân đốt đồng sau thu hoạch, và **nguyên nhân chính khiến không khí ô nhiễm ở vùng chúng tôi là lửa đốt ở nông thôn.** (→ lửa ở nông thôn)"
+      },
+      {
+        "n": 13,
+        "q": "A person calls a friend about his new car. What is the price of the small car?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "2,500 pounds"
+          },
+          {
+            "k": "B",
+            "t": "3,250 pounds"
+          },
+          {
+            "k": "C",
+            "t": "4,000 pounds"
+          }
+        ],
+        "narration": "Man: Hi Tom, I've been to the car dealer today. I really liked a luxurious sports sedan, but it costs 4,000 pounds, which is way over my budget. Then the dealer showed me a compact city model. It's perfect for me, and the price of the small car is 3,250 pounds. I think I'll buy it this weekend.",
+        "correct": "B",
+        "a": "3,250 pounds",
+        "trHL": "A luxurious sports sedan costs 4,000 pounds, which is way over my budget. **the price of the small car is 3,250 pounds.**",
+        "viHL": "Nam: Chào Tom, hôm nay tớ đến đại lý ô tô. Tớ rất thích một chiếc sedan thể thao sang trọng, nhưng giá 4.000 bảng, vượt xa ngân sách. Rồi người bán cho tớ xem một mẫu xe nhỏ đi phố. Rất hợp với tớ, và **giá chiếc xe nhỏ là 3.250 bảng.** Chắc cuối tuần này tớ mua. (→ 3.250 bảng; 4.000 là xe thể thao)"
       }
     ],
     "p2": {
-      "title": "Matching (Speaker → Purposes of using the Internet)",
-      "intro": "Listen to the opinions of 4 people talking about their purposes of using the Internet. Complete the sentences below.",
+      "title": "Matching (Speaker → Experience at a restaurant)",
+      "intro": "Four people are talking about their recent experience at a restaurant. Complete the sentences below. There are TWO extra options that you do not need to use.",
       "speakers": [
         {
           "label": "Speaker A",
-          "answer": "watch film",
-          "t": "Person A: I spend quite a bit of my free time online, mostly because I love watching movies. The Internet makes it so easy to find a wide variety of films, from the latest releases to old classics. I can stream them directly on my laptop or TV without needing to go out and buy DVDs or rent movies. I just pick a film and relax. It's the best way to unwind after a long day, and I can watch whatever I want, whenever I want.",
+          "answer": "was hungry after dinner",
+          "t": "The restaurant was lovely, although the prices were a bit higher than I expected. At the end, they even gave us a free slice of cake. But the portions were so small. To be honest, I was hungry after dinner, and I had to buy a sandwich on the way home.",
           "letter": "A",
-          "trHL": "Person A: I spend my free time online, mostly because **I love watching movies.** The Internet makes it easy to find films.",
-          "viHL": "Người A: Tôi dành khá nhiều thời gian rảnh online, chủ yếu vì **tôi thích xem phim.** Internet giúp tìm nhiều loại phim rất dễ, từ phim mới nhất đến phim kinh điển. Tôi xem trực tiếp trên laptop hoặc TV mà không cần ra ngoài mua DVD hay thuê phim. Tôi chỉ việc chọn phim và thư giãn. Đó là cách hay nhất để xả hơi sau ngày dài, và tôi xem gì tùy thích, lúc nào tùy ý. (→ xem phim)"
+          "trHL": "The prices were a bit higher than I expected. They even gave us a free slice of cake. **But the portions were so small. To be honest, I was hungry after dinner**",
+          "viHL": "Nhà hàng rất đẹp, dù giá hơi cao hơn tôi nghĩ. Cuối bữa họ còn tặng chúng tôi một miếng bánh miễn phí. **Nhưng phần ăn quá nhỏ. Thật lòng, ăn xong tôi vẫn đói**, và phải mua bánh mì kẹp trên đường về. (→ đói sau bữa tối)"
         },
         {
           "label": "Speaker B",
-          "answer": "communicate with friends",
-          "t": "Person B: The main reason I use the Internet is to stay in touch with my friends. It's great because I can talk to people who live far away without any issues. Whether it's through social media, video calls, or messaging apps, the Internet allows me to communicate easily and quickly. My best friend loves using the Internet for studying online courses, but that's not really for me. I prefer just chatting and staying connected through messages and calls.",
+          "answer": "ordered the wrong food",
+          "t": "The waiter was very kind and brought us a free dessert because it was my birthday. But the lighting was so poor, and the whole menu was in French. I just pointed at something, and instead of grilled fish, I got a plate of raw oysters. I'd ordered the wrong food!",
           "letter": "B",
-          "trHL": "Person B: The main reason I use the Internet is **to stay in touch with my friends** — social media, video calls, messaging.",
-          "viHL": "Người B: Lý do chính tôi dùng Internet là **để giữ liên lạc với bạn bè.** Tuyệt vì tôi có thể trò chuyện với người ở xa mà không gặp trở ngại gì. Dù qua mạng xã hội, gọi video hay ứng dụng nhắn tin, Internet cho tôi giao tiếp dễ dàng và nhanh chóng. Bạn thân tôi thích dùng Internet để học các khóa trực tuyến, nhưng cái đó không hợp tôi. Tôi thích trò chuyện và giữ kết nối qua tin nhắn và cuộc gọi hơn. (→ liên lạc với bạn)"
+          "trHL": "Brought us a free dessert. The lighting was so poor, and the whole menu was in French. **instead of grilled fish, I got a plate of raw oysters. I'd ordered the wrong food!**",
+          "viHL": "Người phục vụ rất tử tế và mang cho chúng tôi món tráng miệng miễn phí vì hôm đó là sinh nhật tôi. Nhưng ánh sáng quá tối, và cả thực đơn toàn tiếng Pháp. Tôi chỉ đại một món, và **thay vì cá nướng, tôi nhận được một đĩa hàu sống. Tôi gọi nhầm món!** (→ gọi nhầm món)"
         },
         {
           "label": "Speaker C",
-          "answer": "complete school assignments",
-          "t": "Person C: For me, the Internet is an essential tool for completing my school assignments. I use it to research information, find articles, and access educational websites that help me understand my subjects better. It's so convenient because I can find everything I need online without having to spend hours in the library. I also use it to download notes and submit my homework. It has really made studying more efficient, and I can work from anywhere, whether it's at home or on the go.",
+          "answer": "watched a nice performance",
+          "t": "The food was expensive and we had to wait almost an hour for our table. I was getting really annoyed. But then an acoustic band came on and played some jazz, and they were brilliant. Watching them made up for the long wait.",
           "letter": "C",
-          "trHL": "Person C: The Internet is an essential tool for **completing my school assignments** — research, articles, educational websites.",
-          "viHL": "Người C: Với tôi, Internet là công cụ thiết yếu để **hoàn thành bài tập ở trường.** Tôi dùng nó để tra cứu thông tin, tìm bài viết và truy cập các trang giáo dục giúp tôi hiểu bài hơn. Rất tiện vì tôi tìm được mọi thứ cần online mà không phải ngồi hàng giờ trong thư viện. Tôi cũng dùng nó để tải ghi chú và nộp bài. Nó thật sự khiến việc học hiệu quả hơn, và tôi làm được ở bất cứ đâu, dù ở nhà hay đang di chuyển. (→ làm bài tập)"
+          "trHL": "The food was expensive and we had to wait almost an hour. **But then an acoustic band came on and played some jazz, and they were brilliant.**",
+          "viHL": "Đồ ăn đắt và chúng tôi phải chờ gần một tiếng mới có bàn. Tôi bắt đầu rất bực. **Nhưng rồi một ban nhạc acoustic lên chơi nhạc jazz, và họ rất xuất sắc.** Được xem họ biểu diễn bù lại cho thời gian chờ. (→ xem biểu diễn hay)"
         },
         {
           "label": "Speaker D",
-          "answer": "find transport information",
-          "t": "Person D: Whenever I need to plan a trip or get somewhere, I always use the Internet to find transportation details. I can check train schedules, bus routes, and even look up flights. It helps me figure out the best way to travel, and I can even buy tickets online. I like how I can get real-time updates about delays or changes. It makes traveling much easier and saves me the hassle of standing in line at stations or airports.",
+          "answer": "met successful staff",
+          "t": "The place was so busy that I assumed the staff would be inexperienced or a bit rude. I was completely wrong. Our waiter was excellent. He told us he had won an international award and now owns his own chain of restaurants. He still works there at weekends because he loves it.",
           "letter": "D",
-          "trHL": "Person D: Whenever I need to plan a trip, I use the Internet **to find transportation details** — train schedules, bus routes, flights.",
-          "viHL": "Người D: Mỗi khi cần lên kế hoạch chuyến đi hay tới đâu đó, tôi luôn dùng Internet để **tìm thông tin phương tiện.** Tôi xem được lịch tàu, tuyến buýt, cả tra chuyến bay. Nó giúp tôi tìm cách di chuyển tốt nhất, và tôi còn mua vé online được. Tôi thích cách nó cập nhật thời gian thực về việc trễ hay thay đổi. Nó khiến việc đi lại dễ hơn nhiều và giúp tôi khỏi phải xếp hàng ở nhà ga hay sân bay. (→ tìm thông tin di chuyển)"
+          "trHL": "I assumed the staff would be inexperienced or a bit rude. **Our waiter was excellent. He told us he had won an international award and now owns his own chain of restaurants.**",
+          "viHL": "Quán đông đến mức tôi tưởng nhân viên sẽ thiếu kinh nghiệm hoặc hơi thô lỗ. Tôi hoàn toàn sai. **Người phục vụ của chúng tôi rất xuất sắc. Anh ấy kể từng đoạt giải thưởng quốc tế và giờ sở hữu cả chuỗi nhà hàng riêng.** Anh vẫn làm ở đó cuối tuần vì yêu nghề. (→ gặp nhân viên thành đạt)"
         }
       ],
       "qnum": 14,
       "pool": [
-        "watch film",
-        "communicate with friends",
-        "complete school assignments",
-        "find transport information"
+        "met successful staff",
+        "watched a nice performance",
+        "ordered the wrong food",
+        "complained about the high prices",
+        "received a free dessert",
+        "was hungry after dinner"
       ]
     },
     "p3": {
-      "intro": "Listen to two people discussing singers and music. Read the opinions below and decide whose opinion matches the statements, the man, the woman, or both the man and the woman.",
+      "intro": "Listen to a conversation between a man and a woman discussing local cultural events. Read the statements below and decide who expresses each opinion: the Man (M), the Woman (W), or Both the Man and the Woman (B).",
       "statements": [
         {
-          "text": "Singer can be good models for the young.",
-          "answer": "Woman",
-          "ex": "<b>Nữ đúng.</b> Nữ nói \"singers can be good role models for young people\". Nam hoài nghi (\"I'm not so sure\") → chỉ Nữ."
-        },
-        {
-          "text": "Taste in music is a highly personal thing.",
-          "answer": "Both",
-          "ex": "<b>Cả hai đúng.</b> Nam nói \"taste in music... is such a highly personal thing\"; Nữ \"Absolutely! Everyone has their own preferences\" → Both."
-        },
-        {
-          "text": "Music is a universal language.",
+          "text": "Exhibitions should be different and diverse",
           "answer": "Man",
-          "ex": "<b>Nam đúng.</b> Nam nói \"music... is a universal language that connects people\". Nữ phản đối (\"I don't fully agree\") → chỉ Nam."
+          "ex": "<b>Nam.</b> Nam: \"exhibitions should be different and diverse... showcase novel ideas\". Nữ không hoàn toàn đồng ý: \"they don't have to be so new\"."
         },
         {
-          "text": "Music can be used to manipulate people's feelings.",
+          "text": "Traditional customs are gradually losing their significance",
           "answer": "Both",
-          "ex": "<b>Cả hai đúng.</b> Nam nói \"music can be used to manipulate people's feelings\"; Nữ \"Definitely!... Music has that incredible power\" → Both."
+          "ex": "<b>Cả hai.</b> Nữ: \"traditions are gradually losing their significance\"; Nam: \"I couldn't agree more on that point\"."
+        },
+        {
+          "text": "Local festivals will disappear soon in the near future",
+          "answer": "Woman",
+          "ex": "<b>Nữ.</b> Nữ: \"local festivals will disappear soon in the near future\". Nam phản bác và đề xuất cải tiến lễ hội."
+        },
+        {
+          "text": "Schools are important to shaping future generations",
+          "answer": "Woman",
+          "ex": "<b>Nữ.</b> Nữ: \"schools are important to shaping future generations\". Nam cho rằng trách nhiệm chính thuộc về cha mẹ và gia đình."
         }
       ],
-      "transcript": "Statement | Answer  Woman: You know, I really believe that singers can be good role models for young people. Their influence can inspire kids to pursue their dreams and express themselves. Just think about how many young artists start singing because they look up to someone famous. Man: I'm not so sure about that. While some singers may have positive messages, others don't always set the best example. Sometimes their lifestyles can be quite the opposite of what we'd want kids to emulate. Woman: Fair point, but I think many young fans look up to their favorite artists and adopt their values. Artists like Taylor Swift or Ed Sheeran often promote kindness and hard work. Man: I get that. But when it comes to taste in music, it's such a highly personal thing. What resonates with one person might not resonate with another. I mean, I might love rock while my friend prefers classical! Woman: Absolutely! Everyone has their own preferences, and that's what makes music so interesting. It's like a reflection of our individual personalities. Man: Exactly! And speaking of music, I believe it's a universal language that connects people from different cultures. You can go anywhere in the world and find someone who enjoys music. Woman: I don't fully agree with that. While music can connect people, its meanings can vary greatly between cultures. A song that makes one group happy might not even be understood by another. Man: True, but one thing we can both agree on is that music can be used to manipulate people's feelings, whether in advertising or emotional moments in movies. Woman: Definitely! It's amazing how a song can evoke such strong emotions in us. Just think about those movie soundtracks that give you chills or make you cry. Music has that incredible power. Man: Right? It's fascinating how a simple melody can tap into our emotions so deeply.",
-      "qnum": 15,
-      "trHL": "Woman: **I really believe that singers can be good role models for young people.** Man: I'm not so sure. Man: When it comes to **taste in music, it's such a highly personal thing.** Woman: **Absolutely! Everyone has their own preferences.** Man: **Music is a universal language that connects people from different cultures.** Woman: **I don't fully agree with that.** Man: One thing we both agree on is that **music can be used to manipulate people's feelings.** Woman: **Definitely!... Music has that incredible power.**",
-      "viHL": "Nữ: Cậu biết đấy, tớ thật sự tin ca sĩ có thể là hình mẫu tốt cho giới trẻ. Ảnh hưởng của họ có thể truyền cảm hứng cho trẻ theo đuổi ước mơ và thể hiện bản thân. Cứ nghĩ xem bao nhiêu nghệ sĩ trẻ bắt đầu ca hát vì họ ngưỡng mộ một người nổi tiếng. Nam: Tớ không chắc lắm về điều đó. Dù vài ca sĩ có thông điệp tích cực, nhiều người khác không phải lúc nào cũng nêu gương tốt nhất. Đôi khi lối sống của họ trái ngược với những gì ta muốn trẻ noi theo. Nữ: Ý hay, nhưng tớ nghĩ nhiều fan trẻ ngưỡng mộ nghệ sĩ yêu thích và tiếp nhận giá trị của họ. Những nghệ sĩ như Taylor Swift hay Ed Sheeran thường lan tỏa lòng tử tế và sự chăm chỉ. Nam: Tớ hiểu. Nhưng nói đến gu âm nhạc, đó là chuyện rất cá nhân. Điều đồng điệu với người này có thể không đồng điệu với người khác. Ý tớ là, tớ có thể mê rock trong khi bạn tớ thích cổ điển! Nữ: Chắc chắn rồi! Ai cũng có sở thích riêng, và đó là điều khiến âm nhạc thú vị. Nó như phản chiếu cá tính riêng của mỗi người. Nam: Chính xác! Và nói về âm nhạc, tớ tin nó là ngôn ngữ chung kết nối con người từ các nền văn hóa khác nhau. Bạn đi bất cứ đâu trên thế giới cũng tìm được người thích âm nhạc. Nữ: Tớ không hoàn toàn đồng ý. Dù âm nhạc có thể kết nối con người, ý nghĩa của nó có thể khác nhau nhiều giữa các nền văn hóa. Một bài khiến nhóm này vui có thể nhóm khác còn chẳng hiểu. Nam: Đúng, nhưng một điều cả hai ta đều đồng ý là âm nhạc có thể được dùng để tác động cảm xúc của người ta, dù trong quảng cáo hay những khoảnh khắc xúc động trong phim. Nữ: Chắc chắn! Thật kỳ diệu khi một bài hát khơi dậy trong ta cảm xúc mạnh đến vậy. Cứ nghĩ đến những bản nhạc phim khiến bạn nổi da gà hay bật khóc. Âm nhạc có sức mạnh phi thường đó. Nam: Đúng nhỉ? Thật thú vị khi một giai điệu đơn giản lại chạm sâu đến cảm xúc của ta."
+      "transcript": "Man: I went to the new exhibition at the town hall last weekend. Honestly, I think exhibitions should be different and diverse. They need to showcase novel ideas, or people just won't come.\nWoman: I don't completely agree. A good exhibition doesn't have to be so new. Sometimes people enjoy seeing familiar things presented well. What worries me more is that traditions are gradually losing their significance in our town.\nMan: I couldn't agree more on that point. Traditions are indeed losing their touch, especially with young people.\nWoman: Exactly. I'm afraid local festivals will disappear soon in the near future. Fewer people come every year.\nMan: I don't think so. If we improve the festivals, add music and activities for families, people will come back.\nWoman: Maybe. But I believe schools are important to shaping future generations. They should teach children about local culture and identity.\nMan: I see it differently. That responsibility mainly lies with parents and families, not schools.",
+      "qnum": 18,
+      "trHL": "Man: **exhibitions should be different and diverse** Woman: **A good exhibition doesn't have to be so new**\nWoman: **traditions are gradually losing their significance** Man: **I couldn't agree more on that point**\nWoman: **I'm afraid local festivals will disappear soon in the near future** Man: **I don't think so**\nWoman: **schools are important to shaping future generations** Man: **That responsibility mainly lies with parents and families**",
+      "viHL": "Nam: Cuối tuần trước tôi đi xem triển lãm mới ở tòa thị chính. Thật lòng, tôi nghĩ **triển lãm nên khác biệt và đa dạng.** Phải giới thiệu ý tưởng mới, không thì chẳng ai đến.\nNữ: Tôi không hoàn toàn đồng ý. **Một triển lãm hay không nhất thiết phải quá mới.** Đôi khi người ta thích xem những thứ quen thuộc được trình bày đẹp. Điều tôi lo hơn là **các truyền thống đang dần mất đi ý nghĩa** ở thị trấn mình.\nNam: **Tôi hoàn toàn đồng ý điểm này.** Truyền thống đúng là đang phai nhạt, nhất là với giới trẻ.\nNữ: Đúng vậy. **Tôi sợ các lễ hội địa phương sẽ sớm biến mất trong tương lai gần.** Năm nào người đến cũng ít hơn.\nNam: **Tôi không nghĩ vậy.** Nếu cải tiến lễ hội, thêm âm nhạc và hoạt động cho gia đình, người ta sẽ quay lại.\nNữ: Có thể. Nhưng tôi tin **trường học quan trọng trong việc định hình thế hệ tương lai.** Trường nên dạy trẻ về văn hóa và bản sắc địa phương.\nNam: Tôi nghĩ khác. **Trách nhiệm đó chủ yếu thuộc về cha mẹ và gia đình**, không phải trường học."
     },
     "p4": [
       {
         "num": 16,
-        "intro": "Listen to a TV announcer talking about a writer's new novel. Choose the correct answers.",
+        "intro": "Listen to a productivity expert talk at a seminar about workplace productivity and answer the questions below.",
         "questions": [
           {
-            "q": "What does the announcer say about the new novel?",
-            "a": "A. It is different from his earlier works",
+            "q": "What does the speaker conclude about effective time management?",
+            "a": "B. It is the best way to maximize productivity",
             "opts": [
               {
                 "k": "A",
-                "t": "It is different from his earlier works"
+                "t": "It comes naturally to most successful business leaders"
               },
               {
                 "k": "B",
-                "t": "It is a typical romance"
+                "t": "It is the best way to maximize productivity"
               },
               {
                 "k": "C",
-                "t": "It got poor reviews"
-              }
-            ],
-            "correct": "A",
-            "ex": "<b>Đáp án A.</b> \"his new novel, Shadow in the Night, is quite different... explores a thrilling world of suspense\".<br>• B sai: rời xa dòng lãng mạn.<br>• C sai: độc giả \"excited about this new direction\"."
-          },
-          {
-            "q": "What does the announcer say the writer should do in the future?",
-            "a": "C. He should listen to critics before writing his next work",
-            "opts": [
-              {
-                "k": "A",
-                "t": "Write only romance"
-              },
-              {
-                "k": "B",
-                "t": "Stop writing"
-              },
-              {
-                "k": "C",
-                "t": "He should listen to critics before writing his next work"
-              }
-            ],
-            "correct": "C",
-            "ex": "<b>Đáp án C.</b> \"it's important for Parker to pay attention to the critics' advice as he works on his next book\".<br>• A, B sai: không ai bảo chỉ viết lãng mạn hay ngừng viết."
-          }
-        ],
-        "t": "Announcer: Good evening, everyone! Today, we're excited to talk about the latest novel by popular author James Parker. He is known for his softer, romantic stories like Whispers of the Heart, which have touched the hearts of many readers. However, his new novel, Shadow in the Night, is quite different. In Shadow in the Night, Parker explores a thrilling world of suspense and mystery. He moves away from his gentle love stories to deliver an exciting plot filled with unexpected twists. The tension in this book is much higher, showing that he can write in different styles. While many readers are excited about this new direction, I believe it's important for Parker to pay attention to the critics' advice as he works on his next book. Their feedback can help him improve his writing and find the right balance between romance and thrill that fans appreciate. Stay tuned for more updates on this talented author!",
-        "trHL": "He is known for softer, romantic stories. **However, his new novel, Shadow in the Night, is quite different** — a thrilling world of suspense and mystery. **While many readers are excited, I believe it's important for Parker to pay attention to the critics' advice as he works on his next book.**",
-        "viHL": "Người dẫn: Chào buổi tối cả nhà! Hôm nay, chúng ta rất hào hứng nói về cuốn tiểu thuyết mới nhất của tác giả nổi tiếng James Parker. Ông được biết đến với những câu chuyện nhẹ nhàng, lãng mạn như Whispers of the Heart, từng chạm đến trái tim nhiều độc giả. Tuy nhiên, cuốn tiểu thuyết mới của ông, Shadow in the Night, lại khá khác biệt. Trong đó, Parker khám phá một thế giới hồi hộp và bí ẩn đầy kịch tính. Ông rời bỏ những chuyện tình dịu dàng để mang đến một cốt truyện gay cấn đầy những bước ngoặt bất ngờ. Sự căng thẳng trong cuốn sách này cao hơn nhiều, cho thấy ông có thể viết nhiều phong cách khác nhau. Trong khi nhiều độc giả háo hức với hướng đi mới này, tôi cho rằng Parker nên chú ý đến lời khuyên của giới phê bình khi viết cuốn tiếp theo. Phản hồi của họ có thể giúp ông cải thiện lối viết và tìm được sự cân bằng phù hợp giữa lãng mạn và hồi hộp mà người hâm mộ yêu thích. Hãy đón xem thêm cập nhật về tác giả tài năng này!"
-      },
-      {
-        "num": 17,
-        "intro": "A radio MC talks about a famous musician's life. Choose the correct answers.",
-        "questions": [
-          {
-            "q": "What has the musician decided regarding his singing career?",
-            "a": "B. He will retire from singing professionally",
-            "opts": [
-              {
-                "k": "A",
-                "t": "Take a short break and return"
-              },
-              {
-                "k": "B",
-                "t": "He will retire from singing professionally"
-              },
-              {
-                "k": "C",
-                "t": "Release one more album"
+                "t": "It matters less than working longer hours"
               }
             ],
             "correct": "B",
-            "ex": "<b>Đáp án B.</b> \"a beloved musician who has decided to retire from singing professionally... stepping away for good\".<br>• A sai: khác quá khứ (trước hay quay lại).<br>• C sai: không nói phát hành thêm album."
+            "ex": "<b>Đáp án B.</b> \"effective time management is the best way to maximize productivity\".<br>• A sai: diễn giả nói nó <i>không</i> tự nhiên mà có, kể cả với lãnh đạo thành công.<br>• C sai: làm thêm giờ không phải là cách. <i>(Trên web, đáp án B và C bị lỗi chữ; đáp án đúng giữ nguyên là B.)</i>"
           },
           {
-            "q": "What could the musician have achieved with his recent albums?",
-            "a": "A. He could have been more successful",
+            "q": "What is highlighted regarding the implementation of modern time-saving techniques?",
+            "a": "A. Using them effectively requires effort",
             "opts": [
               {
                 "k": "A",
-                "t": "He could have been more successful"
+                "t": "Using them effectively requires effort"
               },
               {
                 "k": "B",
-                "t": "Won many awards"
+                "t": "They rely heavily on sophisticated digital applications"
               },
               {
                 "k": "C",
-                "t": "Toured the world"
+                "t": "They guarantee immediate stress reduction in the office"
               }
             ],
             "correct": "A",
-            "ex": "<b>Đáp án A.</b> \"many believe he could have achieved even greater success with his recent albums\".<br>• B, C sai: không nhắc giải thưởng hay lưu diễn."
+            "ex": "<b>Đáp án A.</b> \"using them effectively requires effort and self-discipline\".<br>• B sai: nhiều người tải ứng dụng nhưng vô ích nếu thiếu nỗ lực.<br>• C sai: \"there is no guarantee of immediate stress reduction\"."
           }
         ],
-        "t": "Radio MC: Good afternoon, everyone! Today, we're diving into the life of a beloved musician who has decided to retire from singing professionally. Unlike in the past, where he would inform his fans and then make a comeback, this time he's serious about stepping away for good. His talent has always shone through, and many believe he could have achieved even greater success with his recent albums. However, the long break he took between projects made it difficult for him to regain his previous momentum. Fans were excited to see him return, but the gap left some wondering if he could still capture the magic he once had. As he prepares for this new chapter in his life, we can only reflect on the incredible music he's given us over the years. He leaves behind a rich legacy that will inspire future generations of artists. Stay tuned for more updates on this iconic musician!",
-        "trHL": "A beloved musician who **has decided to retire from singing professionally.** This time he's serious about stepping away for good. **Many believe he could have achieved even greater success with his recent albums,** but the long break made it difficult to regain momentum.",
-        "viHL": "MC radio: Chào buổi chiều cả nhà! Hôm nay chúng ta cùng tìm hiểu cuộc đời một nhạc sĩ được yêu mến, người đã quyết định giải nghệ khỏi việc ca hát chuyên nghiệp. Khác với trước kia, khi anh báo với người hâm mộ rồi lại tái xuất, lần này anh nghiêm túc rời đi hẳn. Tài năng của anh luôn tỏa sáng, và nhiều người tin anh đã có thể đạt thành công lớn hơn nữa với những album gần đây. Tuy nhiên, quãng nghỉ dài giữa các dự án khiến anh khó lấy lại đà như trước. Người hâm mộ háo hức thấy anh trở lại, nhưng khoảng cách đó khiến vài người tự hỏi liệu anh còn giữ được sức hút ngày xưa. Khi anh chuẩn bị cho chương mới trong đời, chúng ta chỉ có thể hồi tưởng về thứ âm nhạc tuyệt vời anh đã trao suốt bao năm. Anh để lại một di sản phong phú sẽ truyền cảm hứng cho các thế hệ nghệ sĩ sau này. Hãy đón xem thêm cập nhật về người nhạc sĩ mang tính biểu tượng này!"
+        "t": "Expert: Many people believe that good time management comes naturally to successful business leaders. It doesn't. They learn it, just like everyone else. And working longer hours is not the answer either. After years of research, my conclusion is simple: effective time management is the best way to maximize productivity. However, putting modern time-saving techniques into practice is not easy. Using them effectively requires effort and self-discipline. Many people download digital apps, but without real effort, the apps make no difference. And there is no guarantee of immediate stress reduction in the office; the benefits come slowly.",
+        "trHL": "Good time management comes naturally to successful business leaders. It doesn't. **effective time management is the best way to maximize productivity.** **Using them effectively requires effort and self-discipline.** Many people download digital apps, but without real effort, the apps make no difference. There is no guarantee of immediate stress reduction.",
+        "viHL": "Chuyên gia: Nhiều người tin rằng quản lý thời gian tốt là điều tự nhiên có ở các lãnh đạo doanh nghiệp thành công. Không phải vậy. Họ học nó, như mọi người khác. Và làm việc nhiều giờ hơn cũng không phải là giải pháp. Sau nhiều năm nghiên cứu, kết luận của tôi rất đơn giản: **quản lý thời gian hiệu quả là cách tốt nhất để tối đa năng suất.** Tuy nhiên, áp dụng các kỹ thuật tiết kiệm thời gian hiện đại không dễ. **Dùng chúng hiệu quả đòi hỏi nỗ lực và kỷ luật bản thân.** Nhiều người tải ứng dụng, nhưng thiếu nỗ lực thật sự thì ứng dụng chẳng tạo ra khác biệt. Và không có gì đảm bảo giảm căng thẳng ngay ở văn phòng; lợi ích đến từ từ."
+      },
+      {
+        "num": 17,
+        "intro": "Listen to an art critic talk at a museum lecture about the recent exhibition by James Panos and answer the questions below.",
+        "questions": [
+          {
+            "q": "How does the speaker describe the overall mood of James Panos's artwork?",
+            "a": "A. James Panos's paintings would be characterized by sadness",
+            "opts": [
+              {
+                "k": "A",
+                "t": "James Panos's paintings would be characterized by sadness"
+              },
+              {
+                "k": "B",
+                "t": "They reflect vibrant energy and optimism"
+              },
+              {
+                "k": "C",
+                "t": "They focus on abstract political satire"
+              }
+            ],
+            "correct": "A",
+            "ex": "<b>Đáp án A.</b> \"his paintings would be characterized by sadness\", thể hiện qua tông xám và xanh thẫm.<br>• B sai: tươi sáng, lạc quan là tranh của các họa sĩ cùng thời (contemporaries).<br>• C: châm biếm chính trị không được nhắc đến."
+          },
+          {
+            "q": "What impression did the overall exhibition leave on the speaker?",
+            "a": "B. It was a window into the past",
+            "opts": [
+              {
+                "k": "A",
+                "t": "It failed to attract younger museum visitors"
+              },
+              {
+                "k": "B",
+                "t": "It was a window into the past"
+              },
+              {
+                "k": "C",
+                "t": "It was heavily influenced by French Impressionism"
+              }
+            ],
+            "correct": "B",
+            "ex": "<b>Đáp án B.</b> Triển lãm xếp theo thứ tự thời gian, như bước ngược về lịch sử: \"it was a window into the past\".<br>• A, C: không nhắc đến khách trẻ hay trường phái Ấn tượng Pháp."
+          }
+        ],
+        "t": "Critic: Good evening. Tonight I'd like to talk about the recent exhibition of James Panos. While many of his contemporaries painted with vibrant energy and optimism, Panos chose a very different path. If I had to sum him up in one sentence, I'd say his paintings would be characterized by sadness. You can see it in his heavy greys and deep blues. The museum arranged the works in chronological order, so walking through the rooms felt like stepping back in history. For me, it was a window into the past.",
+        "trHL": "While many of his contemporaries painted with vibrant energy and optimism. **his paintings would be characterized by sadness.** You can see it in his heavy greys and deep blues. The museum arranged the works in chronological order. **For me, it was a window into the past.**",
+        "viHL": "Nhà phê bình: Chào buổi tối. Tối nay tôi muốn nói về triển lãm gần đây của James Panos. Trong khi nhiều họa sĩ cùng thời vẽ với năng lượng tươi sáng và lạc quan, Panos chọn một con đường rất khác. Nếu phải tóm gọn ông trong một câu, tôi sẽ nói **tranh của ông mang đặc trưng là nỗi buồn**, thể hiện qua những mảng xám nặng nề và xanh thẫm. Bảo tàng xếp tác phẩm theo thứ tự thời gian, nên đi qua các phòng như bước ngược về lịch sử. **Với tôi, đó là một ô cửa sổ nhìn về quá khứ.**"
       }
     ]
   },
@@ -8348,6 +8350,484 @@ const TESTS=[
         "viHL": "Người điểm sách: Hôm nay, tôi muốn chia sẻ cảm nghĩ về một cuốn sách hấp dẫn viết về cuộc đời nhà khoa học lừng danh, Tiến sĩ Emily Carter. Một trong những điểm nổi bật của cuốn sách là cách viết hào hứng cho người đọc. Tác giả có tài thổi hồn vào những khái niệm khoa học phức tạp, biến việc đọc thành một trải nghiệm cuốn hút. Dù vài người có thể mong đợi sự tập trung nặng vào chi tiết kỹ thuật, cuốn sách khéo léo cân bằng khoa học với cách kể chuyện, đảm bảo nó vẫn dễ tiếp cận. Nó chắc chắn không giống một cuốn giáo trình hơn là một cuốn tiểu sử; thay vào đó, nó mời gọi độc giả bước vào thế giới của nhà khoa học một cách gần gũi. Nhìn chung, tôi cho rằng nó được viết cho độc giả đại chúng. Mục tiêu của tác giả dường như là khơi dậy sự tò mò về khoa học và khuyến khích độc giả từ mọi hoàn cảnh trân trọng những đóng góp của Tiến sĩ Carter. Khác với những tác phẩm chỉ phù hợp cho chuyên gia trong ngành, cuốn sách này thật sự chào đón tất cả mọi người khám phá cuộc đời một nhà khoa học phi thường."
       }
     ]
+  },
+  {
+    "num": 18,
+    "p1": [
+      {
+        "n": 1,
+        "q": "A man is calling his sister. Where are they going to meet?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "At the station"
+          },
+          {
+            "k": "B",
+            "t": "At the park"
+          },
+          {
+            "k": "C",
+            "t": "At the university"
+          }
+        ],
+        "narration": "Man: Hi, it's me! I wanted to confirm where we're meeting today. I thought we agreed to meet at the park, right? It's a nice place to relax and catch up. The station would be too crowded, and the university is a bit far for me. Let's stick to the park so we can enjoy the weather. What time should I meet you there?",
+        "correct": "B",
+        "a": "At the park",
+        "trHL": "Man: I wanted to confirm where we're meeting. We agreed to meet at the park, right? **The station would be too crowded, and the university is a bit far. Let's stick to the park.**",
+        "viHL": "Nam: Chào, tớ đây! Tớ muốn xác nhận chỗ mình gặp hôm nay. Mình đã hẹn gặp ở công viên đúng không? Đó là nơi thư giãn và trò chuyện thoải mái. **Ga thì quá đông, còn trường thì hơi xa với tớ. Cứ gặp ở công viên nhé** để tận hưởng thời tiết. Mấy giờ tớ gặp cậu ở đó? (→ ở công viên)"
+      },
+      {
+        "n": 2,
+        "q": "A woman is talking about her vacation. What is the relationship between the speaker and Lisa?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Best friends"
+          },
+          {
+            "k": "B",
+            "t": "Mother and daughter"
+          },
+          {
+            "k": "C",
+            "t": "Teacher and student"
+          }
+        ],
+        "narration": "Woman: I just got back from an amazing vacation with Lisa! We've been friends for years, and this trip really brought us closer. I can't imagine going with anyone else. Some people think we look like mother and daughter because we care for each other so much, but it's really just best friends hanging out!",
+        "correct": "A",
+        "a": "Best friends",
+        "trHL": "I just got back from a vacation with Lisa! **We've been friends for years.** Some think we look like mother and daughter, **but it's really just best friends hanging out!**",
+        "viHL": "Nữ: Tớ vừa đi nghỉ với Lisa về, tuyệt lắm! **Bọn tớ là bạn nhiều năm rồi,** và chuyến đi này khiến bọn tớ thân nhau hơn. Tớ không tưởng tượng nổi đi với ai khác. Vài người tưởng tụi tớ là mẹ con vì quan tâm nhau quá, nhưng thật ra chỉ là bạn thân đi chơi thôi! (→ bạn thân)"
+      },
+      {
+        "n": 3,
+        "q": "Anna is calling her brother Max. What does Anna do later in the afternoon?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Stay late at the office"
+          },
+          {
+            "k": "B",
+            "t": "Pick up her kids"
+          },
+          {
+            "k": "C",
+            "t": "Hang out with friends"
+          }
+        ],
+        "narration": "Woman: Hey Max, it's Anna. I wanted to ask you for a favor this afternoon. I have to stay late at the office to finish some work. Could you please pick up my kids from school? After that, I know you'll want to hang out with your friends, so feel free to take them along. I really appreciate your help!",
+        "correct": "A",
+        "a": "Stay late at the office",
+        "trHL": "Anna: I have to stay late at the office to finish some work. **Could you please pick up my kids from school?**",
+        "viHL": "Anna: Này Max, Anna đây. Chiều nay chị muốn nhờ em một việc. Chị phải ở lại văn phòng làm nốt việc. **Em đón giúp bọn nhỏ ở trường được không?** Sau đó, chị biết em sẽ muốn đi chơi với bạn, nên cứ dẫn tụi nhỏ theo cũng được. Cảm ơn em nhiều nhé! (→ chị ấy ở lại văn phòng)"
+      },
+      {
+        "n": 4,
+        "q": "A man is talking about his trip. What did he enjoy last year?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Go for a walk"
+          },
+          {
+            "k": "B",
+            "t": "Go picnic"
+          },
+          {
+            "k": "C",
+            "t": "Go cycling"
+          }
+        ],
+        "narration": "Man: Last year, I had an amazing trip! One of the best things I enjoyed was going cycling in the countryside. The views were stunning, and it felt great to be outdoors. I also went for a walk a few times, but cycling really allowed me to explore more areas. We even had a picnic one day, which was lovely too!",
+        "correct": "C",
+        "a": "Go cycling",
+        "trHL": "One of the best things I enjoyed was **going cycling in the countryside.** Cycling really allowed me to explore more areas.",
+        "viHL": "Nam: Năm ngoái tớ có một chuyến đi tuyệt vời! Một trong những điều tớ thích nhất là **đạp xe ở vùng quê.** Cảnh đẹp mê hồn, và cảm giác ở ngoài trời thật tuyệt. Tớ cũng đi bộ vài lần, nhưng đạp xe mới cho tớ khám phá được nhiều nơi hơn. Có một hôm bọn tớ còn đi picnic nữa, cũng thích lắm! (→ đạp xe)"
+      },
+      {
+        "n": 5,
+        "q": "Doctor's office is calling to change the appointment. When is the new appointment?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "On Friday 14th"
+          },
+          {
+            "k": "B",
+            "t": "On Thursday 30th"
+          },
+          {
+            "k": "C",
+            "t": "On Thursday 13th"
+          }
+        ],
+        "narration": "Hello! This is the doctor's office calling to change your appointment. I wanted to let you know that the new appointment is on Thursday the 13th. I understand you might have been expecting it to be on Friday the 14th, but we're all off this day due to the national dentist holiday. Please let us know if that works for you!",
+        "correct": "C",
+        "a": "On Thursday 13th",
+        "trHL": "This is the doctor's office. **The new appointment is on Thursday the 13th.** You might have expected Friday the 14th, but we're off that day.",
+        "viHL": "Chào! Đây là phòng khám gọi để đổi lịch hẹn của bạn. **Tôi muốn báo rằng lịch hẹn mới là Thứ Năm ngày 13.** Tôi hiểu bạn có thể đã mong nó vào Thứ Sáu ngày 14, nhưng hôm đó chúng tôi nghỉ do ngày lễ nha khoa toàn quốc. Báo lại cho chúng tôi nếu ngày đó tiện nhé!"
+      },
+      {
+        "n": 6,
+        "q": "A man calls the teleshop. What is the teleshop number?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "102030"
+          },
+          {
+            "k": "B",
+            "t": "201030"
+          },
+          {
+            "k": "C",
+            "t": "301020"
+          }
+        ],
+        "narration": "Hello, I need to call the teleshop for some information. My phone is not working. Can you remind me of the number? I think it starts with 20 or 10 or 30 something. Is it 102030 or 301020? No, wait! I remember now—it's 201030! I really need to order that new gadget. Thanks for your help!",
+        "correct": "B",
+        "a": "201030",
+        "trHL": "Is it 102030 or 301020? **No, wait! I remember now—it's 201030!**",
+        "viHL": "Xin chào, tôi cần gọi cho cửa hàng bán qua truyền hình để hỏi thông tin. Điện thoại tôi hỏng rồi. Bạn nhắc giúp tôi số nhé? Tôi nghĩ nó bắt đầu bằng 20 hoặc 10 hoặc 30 gì đó. Là 102030 hay 301020 nhỉ? **À khoan, tôi nhớ ra rồi — là 201030!** Tôi thật sự cần đặt món đồ công nghệ mới đó. Cảm ơn bạn nhé!"
+      },
+      {
+        "n": 7,
+        "q": "Vincent is calling James. Why does Vincent call James?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "To say hello"
+          },
+          {
+            "k": "B",
+            "t": "To arrange meeting"
+          },
+          {
+            "k": "C",
+            "t": "To suggest a drink"
+          }
+        ],
+        "narration": "Man: Hi James, it's Vincent. I just wanted to check in and see how you're doing. It's been a while since we last caught up! How about we grab a drink later? I know a great new place that has very nice tea. You should definitely try it next time you visit me. Text me back!",
+        "correct": "C",
+        "a": "To suggest a drink",
+        "trHL": "Hi James, it's Vincent. **How about we grab a drink later?** I know a great new place that has very nice tea.",
+        "viHL": "Nam: Chào James, Vincent đây. Tớ chỉ muốn hỏi thăm xem cậu dạo này thế nào. Lâu rồi mình chưa gặp nhau! **Hay lát nữa mình đi làm ly nước nhé?** Tớ biết một quán mới rất hay có trà ngon lắm. Lần sau ghé tớ nhất định phải thử. Nhắn lại cho tớ nhé! (→ rủ đi uống nước)"
+      },
+      {
+        "n": 8,
+        "q": "Two people are talking about meeting for dinner. What time does Ahmed meet Rose?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "quarter past seven"
+          },
+          {
+            "k": "B",
+            "t": "half past seven"
+          },
+          {
+            "k": "C",
+            "t": "quarter to eight"
+          }
+        ],
+        "narration": "Man: Hi Rose. It's Ahmed. What time should we meet for dinner tonight? How about we meet at quarter past seven instead? Oh wait, I just remembered—I have a meeting ending at half past seven. Let's make it quarter to eight instead so we could have 15 minutes to travel. Does that work for you?",
+        "correct": "C",
+        "a": "quarter to eight",
+        "trHL": "How about we meet at quarter past seven? Oh wait, I have a meeting ending at half past seven. **Let's make it quarter to eight instead.**",
+        "viHL": "Nam: Chào Rose. Ahmed đây. Tối nay mình gặp nhau ăn tối lúc mấy giờ? Hay mình gặp lúc 7 giờ 15 nhé? Ồ khoan, tớ vừa nhớ ra — tớ có cuộc họp kết thúc lúc 7 giờ 30. **Vậy đổi thành 8 giờ kém 15 (7:45) đi** để mình có 15 phút di chuyển. Thế được không? (→ 7:45)"
+      },
+      {
+        "n": 9,
+        "q": "Max is calling his friend. How much can Max pay for the computer?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "150 pounds"
+          },
+          {
+            "k": "B",
+            "t": "250 pounds"
+          },
+          {
+            "k": "C",
+            "t": "350 pounds"
+          }
+        ],
+        "narration": "Hi, it's me Max. I'm calling about the computer that you are selling. You see, my computer is old and slow. I can't play any games on it any more and would like to replace it with a new one. How much do you offer? I can pay 250 pounds. This afternoon I am busy but we can discuss this tomorrow morning. Is that okay? Call me back soon.",
+        "correct": "B",
+        "a": "250 pounds",
+        "trHL": "Hi, it's me Max. I'm calling about the computer you're selling. My computer is old and slow. **How much do you offer? I can pay 250 pounds.**",
+        "viHL": "Chào, Max đây. Tớ gọi về cái máy tính cậu đang bán. Máy của tớ cũ và chậm rồi. Tớ không chơi game được nữa và muốn thay máy mới. **Cậu bán bao nhiêu? Tớ trả được 250 bảng.** Chiều nay tớ bận nhưng sáng mai mình bàn tiếp được. Ổn chứ? Gọi lại cho tớ sớm nhé. (→ 250 bảng)"
+      },
+      {
+        "n": 10,
+        "q": "A man is talking to the shopping assistant. What color top does he buy?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Red"
+          },
+          {
+            "k": "B",
+            "t": "Blue"
+          },
+          {
+            "k": "C",
+            "t": "Black"
+          }
+        ],
+        "narration": "Man: Hello, I would like to buy a top, please. Woman: Sure, do you have anything particular in mind? Man: I like the design of that green one over there. Do you have it in blue? Woman: Maybe. What size are you? Man: I am wearing large. Woman: Let me see. Ohh. We have that one in blue but small. The red and black ones, however, are available in large. Man: Red is not my cup of tea. Well, I will go with the other option then.",
+        "correct": "C",
+        "a": "Black",
+        "trHL": "We have that one in blue but small. The red and black ones are available in large. **Man: Red is not my cup of tea. I will go with the other option then.**",
+        "viHL": "Nam: Chào, tôi muốn mua một chiếc áo. Nữ: Vâng, anh có kiểu nào cụ thể không? Nam: Tôi thích thiết kế của cái áo xanh lá đằng kia. Có màu xanh dương không? Nữ: Có thể. Anh mặc cỡ nào? Nam: Tôi mặc cỡ lớn. Nữ: Để tôi xem. Ồ, cái đó có màu xanh dương nhưng cỡ nhỏ. Còn màu đỏ và đen thì có cỡ lớn. **Nam: Đỏ không hợp gu tôi. Vậy tôi lấy lựa chọn còn lại.** (→ đen)"
+      },
+      {
+        "n": 11,
+        "q": "Alice is calling her friend. What did she lose?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "A book"
+          },
+          {
+            "k": "B",
+            "t": "A laptop"
+          },
+          {
+            "k": "C",
+            "t": "A phone"
+          }
+        ],
+        "narration": "Hey, it's Alice. I think I might have left something at your house. I had my book with me. It's in my backpack. My laptop's here too. But I can't find my phone anywhere! Did you happen to see it after I left? I think I might have left it on the table.",
+        "correct": "C",
+        "a": "A phone",
+        "trHL": "I had my book in my backpack. My laptop's here too. **But I can't find my phone anywhere!**",
+        "viHL": "Này, Alice đây. Hình như tớ để quên gì đó ở nhà cậu. Sách thì tớ có mang theo, nó trong ba lô. Laptop cũng ở đây. **Nhưng tớ tìm mãi không thấy điện thoại đâu cả!** Cậu có thấy nó sau khi tớ về không? Tớ nghĩ chắc để quên trên bàn rồi. (→ điện thoại)"
+      },
+      {
+        "n": 12,
+        "q": "A man is talking about the city concert. How will the concert end?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "The city's favorite group"
+          },
+          {
+            "k": "B",
+            "t": "Fireworks performance"
+          },
+          {
+            "k": "C",
+            "t": "Singing from orchestra"
+          }
+        ],
+        "narration": "Man: I can't wait for the concert this weekend! It's going to be such an exciting event. The highlight ending will be the city's favorite group performing on stage. I've heard they have some amazing songs planned. There will also be a fireworks performance to celebrate before that, and I'm sure the orchestra will do some singing as well. It's going to be a night to remember!",
+        "correct": "A",
+        "a": "The city's favorite group",
+        "trHL": "**The highlight ending will be the city's favorite group performing on stage.** There will also be fireworks before that.",
+        "viHL": "Nam: Tớ nóng lòng chờ buổi hòa nhạc cuối tuần này! Sẽ là một sự kiện cực kỳ hào hứng. **Phần kết đỉnh nhất là nhóm nhạc yêu thích của thành phố biểu diễn trên sân khấu.** Tớ nghe nói họ đã chuẩn bị vài bài rất hay. Trước đó còn có màn pháo hoa để chào mừng, và chắc chắn dàn nhạc cũng sẽ hát vài bài. Sẽ là một đêm đáng nhớ! (→ nhóm nhạc yêu thích của thành phố)"
+      },
+      {
+        "n": 13,
+        "q": "Jana is talking to her friend. What does Jana's sister look like?",
+        "opts": [
+          {
+            "k": "A",
+            "t": "Tall"
+          },
+          {
+            "k": "B",
+            "t": "Short"
+          },
+          {
+            "k": "C",
+            "t": "Curly hair"
+          }
+        ],
+        "narration": "Woman: Hey, could you do me a favor? My sister is waiting outside, and I need you to give her my book. She's the one who is short and has straight hair, so you can't miss her. I also think she's wearing a blue jacket today. If you see her, just hand it to her, and I'll be so grateful. Thanks for helping me out!",
+        "correct": "B",
+        "a": "Short",
+        "trHL": "My sister is waiting outside. **She's the one who is short and has straight hair, so you can't miss her.**",
+        "viHL": "Jana: Này, giúp tớ một việc nhé? Em gái tớ đang đợi ngoài kia, tớ cần cậu đưa cho nó cuốn sách của tớ. **Nó là đứa thấp và tóc thẳng, nên không lẫn được đâu.** Tớ nghĩ hôm nay nó còn mặc áo khoác xanh dương nữa. Thấy nó thì đưa giúp nhé, tớ biết ơn lắm. Cảm ơn cậu! (→ thấp)"
+      }
+    ],
+    "p2": {
+      "title": "Matching (Speaker → Purposes of using the Internet)",
+      "intro": "Listen to the opinions of 4 people talking about their purposes of using the Internet. Complete the sentences below.",
+      "speakers": [
+        {
+          "label": "Speaker A",
+          "answer": "watch film",
+          "t": "Person A: I spend quite a bit of my free time online, mostly because I love watching movies. The Internet makes it so easy to find a wide variety of films, from the latest releases to old classics. I can stream them directly on my laptop or TV without needing to go out and buy DVDs or rent movies. I just pick a film and relax. It's the best way to unwind after a long day, and I can watch whatever I want, whenever I want.",
+          "letter": "A",
+          "trHL": "Person A: I spend my free time online, mostly because **I love watching movies.** The Internet makes it easy to find films.",
+          "viHL": "Người A: Tôi dành khá nhiều thời gian rảnh online, chủ yếu vì **tôi thích xem phim.** Internet giúp tìm nhiều loại phim rất dễ, từ phim mới nhất đến phim kinh điển. Tôi xem trực tiếp trên laptop hoặc TV mà không cần ra ngoài mua DVD hay thuê phim. Tôi chỉ việc chọn phim và thư giãn. Đó là cách hay nhất để xả hơi sau ngày dài, và tôi xem gì tùy thích, lúc nào tùy ý. (→ xem phim)"
+        },
+        {
+          "label": "Speaker B",
+          "answer": "communicate with friends",
+          "t": "Person B: The main reason I use the Internet is to stay in touch with my friends. It's great because I can talk to people who live far away without any issues. Whether it's through social media, video calls, or messaging apps, the Internet allows me to communicate easily and quickly. My best friend loves using the Internet for studying online courses, but that's not really for me. I prefer just chatting and staying connected through messages and calls.",
+          "letter": "B",
+          "trHL": "Person B: The main reason I use the Internet is **to stay in touch with my friends** — social media, video calls, messaging.",
+          "viHL": "Người B: Lý do chính tôi dùng Internet là **để giữ liên lạc với bạn bè.** Tuyệt vì tôi có thể trò chuyện với người ở xa mà không gặp trở ngại gì. Dù qua mạng xã hội, gọi video hay ứng dụng nhắn tin, Internet cho tôi giao tiếp dễ dàng và nhanh chóng. Bạn thân tôi thích dùng Internet để học các khóa trực tuyến, nhưng cái đó không hợp tôi. Tôi thích trò chuyện và giữ kết nối qua tin nhắn và cuộc gọi hơn. (→ liên lạc với bạn)"
+        },
+        {
+          "label": "Speaker C",
+          "answer": "complete school assignments",
+          "t": "Person C: For me, the Internet is an essential tool for completing my school assignments. I use it to research information, find articles, and access educational websites that help me understand my subjects better. It's so convenient because I can find everything I need online without having to spend hours in the library. I also use it to download notes and submit my homework. It has really made studying more efficient, and I can work from anywhere, whether it's at home or on the go.",
+          "letter": "C",
+          "trHL": "Person C: The Internet is an essential tool for **completing my school assignments** — research, articles, educational websites.",
+          "viHL": "Người C: Với tôi, Internet là công cụ thiết yếu để **hoàn thành bài tập ở trường.** Tôi dùng nó để tra cứu thông tin, tìm bài viết và truy cập các trang giáo dục giúp tôi hiểu bài hơn. Rất tiện vì tôi tìm được mọi thứ cần online mà không phải ngồi hàng giờ trong thư viện. Tôi cũng dùng nó để tải ghi chú và nộp bài. Nó thật sự khiến việc học hiệu quả hơn, và tôi làm được ở bất cứ đâu, dù ở nhà hay đang di chuyển. (→ làm bài tập)"
+        },
+        {
+          "label": "Speaker D",
+          "answer": "find transport information",
+          "t": "Person D: Whenever I need to plan a trip or get somewhere, I always use the Internet to find transportation details. I can check train schedules, bus routes, and even look up flights. It helps me figure out the best way to travel, and I can even buy tickets online. I like how I can get real-time updates about delays or changes. It makes traveling much easier and saves me the hassle of standing in line at stations or airports.",
+          "letter": "D",
+          "trHL": "Person D: Whenever I need to plan a trip, I use the Internet **to find transportation details** — train schedules, bus routes, flights.",
+          "viHL": "Người D: Mỗi khi cần lên kế hoạch chuyến đi hay tới đâu đó, tôi luôn dùng Internet để **tìm thông tin phương tiện.** Tôi xem được lịch tàu, tuyến buýt, cả tra chuyến bay. Nó giúp tôi tìm cách di chuyển tốt nhất, và tôi còn mua vé online được. Tôi thích cách nó cập nhật thời gian thực về việc trễ hay thay đổi. Nó khiến việc đi lại dễ hơn nhiều và giúp tôi khỏi phải xếp hàng ở nhà ga hay sân bay. (→ tìm thông tin di chuyển)"
+        }
+      ],
+      "qnum": 14,
+      "pool": [
+        "watch film",
+        "communicate with friends",
+        "complete school assignments",
+        "find transport information"
+      ]
+    },
+    "p3": {
+      "intro": "Listen to two people discussing singers and music. Read the opinions below and decide whose opinion matches the statements, the man, the woman, or both the man and the woman.",
+      "statements": [
+        {
+          "text": "Singer can be good models for the young.",
+          "answer": "Woman",
+          "ex": "<b>Nữ đúng.</b> Nữ nói \"singers can be good role models for young people\". Nam hoài nghi (\"I'm not so sure\") → chỉ Nữ."
+        },
+        {
+          "text": "Taste in music is a highly personal thing.",
+          "answer": "Both",
+          "ex": "<b>Cả hai đúng.</b> Nam nói \"taste in music... is such a highly personal thing\"; Nữ \"Absolutely! Everyone has their own preferences\" → Both."
+        },
+        {
+          "text": "Music is a universal language.",
+          "answer": "Man",
+          "ex": "<b>Nam đúng.</b> Nam nói \"music... is a universal language that connects people\". Nữ phản đối (\"I don't fully agree\") → chỉ Nam."
+        },
+        {
+          "text": "Music can be used to manipulate people's feelings.",
+          "answer": "Both",
+          "ex": "<b>Cả hai đúng.</b> Nam nói \"music can be used to manipulate people's feelings\"; Nữ \"Definitely!... Music has that incredible power\" → Both."
+        }
+      ],
+      "transcript": "Statement | Answer  Woman: You know, I really believe that singers can be good role models for young people. Their influence can inspire kids to pursue their dreams and express themselves. Just think about how many young artists start singing because they look up to someone famous. Man: I'm not so sure about that. While some singers may have positive messages, others don't always set the best example. Sometimes their lifestyles can be quite the opposite of what we'd want kids to emulate. Woman: Fair point, but I think many young fans look up to their favorite artists and adopt their values. Artists like Taylor Swift or Ed Sheeran often promote kindness and hard work. Man: I get that. But when it comes to taste in music, it's such a highly personal thing. What resonates with one person might not resonate with another. I mean, I might love rock while my friend prefers classical! Woman: Absolutely! Everyone has their own preferences, and that's what makes music so interesting. It's like a reflection of our individual personalities. Man: Exactly! And speaking of music, I believe it's a universal language that connects people from different cultures. You can go anywhere in the world and find someone who enjoys music. Woman: I don't fully agree with that. While music can connect people, its meanings can vary greatly between cultures. A song that makes one group happy might not even be understood by another. Man: True, but one thing we can both agree on is that music can be used to manipulate people's feelings, whether in advertising or emotional moments in movies. Woman: Definitely! It's amazing how a song can evoke such strong emotions in us. Just think about those movie soundtracks that give you chills or make you cry. Music has that incredible power. Man: Right? It's fascinating how a simple melody can tap into our emotions so deeply.",
+      "qnum": 15,
+      "trHL": "Woman: **I really believe that singers can be good role models for young people.** Man: I'm not so sure. Man: When it comes to **taste in music, it's such a highly personal thing.** Woman: **Absolutely! Everyone has their own preferences.** Man: **Music is a universal language that connects people from different cultures.** Woman: **I don't fully agree with that.** Man: One thing we both agree on is that **music can be used to manipulate people's feelings.** Woman: **Definitely!... Music has that incredible power.**",
+      "viHL": "Nữ: Cậu biết đấy, tớ thật sự tin ca sĩ có thể là hình mẫu tốt cho giới trẻ. Ảnh hưởng của họ có thể truyền cảm hứng cho trẻ theo đuổi ước mơ và thể hiện bản thân. Cứ nghĩ xem bao nhiêu nghệ sĩ trẻ bắt đầu ca hát vì họ ngưỡng mộ một người nổi tiếng. Nam: Tớ không chắc lắm về điều đó. Dù vài ca sĩ có thông điệp tích cực, nhiều người khác không phải lúc nào cũng nêu gương tốt nhất. Đôi khi lối sống của họ trái ngược với những gì ta muốn trẻ noi theo. Nữ: Ý hay, nhưng tớ nghĩ nhiều fan trẻ ngưỡng mộ nghệ sĩ yêu thích và tiếp nhận giá trị của họ. Những nghệ sĩ như Taylor Swift hay Ed Sheeran thường lan tỏa lòng tử tế và sự chăm chỉ. Nam: Tớ hiểu. Nhưng nói đến gu âm nhạc, đó là chuyện rất cá nhân. Điều đồng điệu với người này có thể không đồng điệu với người khác. Ý tớ là, tớ có thể mê rock trong khi bạn tớ thích cổ điển! Nữ: Chắc chắn rồi! Ai cũng có sở thích riêng, và đó là điều khiến âm nhạc thú vị. Nó như phản chiếu cá tính riêng của mỗi người. Nam: Chính xác! Và nói về âm nhạc, tớ tin nó là ngôn ngữ chung kết nối con người từ các nền văn hóa khác nhau. Bạn đi bất cứ đâu trên thế giới cũng tìm được người thích âm nhạc. Nữ: Tớ không hoàn toàn đồng ý. Dù âm nhạc có thể kết nối con người, ý nghĩa của nó có thể khác nhau nhiều giữa các nền văn hóa. Một bài khiến nhóm này vui có thể nhóm khác còn chẳng hiểu. Nam: Đúng, nhưng một điều cả hai ta đều đồng ý là âm nhạc có thể được dùng để tác động cảm xúc của người ta, dù trong quảng cáo hay những khoảnh khắc xúc động trong phim. Nữ: Chắc chắn! Thật kỳ diệu khi một bài hát khơi dậy trong ta cảm xúc mạnh đến vậy. Cứ nghĩ đến những bản nhạc phim khiến bạn nổi da gà hay bật khóc. Âm nhạc có sức mạnh phi thường đó. Nam: Đúng nhỉ? Thật thú vị khi một giai điệu đơn giản lại chạm sâu đến cảm xúc của ta."
+    },
+    "p4": [
+      {
+        "num": 16,
+        "intro": "Listen to a TV announcer talking about a writer's new novel. Choose the correct answers.",
+        "questions": [
+          {
+            "q": "What does the announcer say about the new novel?",
+            "a": "A. It is different from his earlier works",
+            "opts": [
+              {
+                "k": "A",
+                "t": "It is different from his earlier works"
+              },
+              {
+                "k": "B",
+                "t": "It is a typical romance"
+              },
+              {
+                "k": "C",
+                "t": "It got poor reviews"
+              }
+            ],
+            "correct": "A",
+            "ex": "<b>Đáp án A.</b> \"his new novel, Shadow in the Night, is quite different... explores a thrilling world of suspense\".<br>• B sai: rời xa dòng lãng mạn.<br>• C sai: độc giả \"excited about this new direction\"."
+          },
+          {
+            "q": "What does the announcer say the writer should do in the future?",
+            "a": "C. He should listen to critics before writing his next work",
+            "opts": [
+              {
+                "k": "A",
+                "t": "Write only romance"
+              },
+              {
+                "k": "B",
+                "t": "Stop writing"
+              },
+              {
+                "k": "C",
+                "t": "He should listen to critics before writing his next work"
+              }
+            ],
+            "correct": "C",
+            "ex": "<b>Đáp án C.</b> \"it's important for Parker to pay attention to the critics' advice as he works on his next book\".<br>• A, B sai: không ai bảo chỉ viết lãng mạn hay ngừng viết."
+          }
+        ],
+        "t": "Announcer: Good evening, everyone! Today, we're excited to talk about the latest novel by popular author James Parker. He is known for his softer, romantic stories like Whispers of the Heart, which have touched the hearts of many readers. However, his new novel, Shadow in the Night, is quite different. In Shadow in the Night, Parker explores a thrilling world of suspense and mystery. He moves away from his gentle love stories to deliver an exciting plot filled with unexpected twists. The tension in this book is much higher, showing that he can write in different styles. While many readers are excited about this new direction, I believe it's important for Parker to pay attention to the critics' advice as he works on his next book. Their feedback can help him improve his writing and find the right balance between romance and thrill that fans appreciate. Stay tuned for more updates on this talented author!",
+        "trHL": "He is known for softer, romantic stories. **However, his new novel, Shadow in the Night, is quite different** — a thrilling world of suspense and mystery. **While many readers are excited, I believe it's important for Parker to pay attention to the critics' advice as he works on his next book.**",
+        "viHL": "Người dẫn: Chào buổi tối cả nhà! Hôm nay, chúng ta rất hào hứng nói về cuốn tiểu thuyết mới nhất của tác giả nổi tiếng James Parker. Ông được biết đến với những câu chuyện nhẹ nhàng, lãng mạn như Whispers of the Heart, từng chạm đến trái tim nhiều độc giả. Tuy nhiên, cuốn tiểu thuyết mới của ông, Shadow in the Night, lại khá khác biệt. Trong đó, Parker khám phá một thế giới hồi hộp và bí ẩn đầy kịch tính. Ông rời bỏ những chuyện tình dịu dàng để mang đến một cốt truyện gay cấn đầy những bước ngoặt bất ngờ. Sự căng thẳng trong cuốn sách này cao hơn nhiều, cho thấy ông có thể viết nhiều phong cách khác nhau. Trong khi nhiều độc giả háo hức với hướng đi mới này, tôi cho rằng Parker nên chú ý đến lời khuyên của giới phê bình khi viết cuốn tiếp theo. Phản hồi của họ có thể giúp ông cải thiện lối viết và tìm được sự cân bằng phù hợp giữa lãng mạn và hồi hộp mà người hâm mộ yêu thích. Hãy đón xem thêm cập nhật về tác giả tài năng này!"
+      },
+      {
+        "num": 17,
+        "intro": "A radio MC talks about a famous musician's life. Choose the correct answers.",
+        "questions": [
+          {
+            "q": "What has the musician decided regarding his singing career?",
+            "a": "B. He will retire from singing professionally",
+            "opts": [
+              {
+                "k": "A",
+                "t": "Take a short break and return"
+              },
+              {
+                "k": "B",
+                "t": "He will retire from singing professionally"
+              },
+              {
+                "k": "C",
+                "t": "Release one more album"
+              }
+            ],
+            "correct": "B",
+            "ex": "<b>Đáp án B.</b> \"a beloved musician who has decided to retire from singing professionally... stepping away for good\".<br>• A sai: khác quá khứ (trước hay quay lại).<br>• C sai: không nói phát hành thêm album."
+          },
+          {
+            "q": "What could the musician have achieved with his recent albums?",
+            "a": "A. He could have been more successful",
+            "opts": [
+              {
+                "k": "A",
+                "t": "He could have been more successful"
+              },
+              {
+                "k": "B",
+                "t": "Won many awards"
+              },
+              {
+                "k": "C",
+                "t": "Toured the world"
+              }
+            ],
+            "correct": "A",
+            "ex": "<b>Đáp án A.</b> \"many believe he could have achieved even greater success with his recent albums\".<br>• B, C sai: không nhắc giải thưởng hay lưu diễn."
+          }
+        ],
+        "t": "Radio MC: Good afternoon, everyone! Today, we're diving into the life of a beloved musician who has decided to retire from singing professionally. Unlike in the past, where he would inform his fans and then make a comeback, this time he's serious about stepping away for good. His talent has always shone through, and many believe he could have achieved even greater success with his recent albums. However, the long break he took between projects made it difficult for him to regain his previous momentum. Fans were excited to see him return, but the gap left some wondering if he could still capture the magic he once had. As he prepares for this new chapter in his life, we can only reflect on the incredible music he's given us over the years. He leaves behind a rich legacy that will inspire future generations of artists. Stay tuned for more updates on this iconic musician!",
+        "trHL": "A beloved musician who **has decided to retire from singing professionally.** This time he's serious about stepping away for good. **Many believe he could have achieved even greater success with his recent albums,** but the long break made it difficult to regain momentum.",
+        "viHL": "MC radio: Chào buổi chiều cả nhà! Hôm nay chúng ta cùng tìm hiểu cuộc đời một nhạc sĩ được yêu mến, người đã quyết định giải nghệ khỏi việc ca hát chuyên nghiệp. Khác với trước kia, khi anh báo với người hâm mộ rồi lại tái xuất, lần này anh nghiêm túc rời đi hẳn. Tài năng của anh luôn tỏa sáng, và nhiều người tin anh đã có thể đạt thành công lớn hơn nữa với những album gần đây. Tuy nhiên, quãng nghỉ dài giữa các dự án khiến anh khó lấy lại đà như trước. Người hâm mộ háo hức thấy anh trở lại, nhưng khoảng cách đó khiến vài người tự hỏi liệu anh còn giữ được sức hút ngày xưa. Khi anh chuẩn bị cho chương mới trong đời, chúng ta chỉ có thể hồi tưởng về thứ âm nhạc tuyệt vời anh đã trao suốt bao năm. Anh để lại một di sản phong phú sẽ truyền cảm hứng cho các thế hệ nghệ sĩ sau này. Hãy đón xem thêm cập nhật về người nhạc sĩ mang tính biểu tượng này!"
+      }
+    ]
   }
 ];
 const P2L=['A','B','C','D'];
@@ -8711,7 +9191,8 @@ const APTIS_SKILL='listening';
 /* ---- Điểm làm ở web khác (thi thử ngoài app) → ghi vào tiến độ, mỗi lượt đúng 1 lần (mã ext riêng). Lộ trình (plan.html) đọc mảng JSON này.
    de = số đề; ok/n = số câu đúng / tổng câu; q = số câu mỗi part để ghi perQ; wrong = câu sai (đánh số trong từng part). */
 const LISTENING_EXT=[
-{"ext":"l2026-11-20-de11","de":11,"d":"2026-11-20","ok":23,"n":25,"q":{"P1":13,"P2":4,"P3":4,"P4":4},"wrong":["P3_1","P3_4"]}
+{"ext":"l2026-11-20-de11","de":11,"d":"2026-11-20","ok":23,"n":25,"q":{"P1":13,"P2":4,"P3":4,"P4":4},"wrong":["P3_1","P3_4"]},
+{"ext":"l2026-11-20-de12","de":12,"d":"2026-11-20","ok":25,"n":25,"q":{"P1":13,"P2":4,"P3":4,"P4":4},"wrong":[]}
 ];
 function applyListeningExt(S,list){ let ch=false;
   list.forEach(e=>{ const k='de'+e.de, r=S[k]||{attempts:0,bestScore:0,lastScore:0,history:[],perQ:{}};
