@@ -314,6 +314,15 @@ async function seedReadingExt(){
   if(!PROG.reading)PROG.reading={};
   applyReadingExt(PROG.reading,list);
 }
+// Điểm Listening làm ở web khác (LISTENING_EXT trong aptis_listening_all.html) — cùng cách ghi với Reading.
+async function seedListeningExt(){
+  if(!SERVED)return;
+  let txt='';try{const r=await fetch('aptis_listening_all.html',{cache:'no-store'});if(!r.ok)return;txt=await r.text();}catch(e){return;}
+  const m=txt.match(/const LISTENING_EXT=(\[[\s\S]*?\]);/);if(!m)return;
+  let list=[];try{list=JSON.parse(m[1]);}catch(e){return;}
+  if(!PROG.listening)PROG.listening={};
+  applyReadingExt(PROG.listening,list);
+}
 async function load(){
   let d={};
   if(SERVED){try{const r=await fetch('/api/progress',{cache:'no-store'});d=await r.json();}catch(e){d=_lsGet('aptis_progress')||{};}}
@@ -323,6 +332,7 @@ async function load(){
   PROG=d;
   await seedGv();
   await seedReadingExt();
+  await seedListeningExt();
   // Một tab module mở từ trước có thể đã ghi đè bản lịch cũ — lấy bản mới nhất trong cả bản sao lưu riêng.
   const p=newer(PROG.plan&&PROG.plan.cur,_lsGet(PLAN_BK));
   const coach=newer(PROG.coach&&PROG.coach.log,_lsGet(COACH_BK));

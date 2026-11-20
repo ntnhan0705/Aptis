@@ -8228,6 +8228,21 @@ document.addEventListener('keydown',e=>{
 
 /* ===== Tiến độ ôn tập (module dùng chung 4 app) ===== */
 const APTIS_SKILL='listening';
+/* ---- Điểm làm ở web khác (thi thử ngoài app) → ghi vào tiến độ, mỗi lượt đúng 1 lần (mã ext riêng). Lộ trình (plan.html) đọc mảng JSON này.
+   de = đề ghi nhận; ok/n = số câu đúng / tổng câu. Đề ngoài trộn câu từ nhiều đề của app nên q để trống (không ghi perQ, tránh gán sai câu). */
+const LISTENING_EXT=[
+{"ext":"l2026-11-20-de11","de":11,"d":"2026-11-20","ok":23,"n":25,"q":{},"wrong":[]}
+];
+function applyListeningExt(S,list){ let ch=false;
+  list.forEach(e=>{ const k='de'+e.de, r=S[k]||{attempts:0,bestScore:0,lastScore:0,history:[],perQ:{}};
+    r.extIds=r.extIds||[]; if(r.extIds.includes(e.ext))return;
+    const sc=Math.round(e.ok/e.n*100), date=e.d+'T12:00:00.000Z';
+    r.extIds.push(e.ext); r.attempts=(r.attempts||0)+1; r.bestScore=Math.max(r.bestScore||0,sc);
+    r.history=(r.history||[]).concat([{date:date,score:sc,ext:true}]).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    if(!r.lastDate||r.lastDate<=date){ r.lastScore=sc; r.lastDate=date; }
+    r.perQ=r.perQ||{}; Object.keys(e.q).forEach(p=>{ for(let i=1;i<=e.q[p];i++){ const key=p+'_'+i, q=r.perQ[key]||{seen:0,wrong:0}; q.seen++; if(e.wrong.includes(key))q.wrong++; r.perQ[key]=q; } });
+    S[k]=r; ch=true; });
+  return ch; }
 /* ===== Đồng bộ đám mây — mã đồng bộ = ID blob (jsonblob). Dùng chung mọi app. ===== */
 window.ACLOUD=window.ACLOUD||(function(){
   var API='/progress',CK='aptis_sync_code',t=null;
@@ -8312,7 +8327,7 @@ function renderProgPanel(){
 { const n=+new URLSearchParams(location.search).get('de'); if(n>=1&&TESTS.some(t=>t.num===n)){ sel.test=n; sel.part='all'; } }
 buildSetup();
 startRun();
-progLoad().then(()=>buildSetup());
+progLoad().then(()=>{ if(applyListeningExt(APTIS_PROG[APTIS_SKILL],LISTENING_EXT)) progSave(); buildSetup(); });
 </script>
 </body>
 </html>
