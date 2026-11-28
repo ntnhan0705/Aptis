@@ -443,6 +443,9 @@
   .az-text{font-size:19px;line-height:1.6}
   .az-ipa{font-family:'Times New Roman','Doulos SIL',Georgia,serif;font-size:15px;color:#7030a0;margin-top:6px}
   .az-vi{font-size:13.5px;color:var(--muted);margin-top:6px}
+  .az-mid{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+  .az-all .az-text{font-size:16px;line-height:1.55;margin:0 0 6px}
+  .az-all .az-text:last-child{margin-bottom:0}
   .az-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 6px}
   .az-rate{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
   .az-rate input{width:110px;accent-color:var(--accent)}
@@ -859,7 +862,7 @@
 
   <div class="az-nav">
     <button class="az-btn" id="azPrev">◀ Câu trước</button>
-    <span class="az-pos" id="azPos"></span>
+    <span class="az-mid"><span class="az-pos" id="azPos"></span><button class="az-btn" id="azWhole" title="Chuyển giữa chấm từng câu và đọc cả câu trả lời một lượt">📜 Cả câu trả lời</button></span>
     <button class="az-btn" id="azNext">Câu sau ▶</button>
   </div>
   <div class="az-sent" id="azSent"></div>
@@ -878,6 +881,8 @@
 /* ===== 🎯 LUYỆN PHÁT ÂM VỚI AZURE SPEECH (Pronunciation Assessment) =====
    Mở bằng nút 🎯 trên từng câu, hoặc nút "🎯 Luyện phát âm" của câu hỏi.
    - Mỗi lần 1 câu. ◀ ▶ (hoặc phím ← →) để đổi câu; không bao giờ tự chuyển câu.
+   - Sau câu cuối của mỗi câu hỏi có mục "cả câu trả lời" (nút 📜): thu liên tục đến khi bấm ⏹ Dừng & chấm,
+     ghép điểm các đoạn và tự so khớp với bài mẫu để tìm từ thiếu/thừa (Azure chỉ chấm miscue ở chế độ 1 lượt).
    - Nghe mẫu: Azure TTS giọng en-GB, tốc độ 0.7–1.0×. Chưa có key thì dùng giọng của trình duyệt.
    - Thu & chấm: Pronunciation Assessment chấm theo từng âm (Phoneme), bật miscue (từ thiếu/thừa) và prosody (ngữ điệu, chỉ có ở en-US).
    - Key/region: localStorage 'aptis_azure'. Chỉ ở trình duyệt này, không nằm trong file, không đồng bộ lên máy chủ.
@@ -885,7 +890,7 @@
    Khối này chạy TRƯỚC script chính; nó chỉ dùng DATA/DATALAB/current/plainText/renderAll/stopAll/makeUtterance/synth lúc người dùng bấm. */
 var AZ_SDK_URL='https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1.53.0/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js';
 var AZ_SET_KEY='aptis_azure', AZ_HIST_KEY='aptis_pron_hist', AZ_HIST_MAX=30;
-var AZ={list:[],i:0,open:false,busy:false,token:0,rec:null,mr:null,stream:null,mineURL:null,audio:null,viewing:null};
+var AZ={list:[],i:0,open:false,busy:false,token:0,rec:null,mr:null,stream:null,mineURL:null,audio:null,viewing:null,long:null};
 var _azSdkP=null, _azTts={}, _azHistC=null;
 var AZ_LBL=[['Chính xác','Accuracy'],['Trôi chảy','Fluency'],['Đầy đủ','Completeness'],['Ngữ điệu','Prosody'],['Tổng','PronScore']];
 var AZ_ERR={Mispronunciation:'phát âm sai',Omission:'bỏ sót — chưa đọc từ này',Insertion:'đọc thừa — câu mẫu không có từ này',UnexpectedBreak:'ngắt nghỉ sai chỗ',MissingBreak:'thiếu ngắt nghỉ',Monotone:'giọng đều đều'};
@@ -947,11 +952,20 @@ function azSetMsg(html, kind){ var el=azEl('azSetMsg'); el.className=kind||''; e
 // ---- mở / đóng / chuyển câu ----
 function azBuildList(){
   var L=[]; (DATA||[]).forEach(function(q,qi){ if(!q||q.isVocab||!q.sentences) return;
-    q.sentences.forEach(function(s,si){ L.push({qi:qi,si:si,q:q}); }); });
+    q.sentences.forEach(function(s,si){ L.push({qi:qi,si:si,q:q}); });
+    if(q.sentences.length>1) L.push({qi:qi,si:-1,q:q,all:true}); });
   return L;
 }
 function azItem(){ return AZ.list[AZ.i]; }
-function azText(it){ return plainText(it.q.sentences[it.si]); }
+function azText(it){ return it.all?it.q.sentences.map(plainText).join(' '):plainText(it.q.sentences[it.si]); }
+function azSegs(sent){ return sent.map(function(seg){ var t=azEsc(seg[0]);
+  return seg[1]===1?'<span class="hl">'+t+'</span>':seg[1]===2?'<span class="vhl">'+t+'</span>':t; }).join(''); }
+// nút 📜: từ 1 câu sang "cả câu trả lời" của cùng câu hỏi, và ngược lại (về câu 1)
+function azToggleWhole(){
+  var it=azItem(); if(!it) return;
+  var k=AZ.list.findIndex(function(x){ return x.qi===it.qi&&(it.all?x.si===0:x.all); });
+  if(k<0) return; azCancel(); azStopAudio(); AZ.i=k; azRender();
+}
 function azOpen(si){
   if(typeof stopAll==='function') stopAll();
   AZ.list=azBuildList(); if(!AZ.list.length) return;
@@ -969,14 +983,17 @@ function azClose(){
 function azGo(d){ var n=AZ.i+d; if(n<0||n>=AZ.list.length) return; azCancel(); azStopAudio(); AZ.i=n; azRender(); }
 function azRender(){
   var it=azItem(), q=it.q;
-  azEl('azWhere').textContent=((typeof DATALAB!=='undefined'&&DATALAB[it.qi])||q.badge)+' · câu '+(it.si+1)+'/'+q.sentences.length;
+  var lab=(typeof DATALAB!=='undefined'&&DATALAB[it.qi])||q.badge;
+  azEl('azWhere').textContent=lab+(it.all?' · cả câu trả lời ('+q.sentences.length+' câu)':' · câu '+(it.si+1)+'/'+q.sentences.length);
   azEl('azTitle').textContent=q.q||'';
-  var segs=q.sentences[it.si].map(function(seg){ var t=azEsc(seg[0]);
-    return seg[1]===1?'<span class="hl">'+t+'</span>':seg[1]===2?'<span class="vhl">'+t+'</span>':t; }).join('');
-  azEl('azSent').innerHTML='<div class="s-text az-text">'+segs+'</div>'
-    +(q.ipa&&q.ipa[it.si]?'<div class="az-ipa">'+azEsc(q.ipa[it.si])+'</div>':'')
-    +(q.vi_each&&q.vi_each[it.si]?'<div class="az-vi">🇻🇳 '+azEsc(q.vi_each[it.si])+'</div>':'');
+  azEl('azSent').innerHTML=it.all
+    ? '<div class="az-all">'+q.sentences.map(function(s){ return '<p class="s-text az-text">'+azSegs(s)+'</p>'; }).join('')+'</div>'
+    : '<div class="s-text az-text">'+azSegs(q.sentences[it.si])+'</div>'
+      +(q.ipa&&q.ipa[it.si]?'<div class="az-ipa">'+azEsc(q.ipa[it.si])+'</div>':'')
+      +(q.vi_each&&q.vi_each[it.si]?'<div class="az-vi">🇻🇳 '+azEsc(q.vi_each[it.si])+'</div>':'');
   azEl('azPos').textContent=(AZ.i+1)+' / '+AZ.list.length;
+  var wb=azEl('azWhole'); wb.hidden=q.sentences.length<2; wb.textContent=it.all?'✏️ Từng câu':'📜 Cả câu trả lời';
+  azRecUI(false);
   azEl('azPrev').disabled=AZ.i===0; azEl('azNext').disabled=AZ.i>=AZ.list.length-1;
   AZ.token++;   // bản ghi giọng của câu cũ (nếu còn đang lưu) không gắn sang câu mới
   if(AZ.mineURL){ URL.revokeObjectURL(AZ.mineURL); AZ.mineURL=null; }
@@ -1038,20 +1055,24 @@ function azSpeak(text){
 }
 
 // ---- thu & chấm (Pronunciation Assessment, 1 lượt — miscue chỉ chạy ở chế độ 1 lượt) ----
-function azRecUI(on){ var b=azEl('azRecBtn'); b.classList.toggle('recording',on); b.textContent=on?'⏹ Huỷ lần thu':'🎙 Thu & chấm'; }
+function azRecUI(on){ var b=azEl('azRecBtn'), it=azItem(), all=!!(it&&it.all); b.classList.toggle('recording',on);
+  b.textContent=on?(all?'⏹ Dừng & chấm':'⏹ Huỷ lần thu'):(all?'🎙 Thu cả bài & chấm':'🎙 Thu & chấm'); }
 function azStopMine(){
   try{ if(AZ.mr&&AZ.mr.state!=='inactive') AZ.mr.stop(); }catch(e){}
   try{ if(AZ.stream) AZ.stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
   AZ.mr=null; AZ.stream=null;
 }
-function azEnd(){ var r=AZ.rec; AZ.rec=null; if(r){ try{ r.close(); }catch(e){} } azStopMine(); AZ.busy=false; azRecUI(false); }
+function azEnd(){ var r=AZ.rec; AZ.rec=null; if(r){ try{ r.close(); }catch(e){} }
+  if(AZ.long){ clearInterval(AZ.long.timer); AZ.long=null; }
+  azStopMine(); AZ.busy=false; azRecUI(false); }
 function azCancel(){ if(!AZ.busy) return; AZ.token++; azEnd(); }
 async function azRecord(){
+  if(AZ.busy&&AZ.long){ azLongStop(); return; }
   if(AZ.busy){ azCancel(); azStatus('Đã huỷ lần thu này.'); return; }
   if(!azReady()){ azEl('azSet').open=true; azStatus('Cần nhập key và region của Azure trước — xem hướng dẫn trong ⚙️ Cài đặt Azure.','err'); return; }
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.MediaRecorder){ azStatus('Trình duyệt này không hỗ trợ micro — hãy dùng Chrome hoặc Edge.','err'); return; }
   azStopAudio(); if(typeof stopAll==='function') stopAll();
-  var it=azItem(), ref=azText(it), s=azSettings(), loc=s.locale||'en-US';
+  var it=azItem(), ref=azText(it), s=azSettings(), loc=s.locale||'en-US', long=!!it.all;
   var token=++AZ.token; AZ.busy=true; azRecUI(true); azStatus('⏳ Đang chuẩn bị micro…');
   var sdk;
   try{ sdk=await azSdk(); }catch(e){ if(token===AZ.token) azEnd(); azStatus(azEsc(e.message),'err'); return; }
@@ -1074,12 +1095,14 @@ async function azRecord(){
     var cfg=sdk.SpeechConfig.fromSubscription(s.key,s.region);
     cfg.speechRecognitionLanguage=loc;
     cfg.setProperty(sdk.PropertyId.Speech_SegmentationSilenceTimeoutMs,'1500');   // cho phép ngập ngừng ~1,5 giây giữa câu
-    var pa=new sdk.PronunciationAssessmentConfig(ref,sdk.PronunciationAssessmentGradingSystem.HundredMark,sdk.PronunciationAssessmentGranularity.Phoneme,true);
+    // cả bài: tắt miscue của Azure (chỉ đúng ở chế độ 1 lượt), tự so khớp từ thiếu/thừa sau khi ghép các đoạn
+    var pa=new sdk.PronunciationAssessmentConfig(ref,sdk.PronunciationAssessmentGradingSystem.HundredMark,sdk.PronunciationAssessmentGranularity.Phoneme,!long);
     if(loc==='en-US'){ pa.phonemeAlphabet='IPA'; pa.nbestPhonemeCount=5; pa.enableProsodyAssessment=true; }   // IPA + ngữ điệu: Azure chỉ hỗ trợ en-US
     rec=new sdk.SpeechRecognizer(cfg,sdk.AudioConfig.fromDefaultMicrophoneInput());
     pa.applyTo(rec);
   }catch(e){ azEnd(); azStatus(azErrMsg(e.message||e),'err'); return; }
   AZ.rec=rec;
+  if(long){ azLongRun(sdk,rec,ref,token); return; }
   rec.recognizing=function(r,e){ if(token===AZ.token) azStatus('🎙 Đang nghe: <i>'+azEsc(e.result.text)+'</i>','rec'); };
   azStatus('🎙 Đọc câu ngay bây giờ… nói xong im lặng khoảng 1–2 giây là máy tự chấm.','rec');
   rec.recognizeOnceAsync(function(result){ if(token===AZ.token) azFinish(sdk,result,ref); },
@@ -1116,6 +1139,79 @@ function azParse(j, text){
   });
   return {s:[num(pa.AccuracyScore),num(pa.FluencyScore),num(pa.CompletenessScore),num(pa.ProsodyScore),num(pa.PronScore)],
     h:j.DisplayText||text||'', w:words};
+}
+
+// ---- cả câu trả lời: thu liên tục, ghép các đoạn Azure trả về ----
+var AZ_LONG_MAX_MS=240000;   // tự dừng sau 4 phút
+function azClock(sec){ return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
+function azLongRun(sdk, rec, ref, token){
+  var L=AZ.long={segs:[],texts:[],live:'',t0:Date.now(),timer:null,stopping:false,done:false,ref:ref,token:token};
+  var tick=function(){ if(token!==AZ.token||L.stopping) return;
+    if(Date.now()-L.t0>AZ_LONG_MAX_MS){ azLongStop(); return; }
+    azStatus('🎙 Đang thu cả bài · <b>'+azClock(Math.round((Date.now()-L.t0)/1000))+'</b> — đọc hết rồi bấm <b>⏹ Dừng &amp; chấm</b>.'
+      +(L.live?'<br><i>… '+azEsc(L.live.slice(-160))+'</i>':''),'rec'); };
+  rec.recognizing=function(r,e){ if(token===AZ.token) L.live=L.texts.concat(e.result.text).join(' '); };
+  rec.recognized=function(r,e){ if(token!==AZ.token||e.result.reason!==sdk.ResultReason.RecognizedSpeech) return;
+    var j={}; try{ j=JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult)||'{}'); }catch(x){}
+    L.segs.push(j); L.texts.push(e.result.text); L.live=L.texts.join(' '); };
+  rec.canceled=function(r,e){ if(token!==AZ.token||e.reason!==sdk.CancellationReason.Error) return;
+    azEnd(); azStatus(azErrMsg((e.errorDetails||'')+' '+(e.errorCode!=null?e.errorCode:'')),'err'); };
+  L.timer=setInterval(tick,500); tick();
+  rec.startContinuousRecognitionAsync(function(){},function(err){ if(token!==AZ.token) return; azEnd(); azStatus(azErrMsg(err),'err'); });
+}
+function azLongStop(){
+  var L=AZ.long, rec=AZ.rec; if(!L||!rec||L.stopping) return;
+  L.stopping=true; azStatus('⏳ Đang chấm cả bài…');
+  rec.stopContinuousRecognitionAsync(function(){ if(L.token===AZ.token) azLongFinish(L); },
+    function(err){ if(L.token!==AZ.token) return; azEnd(); azStatus(azErrMsg(err),'err'); });
+}
+function azLongFinish(L){
+  if(L.done) return; L.done=true; azEnd();
+  var at=azMerge(L.segs,L.ref);
+  if(!at){ azStatus('Máy không nghe được gì — đọc to, rõ và gần micro hơn rồi thử lại.','err'); return; }
+  at.t=Date.now(); azHistAdd(L.ref,at);
+  azShowAttempt(at,false); azRenderHist(); azStatus('');
+}
+// so khớp từ (LCS): cặp [i ref, j hyp], i hoặc j = -1 khi bên kia không có
+function azAlign(a, b){
+  var n=a.length, m=b.length, D=[], i, j;
+  for(i=0;i<=n;i++){ D.push(new Array(m+1).fill(0)); }
+  for(i=n-1;i>=0;i--) for(j=m-1;j>=0;j--) D[i][j]=a[i]===b[j]?D[i+1][j+1]+1:Math.max(D[i+1][j],D[i][j+1]);
+  var out=[]; i=0; j=0;
+  while(i<n||j<m){
+    if(i<n&&j<m&&a[i]===b[j]){ out.push([i++,j++]); }
+    else if(j<m&&(i>=n||D[i][j+1]>=D[i+1][j])){ out.push([-1,j++]); }
+    else out.push([i++,-1]);
+  }
+  return out;
+}
+// ghép điểm như mẫu "continuous" của Microsoft: Fluency theo thời lượng, Accuracy/Completeness tính lại trên cả bài
+function azMerge(segs, ref){
+  var hyp=[], flu=[], dur=[], pro=[], texts=[];
+  segs.forEach(function(j){ var at=azParse(j,''); if(!at) return;
+    var d=((j.NBest[0].Words)||[]).reduce(function(a,w){ return a+(+w.Duration||0); },0);
+    if(at.s[1]!=null&&d>0){ flu.push(at.s[1]); dur.push(d); }
+    if(at.s[3]!=null) pro.push(at.s[3]);
+    if(at.h) texts.push(at.h);
+    at.w.forEach(function(w){ if(w.e!=='Omission'&&w.e!=='Insertion'&&azKey(w.w)) hyp.push(w); }); });
+  if(!hyp.length) return null;
+  var refW=azKey(ref).split(' ').filter(Boolean);
+  var words=[], match=0;
+  azAlign(refW,hyp.map(function(w){ return azKey(w.w); })).forEach(function(p){
+    if(p[0]>=0&&p[1]>=0){ match++; words.push(hyp[p[1]]); }
+    else if(p[1]>=0) words.push(Object.assign({},hyp[p[1]],{e:'Insertion'}));
+    else words.push({w:refW[p[0]],a:null,e:'Omission',ub:false,mb:false,mono:false,ph:[]});
+  });
+  var said=words.filter(function(w){ return w.e!=='Omission'&&w.e!=='Insertion'&&w.a!=null; });
+  var avg=function(a){ return a.length?a.reduce(function(x,y){ return x+y; },0)/a.length:null; };
+  var acc=avg(said.map(function(w){ return w.a; }));
+  var totD=dur.reduce(function(x,y){ return x+y; },0);
+  var fl=totD?flu.reduce(function(x,v,k){ return x+v*dur[k]; },0)/totD:null;
+  var comp=refW.length?Math.min(100,match/refW.length*100):null;
+  var pr=avg(pro);
+  var parts=[acc,fl,comp].concat(pr!=null?[pr]:[]).map(function(v){ return v==null?0:v; }).sort(function(x,y){ return x-y; });
+  var tot=pr!=null?parts[0]*0.4+parts[1]*0.2+parts[2]*0.2+parts[3]*0.2:parts[0]*0.6+parts[1]*0.2+parts[2]*0.2;
+  return {s:[acc,fl,comp,pr,tot], h:texts.join(' '), w:words};
 }
 
 // ---- lịch sử (gọn: không lưu từng âm) ----
@@ -1198,6 +1294,7 @@ function azRenderHist(){
   azEl('azOv').addEventListener('click',function(e){ if(e.target===this) azClose(); });
   azEl('azPrev').onclick=function(){ azGo(-1); };
   azEl('azNext').onclick=function(){ azGo(1); };
+  azEl('azWhole').onclick=azToggleWhole;
   azEl('azListen').onclick=function(){ var it=azItem(); if(it) azSpeak(azText(it)); };
   azEl('azRecBtn').onclick=azRecord;
   azEl('azMine').onclick=function(){ if(AZ.mineURL) azPlayURL(AZ.mineURL); };
